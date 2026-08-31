@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Join the Roamitra community — Ask questions, connect with locals, find hosts and meetups.">
+    <title>Community — Roamitra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="assets/css/main.css?v=type4" rel="stylesheet">
+</head>
+<body data-page="community">
+
+    <nav class="roamitra-navbar">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <a href="index.html" class="navbar-brand"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a>
+                <ul class="roamitra-nav-links d-none d-lg-flex">
+                    <li><a href="index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
+                    <li><a href="explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
+                    <li><a href="community.html" class="nav-link active" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
+                    <li><a href="" class="nav-link ai-link"><i class="bi bi-stars"></i> Roamitra AI</a></li>
+                </ul>
+                <div class="roamitra-nav-actions d-none d-lg-flex">
+                    <button class="roamitra-lang-select">EN <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></button>
+                    <a href="login.html" class="btn-roamitra btn-roamitra-ghost">Log in</a>
+                    <a href="signup.html" class="btn-roamitra btn-roamitra-primary">Sign up</a>
+                </div>
+                <button class="roamitra-navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav"><i class="bi bi-list"></i></button>
+            </div>
+            <div class="collapse d-lg-none" id="mobileNav">
+                <div class="roamitra-mobile-nav">
+                    <a href="explore.html" class="nav-link">Explore</a><a href="community.html" class="nav-link">Community</a><a href="#" class="nav-link">Roamitra AI</a>
+                    <div class="d-flex gap-2 mt-3"><a href="login.html" class="btn-roamitra btn-roamitra-outline flex-fill">Log in</a><a href="signup.html" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="search-hero pb-0">
+        <div class="container">
+            <div class="search-bar-wrapper">
+                <div class="search-bar">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search questions, places, travelers..." aria-label="Search">
+                    <div class="search-ai-btn"><button class="btn-roamitra btn-roamitra-ai"><i class="bi bi-stars"></i> + Ask Roamitra AI</button></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Cards -->
+    <section class="section-padding-sm pt-3">
+        <div class="container">
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card feature-green">
+                        <div class="feature-icon"><i class="bi bi-chat-dots"></i></div>
+                        <h3>Ask Questions</h3>
+                        <p>Get advice from experienced travelers and verified locals.</p>
+                        <div class="feature-footer"><a href="#ask-question" class="feature-link-text">Ask now</a><a href="#ask-question" class="btn-feature-arrow green"><i class="bi bi-arrow-right"></i></a></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card feature-orange">
+                        <span class="feature-badge">Most Popular</span>
+                        <div class="feature-icon"><i class="bi bi-house-door"></i></div>
+                        <h3>Host</h3>
+                        <p>Become a local guide and earn while helping travelers.</p>
+                        <ul class="feature-list"><li>Earn while helping travelers</li><li>Get a verified host badge</li><li>Connect with global community</li></ul>
+                        <div class="feature-footer"><a href="host.html" class="feature-link-text">Apply to host</a><a href="host.html" class="btn-feature-arrow orange"><i class="bi bi-arrow-right"></i></a></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card feature-blue">
+                        <div class="feature-icon"><i class="bi bi-bicycle"></i></div>
+                        <h3>Rental Bikes &amp; Cars</h3>
+                        <p>Rent vehicles directly from verified local owners.</p>
+                        <div class="feature-footer"><a href="index.html#rent-section" class="feature-link-text">Browse rentals</a><a href="index.html#rent-section" class="btn-feature-arrow blue"><i class="bi bi-arrow-right"></i></a></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card feature-purple">
+                        <div class="feature-icon"><i class="bi bi-people"></i></div>
+                        <h3>Meetups</h3>
+                        <p>Join local events and group activities with fellow travelers.</p>
+                        <div class="feature-footer"><a href="meetups.html" class="feature-link-text">Find meetups</a><a href="meetups.html" class="btn-feature-arrow purple"><i class="bi bi-arrow-right"></i></a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Stats -->
+    <section class="section-padding-sm pt-0">
+        <div class="container">
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-md-6"><div class="community-stat-card stat-green"><div class="stat-icon"><i class="bi bi-chat-square-text"></i></div><div class="stat-value">2,847</div><div class="stat-label">Active Questions</div><div class="stat-change">+12% vs last month</div></div></div>
+                <div class="col-lg-3 col-md-6"><div class="community-stat-card stat-orange"><div class="stat-icon"><i class="bi bi-house-check"></i></div><div class="stat-value">1,203</div><div class="stat-label">Verified Hosts</div><div class="stat-change">+8% vs last month</div></div></div>
+                <div class="col-lg-3 col-md-6"><div class="community-stat-card stat-blue"><div class="stat-icon"><i class="bi bi-car-front"></i></div><div class="stat-value">856</div><div class="stat-label">Local Rentals</div><div class="stat-change">+15% vs last month</div></div></div>
+                <div class="col-lg-3 col-md-6"><div class="community-stat-card stat-purple"><div class="stat-icon"><i class="bi bi-people"></i></div><div class="stat-value">50k+</div><div class="stat-label">Community Members</div><div class="stat-change">+22% vs last month</div></div></div>
+            </div>
+
+            <!-- Live questions -->
+            <h2 class="section-title mb-3" id="ask-question">Community questions</h2>
+            <form id="communityForm" class="planner-card mb-4">
+                <p class="text-muted small mb-3">Posted questions and replies are stored for your account and appear in notifications. No sample activity is shown here.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="qTitle">Question title</label>
+                    <input class="form-control" id="qTitle" name="title" required maxlength="200" placeholder="e.g. Best time to visit Ubud?">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="qBody">Details</label>
+                    <textarea class="form-control" id="qBody" name="body" rows="3" required placeholder="Ask the community…"></textarea>
+                </div>
+                <button type="submit" class="btn-roamitra btn-roamitra-navy">Post question</button>
+            </form>
+            <div id="liveQuestions" class="mb-5"></div>
+
+            <!-- Connect with Locals -->
+            <div class="section-header-inline mb-3"><h2><i class="bi bi-person-hearts"></i> Connect with Locals</h2><a href="#">See All</a></div>
+            <div class="row g-3 mb-5">
+                <div class="col-lg-3 col-md-6">
+                    <div class="local-card">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=144&h=144&fit=crop&crop=face" alt="Priya Sharma" class="local-avatar" loading="lazy">
+                        <div class="local-name">Priya Sharma <i class="bi bi-patch-check-fill local-verified"></i></div>
+                        <div class="local-location">Bangalore, India</div>
+                        <div class="local-rating"><i class="bi bi-star-fill"></i> 4.9 · 127 trips</div>
+                        <div class="local-tags"><span class="local-tag">Hiking</span><span class="local-tag">Sightseeing</span><span class="local-tag">Food</span></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Connect</button>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="local-card">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=144&h=144&fit=crop&crop=face" alt="Raj Patel" class="local-avatar" loading="lazy">
+                        <div class="local-name">Raj Patel <i class="bi bi-patch-check-fill local-verified"></i></div>
+                        <div class="local-location">Goa, India</div>
+                        <div class="local-rating"><i class="bi bi-star-fill"></i> 4.8 · 89 trips</div>
+                        <div class="local-tags"><span class="local-tag">Beach</span><span class="local-tag">Scooters</span></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Connect</button>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="local-card">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=144&h=144&fit=crop&crop=face" alt="Ananya Reddy" class="local-avatar" loading="lazy">
+                        <div class="local-name">Ananya Reddy <i class="bi bi-patch-check-fill local-verified"></i></div>
+                        <div class="local-location">Hyderabad, India</div>
+                        <div class="local-rating"><i class="bi bi-star-fill"></i> 5.0 · 64 trips</div>
+                        <div class="local-tags"><span class="local-tag">Culture</span><span class="local-tag">History</span></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Connect</button>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="local-card">
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=144&h=144&fit=crop&crop=face" alt="Arjun Mehta" class="local-avatar" loading="lazy">
+                        <div class="local-name">Arjun Mehta <i class="bi bi-patch-check-fill local-verified"></i></div>
+                        <div class="local-location">Mumbai, India</div>
+                        <div class="local-rating"><i class="bi bi-star-fill"></i> 4.7 · 112 trips</div>
+                        <div class="local-tags"><span class="local-tag">Nightlife</span><span class="local-tag">Food</span></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Connect</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verified Hosts -->
+            <div class="section-header-inline mb-3"><h2><i class="bi bi-patch-check"></i> Verified Hosts</h2><a href="#">See All</a></div>
+            <div class="row g-3 mb-5">
+                <div class="col-lg-4 col-md-6">
+                    <div class="host-card">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=128&h=128&fit=crop&crop=face" alt="Vikram Singh" class="host-avatar" loading="lazy">
+                        <div class="host-name">Vikram Singh</div><div class="host-location">Delhi, India</div>
+                        <div class="host-rating"><i class="bi bi-star-fill"></i> 4.9 (78 reviews)</div>
+                        <p class="host-bio">Digital nomad &amp; local food enthusiast. Love showing travelers the real Delhi.</p>
+                        <div class="host-tags"><span class="host-tag">Digital nomad</span><span class="host-tag">Local food</span><span class="host-tag">City tours</span></div>
+                        <div class="host-stay-icons"><i class="bi bi-house" title="Entire place"></i><i class="bi bi-door-open" title="Private room"></i></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Send Request</button>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="host-card">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&crop=face" alt="Meera Joshi" class="host-avatar" loading="lazy">
+                        <div class="host-name">Meera Joshi</div><div class="host-location">Jaipur, India</div>
+                        <div class="host-rating"><i class="bi bi-star-fill"></i> 5.0 (52 reviews)</div>
+                        <p class="host-bio">Heritage walk specialist. I'll show you Jaipur beyond the tourist traps.</p>
+                        <div class="host-tags"><span class="host-tag">Heritage</span><span class="host-tag">Photography</span></div>
+                        <div class="host-stay-icons"><i class="bi bi-door-open"></i></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Send Request</button>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="host-card">
+                        <img src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=128&h=128&fit=crop&crop=face" alt="David Chen" class="host-avatar" loading="lazy">
+                        <div class="host-name">David Chen</div><div class="host-location">Bangalore, India</div>
+                        <div class="host-rating"><i class="bi bi-star-fill"></i> 4.8 (41 reviews)</div>
+                        <p class="host-bio">Tech hub insider. Perfect for digital nomads looking for coworking spots.</p>
+                        <div class="host-tags"><span class="host-tag">Coworking</span><span class="host-tag">Startup culture</span></div>
+                        <div class="host-stay-icons"><i class="bi bi-house"></i><i class="bi bi-door-open"></i></div>
+                        <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm">Send Request</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Find Stays -->
+            <div class="section-header-inline mb-3"><h2><i class="bi bi-house-heart"></i> Find Stays with Locals</h2><a href="#">See All</a></div>
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stay-card">
+                        <div class="stay-image"><img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop" alt="Cozy room" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
+                        <div class="stay-body"><div class="stay-location">Bangalore, India</div><div class="stay-title">Cozy Room in Indiranagar</div><div class="stay-meta"><span class="stay-price">$28 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.9</span></div><div class="stay-type">Private Room</div></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stay-card">
+                        <div class="stay-image"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="Beach house" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
+                        <div class="stay-body"><div class="stay-location">Goa, India</div><div class="stay-title">Beachside Studio Apartment</div><div class="stay-meta"><span class="stay-price">$45 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Entire Place</div></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stay-card">
+                        <div class="stay-image"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" alt="Heritage home" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
+                        <div class="stay-body"><div class="stay-location">Jaipur, India</div><div class="stay-title">Heritage Haveli Experience</div><div class="stay-meta"><span class="stay-price">$55 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 5.0</span></div><div class="stay-type">Private Room</div></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stay-card">
+                        <div class="stay-image"><img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&h=400&fit=crop" alt="Modern apartment" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
+                        <div class="stay-body"><div class="stay-location">Mumbai, India</div><div class="stay-title">Modern Flat near Bandra</div><div class="stay-meta"><span class="stay-price">$38 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.7</span></div><div class="stay-type">Private Room</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="community-trust-bar">
+                <div class="community-trust-item"><i class="bi bi-patch-check"></i> Verified Stays</div>
+                <div class="community-trust-item"><i class="bi bi-credit-card"></i> Secure Payments</div>
+                <div class="community-trust-item"><i class="bi bi-headset"></i> 24/7 Support</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="roamitra-trust-bar"><div class="container"><div class="row g-3"><div class="col-md-4"><div class="trust-item"><i class="bi bi-people-fill"></i><span>3,000+ travelers already joined the waitlist</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure &amp; private</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-heart-fill"></i><span>Loved by early explorers</span></div></div></div></div></div>
+    <footer class="roamitra-footer"><div class="container"><div class="row g-4"><div class="col-lg-3"><a href="index.html" class="navbar-brand d-flex mb-3"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a><div class="roamitra-footer-social"><a href="#"><i class="bi bi-instagram"></i></a><a href="#"><i class="bi bi-facebook"></i></a><a href="#"><i class="bi bi-twitter-x"></i></a></div></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamitra AI</a></li><li><a href="#">Pricing</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li></ul></div><div class="col-lg-3 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div></div></footer>
+
+    <button class="ai-assistant-fab" id="aiFab"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></button>
+    <div class="ai-assistant-popup" id="aiPopup"><div class="ai-assistant-header"><div class="ai-assistant-header-info"><div class="ai-assistant-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div><h4>Roamitra AI</h4><p>Your travel assistant</p></div></div><button class="ai-assistant-close" id="aiClose"><i class="bi bi-x-lg"></i></button></div><div class="ai-assistant-messages" id="aiMessages"><div class="ai-message bot"><div class="ai-message-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div class="ai-message-bubble">Hi! How can I help you with the community today?</div></div></div><div class="ai-assistant-suggestions"><button class="ai-suggestion-chip" data-question="How do I become a host?">Become a Host</button></div><div class="ai-assistant-input"><input type="text" id="aiInput" placeholder="Ask me anything..."><button id="aiSend"><i class="bi bi-send-fill"></i></button></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/nav.js"></script>
+    <script src="assets/js/ai-assistant.js"></script>
+    <script src="assets/js/community-live.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

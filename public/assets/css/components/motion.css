@@ -1,0 +1,307 @@
+/* =============================================
+   Motion — reveals, hover polish, ambient glow
+   ============================================= */
+
+body {
+    animation: pageIn 0.55s ease both;
+}
+
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.45;
+}
+
+body::before {
+    width: 420px;
+    height: 420px;
+    top: -120px;
+    right: -80px;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.55), transparent 70%);
+    animation: orbFloat 18s ease-in-out infinite;
+}
+
+body::after {
+    width: 360px;
+    height: 360px;
+    bottom: 10%;
+    left: -120px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 70%);
+    animation: orbFloat 22s ease-in-out infinite reverse;
+}
+
+.search-hero,
+.section-padding,
+.section-padding-sm,
+.auth-page,
+.explore-panel,
+#destination-detail {
+    position: relative;
+    z-index: 1;
+}
+
+.roamitra-navbar {
+    z-index: 1030;
+    transition: none;
+}
+
+.roamitra-navbar.is-scrolled {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.roamitra-navbar .navbar-brand {
+    transition: transform 0.3s ease;
+}
+
+.roamitra-navbar .navbar-brand:hover {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.roamitra-nav-links .nav-link {
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.roamitra-nav-links .nav-link:hover {
+    color: var(--color-navy);
+}
+
+.search-hero {
+    overflow: hidden;
+}
+
+.search-bar {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+}
+
+.search-bar:focus-within {
+    transform: translateY(-2px);
+}
+
+.search-bar-wrapper {
+    animation: searchPulse 3.5s ease-in-out infinite;
+}
+
+.btn-roamitra {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-roamitra::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+    transform: translateX(-120%);
+    pointer-events: none;
+}
+
+.btn-roamitra:hover::after {
+    animation: shine 0.7s ease;
+}
+
+.btn-roamitra:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(18, 26, 43, 0.14);
+}
+
+.btn-roamitra:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-feature-arrow {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.feature-card:hover .btn-feature-arrow {
+    transform: translateX(4px) scale(1.08);
+}
+
+.filter-pill {
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-pill:hover {
+    transform: translateY(-2px);
+}
+
+.filter-pill.active {
+    box-shadow: 0 6px 16px rgba(18, 26, 43, 0.18);
+}
+
+.feature-card,
+.vehicle-card,
+.destination-card,
+.meetup-card,
+.owner-card,
+.why-rent-item {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+    transform-style: preserve-3d;
+}
+
+.feature-card:hover,
+.vehicle-card:hover,
+.destination-card:hover,
+.meetup-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 40px rgba(29, 78, 216, 0.14);
+}
+
+.feature-card .feature-icon {
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.08) rotate(-6deg);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.18);
+}
+
+.vehicle-card .vehicle-image img,
+.destination-card .dest-image img,
+.meetup-card .meetup-image img {
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vehicle-card:hover .vehicle-image img,
+.destination-card:hover .dest-image img,
+.meetup-card:hover .meetup-image img {
+    transform: scale(1.08);
+}
+
+.owner-card .owner-avatar {
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.owner-card:hover .owner-avatar {
+    transform: scale(1.08);
+}
+
+.why-rent-item .why-icon {
+    transition: transform 0.35s ease, background-color 0.35s ease;
+}
+
+.why-rent-item:hover .why-icon {
+    transform: translateY(-4px) scale(1.08);
+}
+
+.ai-assistant-fab {
+    animation: fabFloat 3.2s ease-in-out infinite;
+}
+
+.reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.in {
+    opacity: 1;
+    transform: none;
+}
+
+.feature-card.reveal.in:hover,
+.vehicle-card.reveal.in:hover,
+.destination-card.reveal.in:hover,
+.meetup-card.reveal.in:hover {
+    transform: translateY(-8px);
+}
+
+.owner-card.reveal.in:hover .owner-avatar,
+.why-rent-item.reveal.in:hover .why-icon {
+    transform: translateY(-4px) scale(1.08);
+}
+
+.ai-assistant-fab:hover {
+    animation-play-state: paused;
+}
+
+#destination-detail:not([hidden]) {
+    animation: destIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.destination-hero img {
+    animation: kenBurns 14s ease-in-out infinite alternate;
+}
+
+.auth-visual-bg {
+    animation: authDrift 16s ease-in-out infinite alternate;
+}
+
+.col-motion-out {
+    animation: fadeOut 0.22s ease forwards;
+}
+
+@keyframes pageIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes riseIn {
+    from { opacity: 0; transform: translateY(22px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes destIn {
+    from { opacity: 0; transform: translateY(28px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shine {
+    to { transform: translateX(120%); }
+}
+
+@keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-40px, 30px); }
+}
+
+@keyframes fabFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+@keyframes kenBurns {
+    from { transform: scale(1); }
+    to { transform: scale(1.08); }
+}
+
+@keyframes authDrift {
+    from { transform: scale(1) translate(0, 0); }
+    to { transform: scale(1.08) translate(-12px, 8px); }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes searchPulse {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0)); }
+    50% { filter: drop-shadow(0 8px 18px rgba(59, 130, 246, 0.18)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+
+    body::before,
+    body::after {
+        display: none;
+    }
+
+    .reveal {
+        opacity: 1;
+        transform: none;
+    }
+}

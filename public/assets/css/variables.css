@@ -1,0 +1,101 @@
+/* =============================================
+   Roamitra Design System — CSS Variables
+   Exact colors from reference mockup
+   ============================================= */
+
+:root {
+    /* Brand Blues — from Ask to Rent card */
+    --color-primary: #1D4ED8;
+    --color-primary-dark: #1E40AF;
+    --color-primary-light: #3B82F6;
+    --color-primary-bright: #60A5FA;
+    --color-primary-hover: #2563EB;
+    --color-accent: #3B82F6;
+
+    /* Navy / Dark Blue */
+    --color-navy: #121A2B;
+    --color-navy-light: #1B2537;
+    --color-navy-btn: #1A2332;
+
+    /* Neutrals — page wash matches Ask to Rent card */
+    --color-white: #FFFFFF;
+    --color-bg: #EBF4FF;
+    --color-bg-light: #F4F8FF;
+    --color-bg-muted: #E0EDFF;
+    --color-bg-search: #E8F1FF;
+    --color-border: #E5E7EB;
+    --color-border-light: #EBEBEB;
+
+    /* Text */
+    --color-text: #111827;
+    --color-text-secondary: #374151;
+    --color-text-muted: #6B7280;
+    --color-text-light: #9CA3AF;
+
+    /* Feature Card Pastels — matched to mockup */
+    --color-card-green: #EDFAF3;
+    --color-card-green-border: #A7E3C9;
+    --color-card-green-icon: #10B981;
+    --color-card-orange: #FFF4EB;
+    --color-card-orange-border: #FED7AA;
+    --color-card-orange-icon: #F97316;
+    --color-card-blue: #EBF4FF;
+    --color-card-blue-border: #BFDBFE;
+    --color-card-blue-icon: #3B82F6;
+    --color-card-purple: #F3EEFF;
+    --color-card-purple-border: #DDD6FE;
+    --color-card-purple-icon: #8B5CF6;
+
+    /* Safety banner */
+    --color-banner-blue: #EEF4FF;
+    --color-banner-blue-icon: #3B82F6;
+
+    /* Status */
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-star: #FBBF24;
+
+    /* Typography */
+    --font-family: 'Manrope', 'Segoe UI', sans-serif;
+    --font-display: 'Sora', 'Manrope', sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-pill: 50px;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+
+    /* Layout */
+    --navbar-height: 68px;
+    --container-max: 1140px;
+}

@@ -1,0 +1,183 @@
+/* =============================================
+   Footer Component
+   ============================================= */
+
+/* Trust Bar — above footer (mockup) */
+.roamitra-trust-bar {
+    background-color: var(--color-bg-light);
+    border-top: 1px solid var(--color-border-light);
+    padding: 1.125rem 0;
+}
+
+.roamitra-trust-bar .trust-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.roamitra-trust-bar .trust-item i {
+    color: var(--color-primary-light);
+    font-size: 1rem;
+}
+
+/* Safety Banners — light blue (mockup) */
+.roamitra-safety-section {
+    padding: 1.5rem 0 0;
+}
+
+.roamitra-safety-banners {
+    display: flex;
+    gap: 0.875rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.roamitra-safety-banner {
+    flex: 1;
+    min-width: 180px;
+    background-color: var(--color-banner-blue);
+    border-radius: var(--radius-lg);
+    padding: 0.875rem 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-navy);
+}
+
+.roamitra-safety-banner i {
+    font-size: 1.125rem;
+    color: var(--color-banner-blue-icon);
+}
+
+/* Dark Stats Bar (mockup) */
+.roamitra-stats-bar {
+    background-color: var(--color-navy);
+    padding: 0.875rem 0;
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.roamitra-stats-bar .stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin: 0 2rem;
+}
+
+.roamitra-stats-bar .stat-item strong {
+    color: var(--color-white);
+    font-weight: 700;
+    font-size: 0.9375rem;
+}
+
+/* Main Footer */
+.roamitra-footer {
+    background-color: var(--color-white);
+    padding: 2.5rem 0 1.25rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.roamitra-footer .container {
+    max-width: var(--container-max);
+}
+
+.roamitra-footer-brand {
+    margin-bottom: 1rem;
+}
+
+.roamitra-footer-brand .roamitra-logo-text {
+    font-size: 1.0625rem;
+}
+
+.roamitra-footer-social {
+    display: flex;
+    gap: 0.625rem;
+    margin-top: 0.875rem;
+}
+
+.roamitra-footer-social a {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    font-size: 0.8125rem;
+}
+
+.roamitra-footer-social a:hover {
+    border-color: var(--color-primary-light);
+    color: var(--color-primary-light);
+    background-color: var(--color-card-blue);
+}
+
+.roamitra-footer-heading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-navy);
+    margin-bottom: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.roamitra-footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.roamitra-footer-links li {
+    margin-bottom: 0.4375rem;
+}
+
+.roamitra-footer-links a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.8125rem;
+    transition: color var(--transition-fast);
+}
+
+.roamitra-footer-links a:hover {
+    color: var(--color-primary);
+}
+
+.roamitra-footer-bottom {
+    border-top: 1px solid var(--color-border-light);
+    margin-top: 2rem;
+    padding-top: 1.25rem;
+    text-align: center;
+    color: var(--color-text-light);
+    font-size: 0.8125rem;
+}
+
+@media (max-width: 767.98px) {
+    .roamitra-trust-bar .trust-item {
+        justify-content: flex-start;
+    }
+
+    .roamitra-stats-bar .stat-item {
+        display: block;
+        margin: 0.25rem 0;
+    }
+
+    .roamitra-safety-banners {
+        flex-direction: column;
+    }
+
+    .roamitra-safety-banner {
+        width: 100%;
+    }
+}

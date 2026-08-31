@@ -1,0 +1,352 @@
+/**
+ * Shared navbar: consistent header, auth gate, notifications, AI launcher.
+ */
+const RoamitraNav = {
+    user: null,
+    protectedPages: ['community', 'planner', 'translator', 'profile', 'itinerary', 'booking', 'host'],
+
+    applyBranding() {
+        const logoSrc = RoamitraApi.basePath() + 'assets/images/logo.png';
+        const botSrc = RoamitraApi.basePath() + 'assets/images/ai-bot.jpeg';
+        document.querySelectorAll('.roamitra-logo-icon').forEach(el => {
+            const img = document.createElement('img');
+            img.src = logoSrc;
+            img.alt = 'Roamitra';
+            img.className = 'roamitra-logo-img';
+            el.replaceWith(img);
+        });
+        document.querySelectorAll('.ai-assistant-fab').forEach(btn => {
+            if (btn.querySelector('img')) return;
+            btn.innerHTML = `<img src="${botSrc}" alt="" class="ai-bot-photo">`;
+        });
+        document.querySelectorAll('.ai-assistant-avatar, .ai-message.bot .ai-message-avatar').forEach(el => {
+            if (el.querySelector('img')) return;
+            el.innerHTML = `<img src="${botSrc}" alt="" class="ai-bot-photo">`;
+        });
+    },
+
+    async init() {
+        this.renderShell();
+        this.applyBranding();
+        this.user = await RoamitraApi.me();
+        if (!this.allowPage()) {
+            return;
+        }
+        this.renderActions();
+        this.injectRoleLinks();
+        this.setActive();
+        if (this.user) {
+            await this.refreshNotifications();
+            setInterval(() => this.refreshNotifications(), 60000);
+        }
+        if (typeof RoamitraAI !== 'undefined') {
+            RoamitraAI.mount();
+        }
+    },
+
+    allowPage() {
+        const page = document.body.dataset.page;
+        if (!this.protectedPages.includes(page)) {
+            return true;
+        }
+        if (this.user) {
+            return true;
+        }
+        const next = (location.pathname.split('/').pop() || 'index.html') + location.search;
+        window.location.replace(RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(next));
+        return false;
+    },
+
+    renderShell() {
+        const nav = document.querySelector('.roamitra-navbar');
+        if (!nav) return;
+        const base = RoamitraApi.basePath();
+        nav.innerHTML = `
+            <div class="container navbar-glass">
+                <div class="navbar-row">
+                    <a href="${base}index.html" class="navbar-brand">
+                        <img src="${base}assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img">
+                        <span class="roamitra-logo-text">roamitra</span>
+                    </a>
+                    <ul class="roamitra-nav-links">
+                        <li><a href="${base}index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
+                        <li><a href="${base}explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
+                        <li><a href="${base}community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
+                        <li><a href="${base}planner.html" class="nav-link" data-nav="planner"><i class="bi bi-map"></i> Plan Trip</a></li>
+                        <li><a href="${base}translator.html" class="nav-link" data-nav="translator"><i class="bi bi-translate"></i> Translator</a></li>
+                        <li><a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamitra AI</a></li>
+                    </ul>
+                    <div class="navbar-end">
+                        <div class="roamitra-nav-actions"></div>
+                        <button class="roamitra-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav" aria-controls="mobileNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="collapse" id="mobileNav">
+                    <div class="roamitra-mobile-nav">
+                        <a href="${base}index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a>
+                        <a href="${base}explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a>
+                        <a href="${base}community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a>
+                        <a href="${base}planner.html" class="nav-link" data-nav="planner"><i class="bi bi-map"></i> Plan Trip</a>
+                        <a href="${base}translator.html" class="nav-link" data-nav="translator"><i class="bi bi-translate"></i> Translator</a>
+                        <a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamitra AI</a>
+                        <div class="mobile-auth-row"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    setActive() {
+        const page = document.body.dataset.page;
+        if (!page) return;
+        document.querySelectorAll('[data-nav]').forEach(link => {
+            link.classList.toggle('active', link.dataset.nav === page);
+        });
+    },
+
+    renderActions() {
+        const desktop = document.querySelector('.roamitra-nav-actions');
+        const mobileRow = document.querySelector('.mobile-auth-row');
+        if (desktop) {
+            desktop.innerHTML = '';
+            desktop.insertAdjacentHTML('beforeend', `
+                <button class="roamitra-lang-select" type="button" aria-label="Select language">EN <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></button>
+            `);
+            if (this.user) {
+                if (['admin', 'co_admin'].includes(this.user.role)) {
+                    desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-outline btn-roamitra-sm">Admin</a>`);
+                } else if (this.user.role === 'customer') {
+                    desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-ghost">Become a host</a>`);
+                }
+                desktop.appendChild(this.bellButton());
+                desktop.appendChild(this.profileButton());
+            } else {
+                desktop.insertAdjacentHTML('beforeend', `
+                    <a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-ghost">Become a host</a>
+                    <a href="${RoamitraApi.page('login.html')}" class="btn-roamitra btn-roamitra-ghost">Log in</a>
+                    <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary">Sign up</a>
+                `);
+            }
+        }
+        if (mobileRow) {
+            if (this.user) {
+                mobileRow.innerHTML = `
+                    <a href="${RoamitraApi.page('profile.html')}" class="btn-roamitra btn-roamitra-navy flex-fill">Profile</a>
+                    ${this.user.role === 'customer' ? `<a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>` : ''}
+                    ${['admin','co_admin'].includes(this.user.role) ? `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Admin</a>` : ''}
+                    <button type="button" class="btn-roamitra btn-roamitra-outline flex-fill js-logout">Log out</button>
+                `;
+            } else {
+                mobileRow.innerHTML = `
+                    <a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>
+                    <a href="${RoamitraApi.page('login.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Log in</a>
+                    <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a>
+                `;
+            }
+        }
+        document.querySelectorAll('.js-logout').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try { await RoamitraApi.post('/auth/logout', {}); } catch (e) { /* ignore */ }
+                window.location.href = RoamitraApi.page('index.html');
+            });
+        });
+    },
+
+    injectRoleLinks() {
+        if (!this.user || !['admin', 'co_admin'].includes(this.user.role)) {
+            return;
+        }
+        const href = RoamitraApi.page('admin.html');
+        document.querySelectorAll('.roamitra-nav-links').forEach(list => {
+            if (list.querySelector('[data-nav="admin"]')) return;
+            const ai = list.querySelector('[data-nav="ai"]');
+            const item = document.createElement('li');
+            item.innerHTML = `<a href="${href}" class="nav-link" data-nav="admin"><i class="bi bi-shield-check"></i> Admin</a>`;
+            if (ai && ai.parentElement) {
+                list.insertBefore(item, ai.parentElement);
+            } else {
+                list.appendChild(item);
+            }
+        });
+        document.querySelectorAll('.roamitra-mobile-nav').forEach(nav => {
+            if (nav.querySelector('[data-nav="admin"]')) return;
+            const ai = nav.querySelector('[data-nav="ai"]');
+            const link = document.createElement('a');
+            link.href = href;
+            link.className = 'nav-link';
+            link.dataset.nav = 'admin';
+            link.innerHTML = '<i class="bi bi-shield-check"></i> Admin';
+            if (ai) nav.insertBefore(link, ai);
+            else nav.appendChild(link);
+        });
+    },
+
+    bellButton() {
+        const wrap = document.createElement('div');
+        wrap.className = 'nav-notify-wrap';
+        wrap.innerHTML = `
+            <button type="button" class="nav-icon-btn" id="notifyBell" aria-label="Notifications" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="nav-unread-dot" id="notifyDot" hidden></span>
+            </button>
+            <div class="notify-panel" id="notifyPanel" hidden>
+                <div class="notify-panel-header">
+                    <strong>Notifications</strong>
+                    <button type="button" class="notify-mark-all" id="notifyMarkAll">Mark all read</button>
+                </div>
+                <div class="notify-panel-body" id="notifyBody">
+                    <p class="notify-empty">Loading…</p>
+                </div>
+            </div>
+        `;
+        wrap.querySelector('#notifyBell').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = wrap.querySelector('#notifyPanel');
+            const open = panel.hidden;
+            panel.hidden = !open;
+            wrap.querySelector('#notifyBell').setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) this.refreshNotifications();
+        });
+        wrap.querySelector('#notifyMarkAll').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                await RoamitraApi.post('/notifications/read-all', {});
+                await this.refreshNotifications();
+            } catch (err) { /* ignore */ }
+        });
+        document.addEventListener('click', () => {
+            wrap.querySelector('#notifyPanel').hidden = true;
+        });
+        wrap.querySelector('#notifyPanel').addEventListener('click', (e) => e.stopPropagation());
+        return wrap;
+    },
+
+    profileButton() {
+        const a = document.createElement('a');
+        a.href = RoamitraApi.page('profile.html');
+        a.className = 'nav-profile-btn';
+        a.setAttribute('aria-label', 'Profile');
+        const initial = (this.user.full_name || 'U').trim().charAt(0).toUpperCase();
+        a.innerHTML = `<span class="nav-profile-avatar">${this.escape(initial)}</span>`;
+        return a;
+    },
+
+    typeLabel(type) {
+        return ({
+            itinerary: 'Itinerary',
+            saved_trip: 'Saved trip',
+            community: 'Community',
+            community_update: 'Community update',
+            booking: 'Booking',
+            host: 'Host'
+        })[type] || type;
+    },
+
+    relativeTime(value) {
+        if (!value) return '';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return String(value);
+        const diff = Date.now() - date.getTime();
+        const mins = Math.round(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        const hours = Math.round(mins / 60);
+        if (hours < 24) return hours + 'h ago';
+        const days = Math.round(hours / 24);
+        if (days < 7) return days + 'd ago';
+        return date.toLocaleDateString();
+    },
+
+    async refreshNotifications() {
+        const body = document.getElementById('notifyBody');
+        const dot = document.getElementById('notifyDot');
+        if (!body) return;
+        try {
+            const data = await RoamitraApi.get('/notifications');
+            if (dot) {
+                const unread = Number(data.unread) || 0;
+                dot.hidden = unread === 0;
+                dot.textContent = unread > 9 ? '9+' : String(unread);
+            }
+            const items = data.notifications || [];
+            const upcoming = data.upcoming_trips || [];
+            const saved = data.saved_trips || [];
+            const recent = data.recent_itineraries || [];
+            if (!items.length && !upcoming.length && !saved.length && !recent.length) {
+                body.innerHTML = '<p class="notify-empty">No activity yet. Generate an itinerary, save a trip, or post in the community.</p>';
+                return;
+            }
+
+            let html = '';
+            if (recent.length) {
+                html += '<p class="notify-section">Recently generated itineraries</p>';
+                recent.forEach(t => {
+                    html += `<a class="notify-item" href="${RoamitraApi.page('itinerary.html')}?trip=${t.id}">
+                        <span class="notify-type">${this.escape(t.destination)}</span>
+                        <span class="notify-meta">Version ${this.escape(t.version)} · ${this.relativeTime(t.created_at)}</span>
+                    </a>`;
+                });
+            }
+            if (saved.length) {
+                html += '<p class="notify-section">Saved trips</p>';
+                saved.forEach(t => {
+                    html += `<a class="notify-item" href="${RoamitraApi.page('itinerary.html')}?trip=${t.id}">
+                        <span class="notify-type">${this.escape(t.destination)}</span>
+                        <span class="notify-meta">${this.escape(t.start_date)} → ${this.escape(t.end_date)}</span>
+                    </a>`;
+                });
+            }
+            if (upcoming.length) {
+                html += '<p class="notify-section">Upcoming trips</p>';
+                upcoming.forEach(t => {
+                    html += `<a class="notify-item" href="${RoamitraApi.page('itinerary.html')}?trip=${t.id}">
+                        <span class="notify-type">${this.escape(t.destination)}</span>
+                        <span class="notify-meta">${this.escape(t.start_date)} → ${this.escape(t.end_date)}</span>
+                    </a>`;
+                });
+            }
+            if (items.length) {
+                html += '<p class="notify-section">Community &amp; alerts</p>';
+                items.forEach(n => {
+                    const href = n.link ? RoamitraApi.page(n.link) : '#';
+                    const unread = !(n.is_read == 1 || n.is_read === true);
+                    html += `<a class="notify-item ${unread ? 'unread' : ''}" data-id="${n.id}" href="${href}">
+                        <span class="notify-type">${this.escape(n.title)}</span>
+                        <span class="notify-body">${this.escape(n.body || '')}</span>
+                        <span class="notify-meta">${this.escape(this.typeLabel(n.type))} · ${this.relativeTime(n.created_at)}</span>
+                    </a>`;
+                });
+            }
+            body.innerHTML = html;
+            body.querySelectorAll('.notify-item[data-id]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.getAttribute('data-id');
+                    if (id) RoamitraApi.post(`/notifications/${id}/read`, {}).catch(() => {});
+                });
+            });
+        } catch (e) {
+            body.innerHTML = '<p class="notify-empty">Could not load notifications.</p>';
+        }
+    },
+
+    escape(text) {
+        const d = document.createElement('div');
+        d.textContent = text == null ? '' : String(text);
+        return d.innerHTML;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof RoamitraApi !== 'undefined') {
+        RoamitraNav.init();
+    }
+    const src = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '') + 'assets/js/motion.js?v=m3';
+    if (!document.querySelector('script[data-roamitra-motion]')) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.dataset.roamitraMotion = '1';
+        document.body.appendChild(script);
+    }
+});

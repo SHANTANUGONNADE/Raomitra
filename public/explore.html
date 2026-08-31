@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore destinations, connect with travelers, and discover local insider tips on Roamitra.">
+    <title>Explore — Roamitra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="assets/css/main.css?v=type4" rel="stylesheet">
+</head>
+<body data-page="explore">
+
+    <nav class="roamitra-navbar">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <a href="index.html" class="navbar-brand">
+                    <img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img">
+                    <span class="roamitra-logo-text">roamitra</span>
+                </a>
+                <ul class="roamitra-nav-links d-none d-lg-flex">
+                    <li><a href="index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
+                    <li><a href="explore.html" class="nav-link active" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
+                    <li><a href="community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
+                    <li><a href="explore.html" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamitra AI</a></li>
+                </ul>
+                <div class="roamitra-nav-actions d-none d-lg-flex">
+                    <button class="roamitra-lang-select" aria-label="Select language">EN <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></button>
+                    <a href="login.html" class="btn-roamitra btn-roamitra-ghost">Log in</a>
+                    <a href="signup.html" class="btn-roamitra btn-roamitra-primary">Sign up</a>
+                </div>
+                <button class="roamitra-navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav"><i class="bi bi-list"></i></button>
+            </div>
+            <div class="collapse d-lg-none" id="mobileNav">
+                <div class="roamitra-mobile-nav">
+                    <a href="explore.html" class="nav-link">Explore</a>
+                    <a href="community.html" class="nav-link">Community</a>
+                    <a href="#" class="nav-link">Roamitra AI</a>
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="login.html" class="btn-roamitra btn-roamitra-outline flex-fill">Log in</a>
+                        <a href="signup.html" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="search-hero pb-0">
+        <div class="container">
+            <div class="search-bar-wrapper">
+                <div class="search-bar">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search destinations, attractions, locals..." aria-label="Search">
+                    <div class="search-ai-btn">
+                        <button class="btn-roamitra btn-roamitra-ai"><i class="bi bi-stars"></i> + Ask Roamitra AI</button>
+                    </div>
+                </div>
+            </div>
+            <div class="explore-tabs-wrap mt-4">
+                <button class="explore-tab active" data-tab="for-you"><i class="bi bi-person"></i> For You</button>
+                <button class="explore-tab" data-tab="local"><i class="bi bi-geo-alt"></i> Local</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- For You Panel -->
+    <section class="section-padding-sm pt-3 explore-panel active" id="panel-for-you">
+        <div class="container">
+            <div class="section-header-inline">
+                <h2><i class="bi bi-globe-americas"></i> Featured Destinations</h2>
+                <a href="#">See All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="destination-card" data-place="bali">
+                        <div class="dest-image">
+                            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&h=400&fit=crop" alt="Bali, Indonesia" loading="lazy">
+                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
+                        </div>
+                        <div class="dest-body">
+                            <div class="dest-title">Bali, Indonesia</div>
+                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.8</span><span>16.7k travelers</span></div>
+                            <p class="dest-desc">Tropical paradise with stunning temples, rice terraces, and vibrant culture.</p>
+                            <div class="dest-tags">
+                                <span class="dest-tag">Beach</span><span class="dest-tag">Culture</span><span class="dest-tag">Adventure</span>
+                            </div>
+                            <div class="dest-footer">
+                                <div class="dest-price">$1,200 <span>/ week</span></div>
+                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="bali">Explore</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="destination-card" data-place="tokyo">
+                        <div class="dest-image">
+                            <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop" alt="Tokyo, Japan" loading="lazy">
+                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
+                        </div>
+                        <div class="dest-body">
+                            <div class="dest-title">Tokyo, Japan</div>
+                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.9</span><span>22.1k travelers</span></div>
+                            <p class="dest-desc">A dazzling blend of ultramodern and traditional, from neon-lit skyscrapers to historic temples.</p>
+                            <div class="dest-tags">
+                                <span class="dest-tag">City</span><span class="dest-tag">Food</span><span class="dest-tag">Culture</span>
+                            </div>
+                            <div class="dest-footer">
+                                <div class="dest-price">$1,450 <span>/ week</span></div>
+                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="tokyo">Explore</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="destination-card" data-place="paris">
+                        <div class="dest-image">
+                            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop" alt="Paris, France" loading="lazy">
+                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
+                        </div>
+                        <div class="dest-body">
+                            <div class="dest-title">Paris, France</div>
+                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.7</span><span>18.5k travelers</span></div>
+                            <p class="dest-desc">The City of Light enchants with its art, cuisine, and iconic landmarks.</p>
+                            <div class="dest-tags">
+                                <span class="dest-tag">Romance</span><span class="dest-tag">Art</span><span class="dest-tag">Food</span>
+                            </div>
+                            <div class="dest-footer">
+                                <div class="dest-price">$1,350 <span>/ week</span></div>
+                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="paris">Explore</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="section-header-inline">
+                        <h2><i class="bi bi-people"></i> People Nearby Traveling</h2>
+                        <a href="#">See All</a>
+                    </div>
+                    <div class="bg-white border rounded-4 p-3">
+                        <div class="person-row">
+                            <div class="person-avatar">EW</div>
+                            <div class="person-info">
+                                <div class="person-name">Emma Wilson <span class="star-rating"><i class="bi bi-star-fill"></i> 4.9</span></div>
+                                <div class="person-location">Currently in Bali, Indonesia</div>
+                                <div class="person-tags"><span class="person-tag">Hiking</span><span class="person-tag">Photography</span><span class="person-tag">Food</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                        <div class="person-row">
+                            <div class="person-avatar" style="background:linear-gradient(135deg,#3B82F6,#8B5CF6);">MK</div>
+                            <div class="person-info">
+                                <div class="person-name">Michael Kim <span class="star-rating"><i class="bi bi-star-fill"></i> 4.8</span></div>
+                                <div class="person-location">Currently in Tokyo, Japan</div>
+                                <div class="person-tags"><span class="person-tag">Culture</span><span class="person-tag">Tech</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                        <div class="person-row">
+                            <div class="person-avatar" style="background:linear-gradient(135deg,#F97316,#EF4444);">SL</div>
+                            <div class="person-info">
+                                <div class="person-name">Sofia Lopez <span class="star-rating"><i class="bi bi-star-fill"></i> 5.0</span></div>
+                                <div class="person-location">Currently in Barcelona, Spain</div>
+                                <div class="person-tags"><span class="person-tag">Art</span><span class="person-tag">Beach</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="section-header-inline">
+                        <h2><i class="bi bi-pin-map"></i> Nearby Places</h2>
+                        <a href="#">See All</a>
+                    </div>
+                    <div class="bg-white border rounded-4 p-3">
+                        <a href="destination.html?place=yosemite" class="place-row js-open-destination" data-place="yosemite">
+                            <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=120&h=120&fit=crop" alt="Yosemite" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Yosemite National Park</h4><p>180 miles · National Park</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
+                        </a>
+                        <a href="destination.html?place=tahoe" class="place-row js-open-destination" data-place="tahoe">
+                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=120&h=120&fit=crop" alt="Lake Tahoe" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Lake Tahoe</h4><p>95 miles · Lake &amp; Mountains</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.8</div>
+                        </a>
+                        <a href="destination.html?place=bigsur" class="place-row js-open-destination" data-place="bigsur">
+                            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&h=120&fit=crop" alt="Big Sur" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Big Sur Coastline</h4><p>120 miles · Scenic Drive</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.7</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-padding-sm pt-3" id="destination-detail" hidden>
+        <div class="container" style="max-width:880px;">
+            <p class="planner-kicker mb-3">
+                <button type="button" class="dest-back-btn" id="destBack"><i class="bi bi-arrow-left"></i> Back to destinations</button>
+            </p>
+            <div class="destination-hero">
+                <img id="destImage" src="" alt="">
+                <div class="destination-hero-overlay">
+                    <h1 id="destTitle">Destination</h1>
+                    <p id="destMeta"></p>
+                </div>
+            </div>
+            <div class="destination-facts" id="destFacts"></div>
+            <p class="section-subtitle" id="destDesc"></p>
+            <ul class="feature-list" id="destHighlights" style="max-width:520px;margin-bottom:1.5rem;"></ul>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn-roamitra btn-roamitra-navy" id="destPlan" href="planner.html">Plan this trip</a>
+                <a class="btn-roamitra btn-roamitra-outline" href="index.html#rent-section">Rent a vehicle</a>
+                <a class="btn-roamitra btn-roamitra-ghost" href="community.html">Ask locals</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Local Panel -->
+    <section class="section-padding-sm pt-3 explore-panel" id="panel-local">
+        <div class="container">
+            <div class="local-feed-header">
+                <h2>Local Feed</h2>
+                <p>Insider tips from verified locals</p>
+                <div class="location-chip"><i class="bi bi-geo-alt-fill"></i> Bangalore, India</div>
+            </div>
+            <div class="feed-filters">
+                <button class="filter-pill active">All</button>
+                <button class="filter-pill">Do's &amp; Don'ts</button>
+                <button class="filter-pill">Part-time Jobs</button>
+                <button class="filter-pill">Food</button>
+                <button class="filter-pill">Hidden Gems</button>
+            </div>
+
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar">AP</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-name">Ananya Patel <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
+                        <div class="feed-post-time">2h ago</div>
+                    </div>
+                    <span class="feed-category safety">Safety Alert</span>
+                </div>
+                <p class="feed-post-content">Avoid walking alone near Majestic bus stand after 10 PM. Use Uber/Ola instead. The area is generally safe during daytime but gets crowded and chaotic at night.</p>
+                <div class="feed-post-actions">
+                    <div class="feed-actions-left">
+                        <button class="feed-action"><i class="bi bi-hand-thumbs-up"></i> 24</button>
+                        <button class="feed-action"><i class="bi bi-chat"></i> 8</button>
+                    </div>
+                    <div class="feed-actions-right">
+                        <button class="feed-action"><i class="bi bi-bookmark"></i></button>
+                        <button class="feed-action"><i class="bi bi-share"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar" style="background:var(--color-card-orange);color:var(--color-card-orange-icon);">RK</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-name">Raj Kumar <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
+                        <div class="feed-post-time">5h ago</div>
+                    </div>
+                    <span class="feed-category food">Food Tip</span>
+                </div>
+                <p class="feed-post-content">Best masala dosa in Bangalore? Head to CTR on Margosa Road in Malleshwaram. Go before 9 AM to avoid the queue. Their butter masala dosa is legendary!</p>
+                <div class="feed-post-actions">
+                    <div class="feed-actions-left">
+                        <button class="feed-action"><i class="bi bi-hand-thumbs-up"></i> 56</button>
+                        <button class="feed-action"><i class="bi bi-chat"></i> 12</button>
+                    </div>
+                    <div class="feed-actions-right">
+                        <button class="feed-action"><i class="bi bi-bookmark"></i></button>
+                        <button class="feed-action"><i class="bi bi-share"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar" style="background:var(--color-card-purple);color:var(--color-card-purple-icon);">PS</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-name">Priya Sharma <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
+                        <div class="feed-post-time">1d ago</div>
+                    </div>
+                    <span class="feed-category gems">Hidden Gem</span>
+                </div>
+                <p class="feed-post-content">Hidden gem alert! Nandi Hills sunrise trek is breathtaking and only 60km from the city. Start at 4 AM, reach the top by 5:30 AM. Carry a jacket — it's cold up there!</p>
+                <div class="feed-post-actions">
+                    <div class="feed-actions-left">
+                        <button class="feed-action"><i class="bi bi-hand-thumbs-up"></i> 89</button>
+                        <button class="feed-action"><i class="bi bi-chat"></i> 23</button>
+                    </div>
+                    <div class="feed-actions-right">
+                        <button class="feed-action"><i class="bi bi-bookmark"></i></button>
+                        <button class="feed-action"><i class="bi bi-share"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="roamitra-trust-bar">
+        <div class="container">
+            <div class="row g-3">
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-people-fill"></i><span>3,000+ travelers already joined the waitlist</span></div></div>
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure &amp; private</span></div></div>
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-heart-fill"></i><span>Loved by early explorers</span></div></div>
+            </div>
+        </div>
+    </div>
+    <footer class="roamitra-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <a href="index.html" class="navbar-brand mb-3 d-flex"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a>
+                    <div class="roamitra-footer-social">
+                        <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamitra AI</a></li><li><a href="#">How it Works</a></li><li><a href="#">Pricing</a></li></ul></div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li><li><a href="#">Travel Stories</a></li></ul></div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li><li><a href="#">Contact</a></li></ul></div>
+                <div class="col-lg-3 col-md-6 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Blog</a></li><li><a href="#">Help Center</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Privacy Policy</a></li></ul></div>
+            </div>
+            <div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <button class="ai-assistant-fab" id="aiFab" aria-label="Open Roamitra AI"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></button>
+    <div class="ai-assistant-popup" id="aiPopup" role="dialog" aria-label="Roamitra AI Chat">
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-header-info"><div class="ai-assistant-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div><h4>Roamitra AI</h4><p>Your travel assistant</p></div></div>
+            <button class="ai-assistant-close" id="aiClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="ai-assistant-messages" id="aiMessages"><div class="ai-message bot"><div class="ai-message-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div class="ai-message-bubble">Hi! I'm Roamitra AI. Ask me about destinations, bookings, or host registration!</div></div></div>
+        <div class="ai-assistant-suggestions" id="aiSuggestions"><button class="ai-suggestion-chip" data-question="What destinations do you recommend?">Destinations</button><button class="ai-suggestion-chip" data-question="How do I become a host?">Become a Host</button></div>
+        <div class="ai-assistant-input"><input type="text" id="aiInput" placeholder="Ask me anything..."><button id="aiSend"><i class="bi bi-send-fill"></i></button></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/nav.js?v=motion1"></script>
+    <script src="assets/js/motion.js?v=m3"></script>
+    <script src="assets/js/ai-assistant.js"></script>
+    <script src="assets/js/destination.js?v=dest-open2"></script>
+    <script src="assets/js/explore.js?v=dest-open2"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

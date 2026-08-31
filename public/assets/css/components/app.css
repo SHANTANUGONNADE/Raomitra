@@ -1,0 +1,524 @@
+/* Planner, itinerary, translator, notifications */
+
+.nav-icon-btn,
+.nav-profile-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-navy);
+    position: relative;
+    text-decoration: none;
+}
+
+.nav-icon-btn:hover,
+.nav-profile-btn:hover {
+    border-color: var(--color-primary-light);
+}
+
+.nav-unread-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: var(--radius-full);
+    background: var(--color-danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 14px;
+}
+
+.nav-profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.nav-notify-wrap {
+    position: relative;
+}
+
+.notify-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    width: 360px;
+    max-width: calc(100vw - 2rem);
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    z-index: 1200;
+}
+
+.notify-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.notify-mark-all {
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.notify-panel-body {
+    max-height: 420px;
+    overflow: auto;
+    padding: 0.5rem 0;
+}
+
+.notify-section {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    padding: 0.5rem 1rem 0.25rem;
+    margin: 0;
+}
+
+.notify-item {
+    display: block;
+    padding: 0.625rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    border-left: 3px solid transparent;
+}
+
+.notify-item.unread {
+    background: var(--color-card-blue);
+    border-left-color: var(--color-primary-light);
+}
+
+.notify-type {
+    display: block;
+    font-weight: 700;
+    font-size: 0.8125rem;
+}
+
+.notify-body,
+.notify-meta {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.notify-empty {
+    padding: 1rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.planner-page,
+.translator-page,
+.itinerary-page {
+    padding: 2rem 0 4rem;
+    background: var(--color-bg-light);
+    min-height: 70vh;
+}
+
+.planner-card,
+.translator-card,
+.itinerary-shell {
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.planner-hero {
+    max-width: 720px;
+    margin-bottom: 1.5rem;
+}
+
+.planner-kicker {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: 0.35rem;
+}
+
+.planner-form {
+    max-width: 1100px;
+}
+
+.planner-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.planner-col-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-navy);
+}
+
+.planner-submit {
+    width: 100%;
+    justify-content: center;
+}
+
+.planner-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.planner-options-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 992px) {
+    .planner-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .planner-col + .planner-col {
+        border-left: 1px solid var(--color-border-light);
+        padding-left: 2rem;
+    }
+
+    .planner-options-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.choice-card {
+    position: relative;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0.85rem 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.choice-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.choice-card:has(input:checked),
+.choice-card:has(input:focus-visible) {
+    border-color: var(--color-primary);
+    background: var(--color-card-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.pref-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pref-chip {
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.pref-chip.active {
+    background: var(--color-navy);
+    color: #fff;
+    border-color: var(--color-navy);
+}
+
+.pref-chip input {
+    display: none;
+}
+
+.form-alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--color-card-blue);
+    margin-bottom: 1rem;
+}
+
+.form-alert.error,
+.auth-error {
+    background: #FEF2F2;
+    color: #991B1B;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.itin-day {
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.itin-acts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.itin-acts li {
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.itin-time {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 0.8125rem;
+}
+
+.itin-cat {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.assistant-dock {
+    position: sticky;
+    bottom: 1rem;
+}
+
+.assistant-dock .ai-assistant-popup {
+    position: static;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    box-shadow: var(--shadow-md);
+}
+
+.assistant-dock .ai-assistant-messages {
+    height: 220px;
+}
+
+.travel-assistant {
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.travel-assistant-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 1rem 1.1rem;
+    background: #0b1b3a;
+    color: #fff;
+}
+
+.travel-assistant-header .ai-bot-photo {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full);
+    border: 2px solid rgba(255,255,255,0.35);
+    flex-shrink: 0;
+}
+
+.travel-assistant-header h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.travel-assistant-header p {
+    margin: 0;
+    font-size: 0.75rem;
+    opacity: 0.85;
+}
+
+.assistant-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.75rem 1rem 0;
+}
+
+.assistant-chip {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+}
+
+.assistant-chip:hover,
+.assistant-chip:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-card-blue);
+}
+
+.travel-assistant-log {
+    height: 240px;
+    overflow: auto;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg-light);
+}
+
+.travel-assistant-form {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.travel-assistant-form input {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    padding: 0.55rem 0.9rem;
+}
+
+.version-pill {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.mic-btn.listening {
+    background: var(--color-danger);
+    color: #fff;
+}
+
+.translated-box {
+    background: var(--color-card-blue);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.wallet-hero {
+    background: linear-gradient(135deg, var(--color-navy), var(--color-primary));
+    color: #fff;
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+}
+
+.wallet-hero p {
+    margin: 0.25rem 0 0;
+    opacity: 0.85;
+    font-size: 0.8125rem;
+}
+
+.wallet-tx {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wallet-tx li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: 0.875rem;
+}
+
+.translate-compose {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.translate-compose textarea {
+    flex: 1;
+}
+
+.mic-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-border);
+    background: #fff;
+    color: var(--color-navy);
+    flex-shrink: 0;
+}
+
+.lang-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.75rem;
+    align-items: end;
+}
+
+.swap-langs {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: #fff;
+}
+
+.reply-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.reply-form input {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.45rem 0.75rem;
+}
+
+.history-item {
+    border-bottom: 1px solid var(--color-border-light);
+    padding: 0.75rem 0;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 767.98px) {
+    .itin-acts li {
+        grid-template-columns: 1fr;
+    }
+    .planner-options {
+        grid-template-columns: 1fr 1fr;
+    }
+}
