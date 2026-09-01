@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.4"
+    }
+  },
+  "rewrites": [
+    { "source": "/api", "destination": "/api/index.php" },
+    { "source": "/api/(.*)", "destination": "/api/index.php" },
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/:path*", "destination": "/public/:path*" }
+  ]
+}

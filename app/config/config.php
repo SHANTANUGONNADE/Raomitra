@@ -9,10 +9,12 @@ return [
     'app_name' => 'Roamitra',
     'db' => [
         'host' => getenv('RAOMITRA_DB_HOST') ?: '127.0.0.1',
+        'port' => (int) (getenv('RAOMITRA_DB_PORT') ?: 3306),
         'name' => 'raomitra',
         'user' => getenv('RAOMITRA_DB_USER') ?: 'root',
         'pass' => getenv('RAOMITRA_DB_PASS') !== false ? (string) getenv('RAOMITRA_DB_PASS') : '',
         'charset' => 'utf8mb4',
+        'ssl' => in_array(strtolower((string) (getenv('RAOMITRA_DB_SSL') ?: '')), ['1', 'true', 'yes'], true),
     ],
     'openai_api_key' => getenv('OPENAI_API_KEY') ?: '',
     'openai_model' => getenv('OPENAI_MODEL') ?: 'gpt-4o-mini',

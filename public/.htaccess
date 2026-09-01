@@ -1,7 +1,6 @@
 # Keep existing public files working; route /api/* to the PHP router when mod_rewrite is on.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /Roamitrawebsite/public/
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^api/(.*)$ api/index.php?r=/$1 [QSA,L]
 </IfModule>

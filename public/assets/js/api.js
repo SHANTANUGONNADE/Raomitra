@@ -1,5 +1,5 @@
 /**
- * Roamitra API client — talks to public/api/index.php
+ * Roamitra API client — talks to public/api/index.php (XAMPP) or /api/index.php (Vercel).
  */
 const RoamitraApi = {
     base: 'api/index.php',
@@ -14,11 +14,12 @@ const RoamitraApi = {
         if (path.includes('/public/')) {
             return path.slice(0, path.indexOf('/public/') + '/public/'.length);
         }
-        return './';
+        return '/';
     },
 
     page(name) {
-        return this.basePath() + name;
+        const prefix = this.basePath();
+        return prefix === '/' ? `/${name}` : prefix + name;
     },
 
     async request(path, options = {}) {
@@ -28,11 +29,18 @@ const RoamitraApi = {
             options.body = JSON.stringify(options.body);
         }
         const res = await fetch(this.url(path), Object.assign({ credentials: 'include' }, options, { headers }));
+        const text = await res.text();
         let data = {};
         try {
-            data = await res.json();
+            data = text ? JSON.parse(text) : {};
         } catch (e) {
-            data = { ok: false, error: 'Invalid server response.' };
+            const html = /^\s*</.test(text) || (res.headers.get('content-type') || '').includes('text/html');
+            data = {
+                ok: false,
+                error: html
+                    ? 'Login API did not return JSON. On Vercel, PHP must run as a function and a remote MySQL database must be set in project environment variables.'
+                    : 'Invalid server response.'
+            };
         }
         if (!res.ok || data.ok === false) {
             const err = new Error(data.error || 'Request failed.');

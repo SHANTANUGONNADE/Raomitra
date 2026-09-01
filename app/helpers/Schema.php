@@ -9,6 +9,15 @@ final class Schema
         $pdo->exec("SET NAMES utf8mb4");
 
         $pdo->exec("
+            CREATE TABLE IF NOT EXISTS app_sessions (
+                id VARCHAR(128) NOT NULL PRIMARY KEY,
+                data LONGBLOB NOT NULL,
+                expires_at INT UNSIGNED NOT NULL,
+                KEY idx_app_sessions_expires (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
             CREATE TABLE IF NOT EXISTS users (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 full_name VARCHAR(120) NOT NULL,

@@ -7,6 +7,9 @@ final class Response
     {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
