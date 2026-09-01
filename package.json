@@ -1,0 +1,5 @@
+{
+  "name": "roamitra",
+  "private": true,
+  "description": "Roamitra travel site — static public/ + PHP api/ on Vercel"
+}

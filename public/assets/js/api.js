@@ -1,12 +1,19 @@
 /**
- * Roamitra API client — talks to public/api/index.php (XAMPP) or /api/index.php (Vercel).
+ * Roamitra API client.
+ * XAMPP: public/api/index.php
+ * Vercel: /api  (Node serverless — POST to a static .php file returns 405)
  */
 const RoamitraApi = {
-    base: 'api/index.php',
+    endpoint() {
+        const path = window.location.pathname.replace(/\\/g, '/');
+        if (path.includes('/public/')) {
+            return path.slice(0, path.indexOf('/public/') + '/public/'.length) + 'api/index.php';
+        }
+        return '/api';
+    },
 
     url(path) {
-        const prefix = this.basePath();
-        return `${prefix}${this.base}?r=${encodeURIComponent(path)}`;
+        return `${this.endpoint()}?r=${encodeURIComponent(path)}`;
     },
 
     basePath() {
@@ -27,6 +34,9 @@ const RoamitraApi = {
         if (data && typeof data.message === 'string' && data.message) return data.message;
         if (data && data.error && typeof data.error === 'object') {
             return data.error.message || JSON.stringify(data.error);
+        }
+        if (res && res.status === 405) {
+            return 'The live API is not running yet. Redeploy from the repo root and wait until the build finishes.';
         }
         if (text && text.length && text.length < 240 && !/^\s*</.test(text)) return text;
         return res && res.status ? `Request failed (${res.status}).` : 'Request failed.';

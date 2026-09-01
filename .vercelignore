@@ -5,3 +5,4 @@ tests
 .env
 .env.*
 !.env.example
+public/api/index.php
