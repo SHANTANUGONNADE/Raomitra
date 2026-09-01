@@ -30,11 +30,14 @@ final class SessionStore implements SessionHandlerInterface
             $lifetime = 1440;
         }
         $expires = time() + $lifetime;
-        $stmt = Database::pdo()->prepare(
-            'INSERT INTO app_sessions (id, data, expires_at) VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE data = VALUES(data), expires_at = VALUES(expires_at)'
-        );
-        $stmt->execute([$id, $data, $expires]);
+        if (Database::isSqlite()) {
+            $sql = 'INSERT INTO app_sessions (id, data, expires_at) VALUES (?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET data = excluded.data, expires_at = excluded.expires_at';
+        } else {
+            $sql = 'INSERT INTO app_sessions (id, data, expires_at) VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE data = VALUES(data), expires_at = VALUES(expires_at)';
+        }
+        Database::pdo()->prepare($sql)->execute([$id, $data, $expires]);
         return true;
     }
 

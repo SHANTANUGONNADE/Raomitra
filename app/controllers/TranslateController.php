@@ -27,10 +27,12 @@ final class TranslateController
                 'INSERT INTO translator_history (user_id, source_lang, target_lang, source_text, translated_text, mode)
                  VALUES (?, ?, ?, ?, ?, ?)'
             )->execute([$userId, $source, $target, $text, $translated, $mode]);
-            Database::pdo()->prepare(
-                'INSERT INTO translator_prefs (user_id, source_lang, target_lang) VALUES (?, ?, ?)
-                 ON DUPLICATE KEY UPDATE source_lang = VALUES(source_lang), target_lang = VALUES(target_lang)'
-            )->execute([$userId, $source, $target]);
+            $prefsSql = Database::isSqlite()
+                ? 'INSERT INTO translator_prefs (user_id, source_lang, target_lang) VALUES (?, ?, ?)
+                    ON CONFLICT(user_id) DO UPDATE SET source_lang = excluded.source_lang, target_lang = excluded.target_lang'
+                : 'INSERT INTO translator_prefs (user_id, source_lang, target_lang) VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE source_lang = VALUES(source_lang), target_lang = VALUES(target_lang)';
+            Database::pdo()->prepare($prefsSql)->execute([$userId, $source, $target]);
         }
 
         Response::ok([

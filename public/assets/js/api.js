@@ -22,6 +22,16 @@ const RoamitraApi = {
         return prefix === '/' ? `/${name}` : prefix + name;
     },
 
+    errorMessage(data, res, text) {
+        if (data && typeof data.error === 'string' && data.error) return data.error;
+        if (data && typeof data.message === 'string' && data.message) return data.message;
+        if (data && data.error && typeof data.error === 'object') {
+            return data.error.message || JSON.stringify(data.error);
+        }
+        if (text && text.length && text.length < 240 && !/^\s*</.test(text)) return text;
+        return res && res.status ? `Request failed (${res.status}).` : 'Request failed.';
+    },
+
     async request(path, options = {}) {
         const headers = Object.assign({ Accept: 'application/json' }, options.headers || {});
         if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
@@ -38,12 +48,12 @@ const RoamitraApi = {
             data = {
                 ok: false,
                 error: html
-                    ? 'Login API did not return JSON. On Vercel, PHP must run as a function and a remote MySQL database must be set in project environment variables.'
+                    ? 'The login API did not run. Redeploy from the project root (not the public folder) so PHP can start.'
                     : 'Invalid server response.'
             };
         }
         if (!res.ok || data.ok === false) {
-            const err = new Error(data.error || 'Request failed.');
+            const err = new Error(this.errorMessage(data, res, text));
             err.status = res.status;
             err.data = data;
             throw err;

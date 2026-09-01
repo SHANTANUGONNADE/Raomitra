@@ -6,6 +6,12 @@ final class Schema
     public static function migrate(): void
     {
         $pdo = Database::pdo();
+        if (Database::isSqlite()) {
+            self::migrateSqlite($pdo);
+            self::seedAdmin($pdo);
+            return;
+        }
+
         $pdo->exec("SET NAMES utf8mb4");
 
         $pdo->exec("
@@ -248,5 +254,188 @@ final class Schema
         $pdo->prepare('INSERT INTO users (full_name, email, password_hash, role) VALUES (?, ?, ?, ?)')
             ->execute(['Roamitra Admin', $email, password_hash('Admin1234!', PASSWORD_DEFAULT), 'admin']);
         WalletService::ensure((int) $pdo->lastInsertId());
+    }
+
+    private static function migrateSqlite(PDO $pdo): void
+    {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS app_sessions (
+                id TEXT PRIMARY KEY,
+                data BLOB NOT NULL,
+                expires_at INTEGER NOT NULL
+            )
+        ");
+        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_app_sessions_expires ON app_sessions (expires_at)');
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'customer',
+                avatar_url TEXT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS trips (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                destination TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                budget REAL NULL,
+                budget_currency TEXT NOT NULL DEFAULT 'USD',
+                traveling_with TEXT NOT NULL DEFAULT 'solo',
+                group_size INTEGER NULL,
+                arrival_time TEXT NULL,
+                departure_time TEXT NULL,
+                preferences TEXT NULL,
+                pace TEXT NOT NULL DEFAULT 'moderate',
+                status TEXT NOT NULL DEFAULT 'draft',
+                is_saved INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS itineraries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trip_id INTEGER NOT NULL,
+                version INTEGER NOT NULL DEFAULT 1,
+                is_current INTEGER NOT NULL DEFAULT 1,
+                itinerary_json TEXT NOT NULL,
+                summary TEXT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
+                UNIQUE (trip_id, version)
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS itinerary_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trip_id INTEGER NOT NULL,
+                itinerary_id INTEGER NULL,
+                role TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT NULL,
+                link TEXT NULL,
+                is_read INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                balance REAL NOT NULL DEFAULT 0,
+                currency TEXT NOT NULL DEFAULT 'USD',
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                wallet_id INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                description TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS translator_prefs (
+                user_id INTEGER PRIMARY KEY,
+                source_lang TEXT NOT NULL DEFAULT 'en',
+                target_lang TEXT NOT NULL DEFAULT 'hi',
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS translator_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                source_lang TEXT NOT NULL,
+                target_lang TEXT NOT NULL,
+                source_text TEXT NOT NULL,
+                translated_text TEXT NOT NULL,
+                mode TEXT NOT NULL DEFAULT 'text',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS community_posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS community_replies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                body TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS host_applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                listing_type TEXT NOT NULL DEFAULT 'host',
+                city TEXT NOT NULL,
+                country TEXT NOT NULL DEFAULT 'India',
+                phone TEXT NOT NULL,
+                bio TEXT NOT NULL,
+                experience TEXT NULL,
+                vehicle_info TEXT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                review_note TEXT NULL,
+                reviewed_by INTEGER NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS vehicle_bookings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                vehicle_name TEXT NOT NULL,
+                category TEXT NULL,
+                location TEXT NULL,
+                daily_rate REAL NOT NULL DEFAULT 0,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                days INTEGER NOT NULL DEFAULT 1,
+                total REAL NOT NULL DEFAULT 0,
+                notes TEXT NULL,
+                status TEXT NOT NULL DEFAULT 'confirmed',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
     }
 }
