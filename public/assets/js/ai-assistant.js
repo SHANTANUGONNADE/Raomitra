@@ -1,6 +1,5 @@
 /**
- * Roamitra — AI Assistant (Frontend UI)
- * Chat popup with typing animation, auto-scroll, and suggestion chips.
+ * Roamini — fullscreen travel assistant
  */
 
 const RoamitraAI = {
@@ -10,15 +9,21 @@ const RoamitraAI = {
     bound: false,
 
     faqResponses: {
-        'travel packages': 'We offer curated travel packages to 88+ countries including adventure tours, cultural experiences, beach getaways, and city explorations. Browse our Explore page to find packages that match your interests and budget!',
-        'become a host': 'To become a host, log in and open Become a Host. Submit your city, phone, and a short bio. A Co-Admin reviews it, then Admin approval makes you a verified host. Vehicle owners can use List Your Vehicle on the same form.',
-        'cancellation policy': 'Our cancellation policy varies by listing type. Most bookings can be cancelled up to 48 hours before for a full refund. Vehicle rentals and meetups may have different terms — check the specific listing for details.',
-        'booking process': 'Open Ask to Rent, choose a vehicle, and click Book Now. Pick pickup and return dates, then confirm. You must be logged in. Your booking is saved to your profile and appears on the Admin dashboard.',
-        'destinations': 'We feature destinations across 88 countries! Popular spots include Bali, Tokyo, Paris, Yosemite, and Bangalore. Use the Explore page to discover featured destinations and insider tips from verified locals.',
-        'host registration': 'Host registration requires: a verified customer account, completed application form, identity documents, and property/vehicle details. The review process typically takes 3-5 business days.',
-        'faq': 'Common questions: How do I book? Create an account, search, and book. How do I become a host? Apply via your profile. What payment methods? Credit/debit cards and secure online payments. Need more help? Visit our Help Center!',
-        'default': 'Thanks for your question! I\'m here to help with travel packages, destinations, bookings, host registration, and more. Could you provide a bit more detail so I can assist you better?'
+        'travel packages': 'We offer curated travel packages to 88+ countries including adventure tours, cultural experiences, beach getaways, and city explorations. Browse Explore to find packages that match your interests and budget!',
+        'become a host': 'To become a host, log in and open Ask to Host. Submit your city, phone, and a short bio. Admin approval makes you a verified host.',
+        'cancellation policy': 'Most bookings can be cancelled up to 48 hours before for a full refund. Vehicle rentals and meetups may have different terms.',
+        'booking process': 'Open Ask to Rent, choose a vehicle, and click Book Now. Pick pickup and return dates, then confirm. You must be logged in.',
+        'destinations': 'Popular spots include Bali, Tokyo, Paris, Yosemite, and Bangalore. Use the Explore page for featured destinations and local tips.',
+        'host registration': 'Host registration needs a verified account, the application form, and identity details. Review typically takes 3–5 business days.',
+        'faq': 'How do I book? Create an account, search, and book. How do I become a host? Apply via Ask to Host. Need more help? Ask me anything!',
+        'default': 'Thanks for your question! I can help with destinations, Ask to Rent, Ask to Host, meetups, and trip planning. Tell me a bit more.'
     },
+
+    langs: [
+        ['en', 'English'], ['hi', 'Hindi'], ['es', 'Spanish'], ['fr', 'French'],
+        ['de', 'German'], ['ja', 'Japanese'], ['ta', 'Tamil'], ['kn', 'Kannada'],
+        ['te', 'Telugu'], ['bn', 'Bengali'], ['ar', 'Arabic'], ['zh-CN', 'Chinese']
+    ],
 
     mount() {
         this.ensureWidget();
@@ -32,48 +37,73 @@ const RoamitraAI = {
             && document.getElementById('aiMessages')
             && document.getElementById('aiInput')
             && document.getElementById('aiSend')
-            && document.getElementById('aiClose');
+            && document.getElementById('aiClose')
+            && document.getElementById('romiLangPop');
         if (complete) {
+            this.renameLabels();
             return;
         }
         document.getElementById('aiFab')?.remove();
         document.getElementById('aiPopup')?.remove();
+        document.getElementById('romiLangPop')?.remove();
         const src = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '') + 'assets/images/ai-bot.jpeg';
+        const langOpts = this.langs.map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
         document.body.insertAdjacentHTML('beforeend', `
-            <button class="ai-assistant-fab" id="aiFab" aria-label="Open Roamitra AI Assistant">
+            <button class="ai-assistant-fab" id="aiFab" aria-label="Open Roamini">
                 <img src="${src}" alt="" class="ai-bot-photo">
             </button>
-            <div class="ai-assistant-popup" id="aiPopup" role="dialog" aria-label="Roamitra AI Chat">
+            <div class="romi-lang-pop" id="romiLangPop" role="dialog" aria-label="Translate">
+                <h5><i class="bi bi-translate"></i> Translate</h5>
+                <div class="romi-lang-row">
+                    <select id="romiSrcLang">${langOpts}</select>
+                    <select id="romiTgtLang">${langOpts}</select>
+                </div>
+                <textarea id="romiSrcText" placeholder="Type a phrase…"></textarea>
+                <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" id="romiTranslateBtn">Translate</button>
+                <p id="romiLangOut" class="small mt-2 mb-0"></p>
+                <a class="small" href="${typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('translator.html') : 'translator.html'}">Open full translator</a>
+            </div>
+            <div class="ai-assistant-popup" id="aiPopup" role="dialog" aria-modal="true" aria-label="Roamini">
                 <div class="ai-assistant-header">
                     <div class="ai-assistant-header-info">
                         <div class="ai-assistant-avatar"><img src="${src}" alt="" class="ai-bot-photo"></div>
                         <div>
-                            <h4>Roamitra AI</h4>
+                            <h4>Roamini</h4>
                             <p>Your travel assistant</p>
                         </div>
                     </div>
-                    <button class="ai-assistant-close" id="aiClose" type="button" aria-label="Close chat">
+                    <button class="ai-assistant-close" id="aiClose" type="button" aria-label="Close Roamini">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
                 <div class="ai-assistant-messages" id="aiMessages">
                     <div class="ai-message bot">
                         <div class="ai-message-avatar"><img src="${src}" alt="" class="ai-bot-photo"></div>
-                        <div class="ai-message-bubble">Hi! I'm Roamitra AI, your travel assistant. How can I help you today?</div>
+                        <div class="ai-message-bubble">Hi! I'm Roamini. Ask me about destinations, Ask to Rent, Ask to Host, or planning a trip.</div>
                     </div>
                 </div>
                 <div class="ai-assistant-suggestions" id="aiSuggestions">
                     <button type="button" class="ai-suggestion-chip" data-question="What travel packages do you offer?">Travel Packages</button>
-                    <button type="button" class="ai-suggestion-chip" data-question="How do I become a host?">Become a Host</button>
-                    <button type="button" class="ai-suggestion-chip" data-question="What is the cancellation policy?">Cancellation Policy</button>
-                    <button type="button" class="ai-suggestion-chip" data-question="How does booking work?">Booking Process</button>
+                    <button type="button" class="ai-suggestion-chip" data-question="How do I become a host?">Ask to Host</button>
+                    <button type="button" class="ai-suggestion-chip" data-question="How does booking work?">Ask to Rent</button>
+                    <button type="button" class="ai-suggestion-chip" data-question="What destinations do you recommend?">Destinations</button>
                 </div>
                 <div class="ai-assistant-input">
-                    <input type="text" id="aiInput" placeholder="Ask me anything about travel..." autocomplete="off">
+                    <input type="text" id="aiInput" placeholder="Ask Roamini anything about travel..." autocomplete="off">
                     <button type="button" id="aiSend" aria-label="Send message"><i class="bi bi-send-fill"></i></button>
                 </div>
             </div>
         `);
+        const srcSel = document.getElementById('romiSrcLang');
+        const tgtSel = document.getElementById('romiTgtLang');
+        if (srcSel) srcSel.value = 'en';
+        if (tgtSel) tgtSel.value = 'hi';
+    },
+
+    renameLabels() {
+        document.querySelectorAll('.ai-assistant-header h4').forEach(el => { el.textContent = 'Roamini'; });
+        document.getElementById('aiFab')?.setAttribute('aria-label', 'Open Roamini');
+        document.getElementById('aiPopup')?.setAttribute('aria-label', 'Roamini');
     },
 
     init() {
@@ -84,20 +114,38 @@ const RoamitraAI = {
         this.input = document.getElementById('aiInput');
         this.sendBtn = document.getElementById('aiSend');
         this.suggestions = document.getElementById('aiSuggestions');
+        this.langPop = document.getElementById('romiLangPop');
 
         if (!this.fab || !this.popup || !this.input) return;
 
         if (!this.bound) {
             document.addEventListener('click', (e) => {
-                const trigger = e.target.closest('.nav-link.ai-link, .search-ai-btn .btn-roamitra-ai, button.btn-roamitra-ai, [data-open-ai]');
-                if (!trigger) return;
-                e.preventDefault();
-                this.open();
+                const trigger = e.target.closest('.nav-link.ai-link, [data-open-ai]');
+                if (trigger) {
+                    e.preventDefault();
+                    this.open();
+                    return;
+                }
+                if (this.langPop && this.langPop.classList.contains('open')
+                    && !e.target.closest('#romiLangPop') && !e.target.closest('#aiFab')) {
+                    this.langPop.classList.remove('open');
+                }
             });
             this.bound = true;
         }
 
-        this.fab.onclick = () => this.toggle();
+        this.fab.onclick = (e) => {
+            e.stopPropagation();
+            if (e.shiftKey || e.altKey) {
+                this.toggleLang();
+                return;
+            }
+            this.toggle();
+        };
+        this.fab.oncontextmenu = (e) => {
+            e.preventDefault();
+            this.toggleLang();
+        };
         if (this.closeBtn) this.closeBtn.onclick = () => this.close();
         if (this.sendBtn) this.sendBtn.onclick = () => this.sendMessage();
         this.input.onkeypress = (e) => {
@@ -109,6 +157,46 @@ const RoamitraAI = {
                 this.sendMessage();
             };
         });
+        document.getElementById('romiTranslateBtn')?.addEventListener('click', () => this.runTranslate());
+
+        if (!document.getElementById('romiLangHint')) {
+            const hint = document.createElement('button');
+            hint.id = 'romiLangHint';
+            hint.type = 'button';
+            hint.className = 'ai-lang-fab';
+            hint.setAttribute('aria-label', 'Translate');
+            hint.innerHTML = '<i class="bi bi-translate"></i>';
+            hint.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleLang();
+            });
+            this.fab.parentNode.insertBefore(hint, this.fab);
+        }
+    },
+
+    toggleLang() {
+        this.langPop?.classList.toggle('open');
+    },
+
+    async runTranslate() {
+        const out = document.getElementById('romiLangOut');
+        const text = document.getElementById('romiSrcText')?.value.trim();
+        if (!out) return;
+        if (!text) {
+            out.textContent = 'Type a phrase first.';
+            return;
+        }
+        out.textContent = 'Translating…';
+        try {
+            const data = await RoamitraApi.post('/translate', {
+                text,
+                source_lang: document.getElementById('romiSrcLang').value,
+                target_lang: document.getElementById('romiTgtLang').value
+            });
+            out.textContent = data.translated || data.text || JSON.stringify(data);
+        } catch (err) {
+            out.textContent = err.message || 'Could not translate right now.';
+        }
     },
 
     toggle() {
@@ -122,6 +210,8 @@ const RoamitraAI = {
         this.isOpen = true;
         this.popup.classList.add('open');
         this.fab?.classList.add('active');
+        document.body.classList.add('roamini-open');
+        this.langPop?.classList.remove('open');
         this.input?.focus();
     },
 
@@ -129,6 +219,7 @@ const RoamitraAI = {
         this.isOpen = false;
         this.popup?.classList.remove('open');
         this.fab?.classList.remove('active');
+        document.body.classList.remove('roamini-open');
     },
 
     sendMessage() {
@@ -192,8 +283,7 @@ const RoamitraAI = {
     hideTyping() {
         this.isTyping = false;
         if (this.sendBtn) this.sendBtn.disabled = false;
-        const typing = document.getElementById('aiTyping');
-        if (typing) typing.remove();
+        document.getElementById('aiTyping')?.remove();
     },
 
     scrollToBottom() {

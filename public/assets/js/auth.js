@@ -3,45 +3,36 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'admin' && /login\.html$/i.test(window.location.pathname) && !/admin-login/i.test(window.location.pathname)) {
+        window.location.replace((typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('admin-login.html') : 'admin-login.html'));
+        return;
+    }
     initPasswordToggle();
     initNameLettersOnly();
     initSignupValidation();
-    initLoginRoleToggle();
+    initStaffLogoGate();
     initAuthSubmit();
     showRegisteredBanner();
 });
 
-function initLoginRoleToggle() {
-    const form = document.getElementById('loginForm');
-    const buttons = document.querySelectorAll('.auth-role-toggle [data-role]');
-    if (!form || !buttons.length) return;
-
-    const applyRole = (role) => {
-        form.dataset.role = role;
-        buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.role === role));
-        const subtitle = document.getElementById('loginSubtitle');
-        const emailLabel = document.getElementById('emailLabel');
-        const email = document.getElementById('email');
-        const submit = document.getElementById('loginSubmit');
-        if (role === 'admin') {
-            if (subtitle) subtitle.textContent = 'Sign in with an admin or co-admin account';
-            if (emailLabel) emailLabel.textContent = 'Admin email';
-            if (email) email.placeholder = 'admin@raomitra.com';
-            if (submit) submit.innerHTML = 'Sign in as admin <i class="bi bi-arrow-right"></i>';
-        } else {
-            if (subtitle) subtitle.textContent = 'Sign in to continue your journey';
-            if (emailLabel) emailLabel.textContent = 'Email';
-            if (email) email.placeholder = 'you@example.com';
-            if (submit) submit.innerHTML = 'Sign In <i class="bi bi-arrow-right"></i>';
+function initStaffLogoGate() {
+    const logo = document.getElementById('staffLogoGate');
+    if (!logo) return;
+    let clicks = 0;
+    let timer = null;
+    logo.addEventListener('click', (e) => {
+        e.preventDefault();
+        clicks += 1;
+        clearTimeout(timer);
+        if (clicks >= 5) {
+            window.location.href = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('admin-login.html') : 'admin-login.html');
+            return;
         }
-    };
-
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => applyRole(btn.dataset.role));
+        timer = setTimeout(() => {
+            clicks = 0;
+            window.location.href = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('explore.html') : 'explore.html');
+        }, 600);
     });
-
-    const params = new URLSearchParams(window.location.search);
-    applyRole(params.get('mode') === 'admin' ? 'admin' : 'member');
 }
 
 function initPasswordToggle() {
@@ -186,7 +177,7 @@ async function submitAuth(form, path, mode) {
 
 function nextPage() {
     const raw = new URLSearchParams(window.location.search).get('next');
-    const fallback = RoamitraApi.page('planner.html');
+    const fallback = RoamitraApi.page('explore.html');
     if (!raw) return fallback;
     try {
         const url = new URL(raw, window.location.origin);

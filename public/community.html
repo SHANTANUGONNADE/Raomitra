@@ -7,35 +7,12 @@
     <title>Community — Roamitra</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=type4" rel="stylesheet">
+    <link href="assets/css/main.css?v=logo1" rel="stylesheet">
+    <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="community">
 
-    <nav class="roamitra-navbar">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between">
-                <a href="index.html" class="navbar-brand"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a>
-                <ul class="roamitra-nav-links d-none d-lg-flex">
-                    <li><a href="index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
-                    <li><a href="explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
-                    <li><a href="community.html" class="nav-link active" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
-                    <li><a href="" class="nav-link ai-link"><i class="bi bi-stars"></i> Roamitra AI</a></li>
-                </ul>
-                <div class="roamitra-nav-actions d-none d-lg-flex">
-                    <button class="roamitra-lang-select">EN <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></button>
-                    <a href="login.html" class="btn-roamitra btn-roamitra-ghost">Log in</a>
-                    <a href="signup.html" class="btn-roamitra btn-roamitra-primary">Sign up</a>
-                </div>
-                <button class="roamitra-navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav"><i class="bi bi-list"></i></button>
-            </div>
-            <div class="collapse d-lg-none" id="mobileNav">
-                <div class="roamitra-mobile-nav">
-                    <a href="explore.html" class="nav-link">Explore</a><a href="community.html" class="nav-link">Community</a><a href="#" class="nav-link">Roamitra AI</a>
-                    <div class="d-flex gap-2 mt-3"><a href="login.html" class="btn-roamitra btn-roamitra-outline flex-fill">Log in</a><a href="signup.html" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a></div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <nav class="roamitra-navbar"></nav>
 
     <section class="search-hero pb-0">
         <div class="container">
@@ -43,13 +20,11 @@
                 <div class="search-bar">
                     <i class="bi bi-search search-icon"></i>
                     <input type="text" placeholder="Search questions, places, travelers..." aria-label="Search">
-                    <div class="search-ai-btn"><button class="btn-roamitra btn-roamitra-ai"><i class="bi bi-stars"></i> + Ask Roamitra AI</button></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Feature Cards -->
     <section class="section-padding-sm pt-3">
         <div class="container">
             <div class="row g-3">
@@ -58,6 +33,7 @@
                         <div class="feature-icon"><i class="bi bi-chat-dots"></i></div>
                         <h3>Ask Questions</h3>
                         <p>Get advice from experienced travelers and verified locals.</p>
+                        <ul class="feature-list"><li>Travel tips &amp; advice</li><li>Local recommendations</li><li>Community answers</li></ul>
                         <div class="feature-footer"><a href="#ask-question" class="feature-link-text">Ask now</a><a href="#ask-question" class="btn-feature-arrow green"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
@@ -65,18 +41,20 @@
                     <div class="feature-card feature-orange">
                         <span class="feature-badge">Most Popular</span>
                         <div class="feature-icon"><i class="bi bi-house-door"></i></div>
-                        <h3>Host</h3>
-                        <p>Become a local guide and earn while helping travelers.</p>
+                        <h3>Ask to Host</h3>
+                        <p>Become a local guide and earn while helping travelers discover your city.</p>
                         <ul class="feature-list"><li>Earn while helping travelers</li><li>Get a verified host badge</li><li>Connect with global community</li></ul>
                         <div class="feature-footer"><a href="host.html" class="feature-link-text">Apply to host</a><a href="host.html" class="btn-feature-arrow orange"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="feature-card feature-blue">
-                        <div class="feature-icon"><i class="bi bi-bicycle"></i></div>
-                        <h3>Rental Bikes &amp; Cars</h3>
-                        <p>Rent vehicles directly from verified local owners.</p>
-                        <div class="feature-footer"><a href="index.html#rent-section" class="feature-link-text">Browse rentals</a><a href="index.html#rent-section" class="btn-feature-arrow blue"><i class="bi bi-arrow-right"></i></a></div>
+                        <span class="feature-badge popular">Popular</span>
+                        <div class="feature-icon"><i class="bi bi-car-front"></i></div>
+                        <h3>Ask to Rent</h3>
+                        <p>Rent bikes, cars, and scooters directly from verified local owners.</p>
+                        <ul class="feature-list"><li>Best local prices</li><li>Verified vehicle owners</li><li>Flexible rental options</li></ul>
+                        <div class="feature-footer"><a href="#rent-section" class="feature-link-text">Browse rentals</a><a href="#rent-section" class="btn-feature-arrow blue"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -84,6 +62,7 @@
                         <div class="feature-icon"><i class="bi bi-people"></i></div>
                         <h3>Meetups</h3>
                         <p>Join local events and group activities with fellow travelers.</p>
+                        <ul class="feature-list"><li>Group adventures</li><li>Local experiences</li><li>Make new friends</li></ul>
                         <div class="feature-footer"><a href="meetups.html" class="feature-link-text">Find meetups</a><a href="meetups.html" class="btn-feature-arrow purple"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
@@ -102,20 +81,95 @@
             </div>
 
             <!-- Live questions -->
-            <h2 class="section-title mb-3" id="ask-question">Community questions</h2>
+            <div class="section-header-inline mb-3" id="ask-question"><h2><i class="bi bi-chat-square-text"></i> Community questions</h2></div>
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar">NS</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-name">Nikhil S. <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Traveler</span></div>
+                        <div class="feed-post-time">Asked in Bangalore</div>
+                    </div>
+                </div>
+                <h3 class="h6 mb-1">Is Cubbon Park safe for a sunrise walk?</h3>
+                <p class="feed-post-content">Landing at 5 AM and want a quiet first morning. Any local tips on gates, coffee nearby, or areas to skip?</p>
+                <p class="feed-post-content mb-0"><strong>Priya Sharma:</strong> Yes — enter from the MG Road side after 6 AM. Skip the dark corners near the library until full daylight. Third Wave Coffee is a 6-minute walk.</p>
+            </div>
+            <div class="feed-post">
+                <div class="feed-post-header">
+                    <div class="feed-post-avatar" style="background:var(--color-card-orange);color:var(--color-card-orange-icon);">AL</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-name">Aisha L. <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Traveler</span></div>
+                        <div class="feed-post-time">Asked in Goa</div>
+                    </div>
+                </div>
+                <h3 class="h6 mb-1">Scooter or car for a 4-day North Goa hop?</h3>
+                <p class="feed-post-content">Two people, light bags. We care more about parking and rain than speed.</p>
+                <p class="feed-post-content mb-0"><strong>Raj Patel:</strong> Scooter if you stay in Calangute–Anjuna. Rent a car only if you plan Old Goa + South day trips. Use Ask to Rent for verified local owners.</p>
+            </div>
             <form id="communityForm" class="planner-card mb-4">
-                <p class="text-muted small mb-3">Posted questions and replies are stored for your account and appear in notifications. No sample activity is shown here.</p>
+                <p class="text-muted small mb-3">Ask the community. Replies show on your profile notifications.</p>
                 <div class="mb-3">
                     <label class="form-label fw-semibold" for="qTitle">Question title</label>
                     <input class="form-control" id="qTitle" name="title" required maxlength="200" placeholder="e.g. Best time to visit Ubud?">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold" for="qBody">Details</label>
-                    <textarea class="form-control" id="qBody" name="body" rows="3" required placeholder="Ask the community…"></textarea>
+                    <textarea class="form-control" id="qBody" name="body" rows="2" required placeholder="Ask the community…"></textarea>
                 </div>
                 <button type="submit" class="btn-roamitra btn-roamitra-navy">Post question</button>
             </form>
-            <div id="liveQuestions" class="mb-5"></div>
+            <div id="liveQuestions" class="mb-4"></div>
+
+            <section class="section-padding-sm pt-0" id="rent-section">
+                <div class="section-header-row">
+                    <div>
+                        <h2 class="section-title">Ask to Rent</h2>
+                        <p class="section-subtitle mb-0">Vehicles from verified local owners</p>
+                    </div>
+                    <a href="host.html?type=vehicle" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm"><i class="bi bi-plus-lg"></i> List Your Vehicle</a>
+                </div>
+                <div class="filter-pills vehicle-filters mb-3">
+                    <button class="filter-pill active" data-filter="all">All</button>
+                    <button class="filter-pill" data-filter="bikes">Bikes</button>
+                    <button class="filter-pill" data-filter="cars">Cars</button>
+                    <button class="filter-pill" data-filter="scooters">Scooters</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-4 col-md-6">
+                        <div class="vehicle-card" data-category="scooters">
+                            <div class="vehicle-image"><img src="assets/images/vehicles/activa6g.webp" alt="Honda Activa 6G"><span class="vehicle-category">Scooter</span></div>
+                            <div class="vehicle-body">
+                                <h3 class="vehicle-title">Honda Activa 6G</h3>
+                                <div class="vehicle-price">$8 <span>/ day</span></div>
+                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Bangalore, India</div>
+                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Honda%20Activa%206G&price=8&location=Bangalore%2C%20India&category=scooters">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <div class="vehicle-card" data-category="bikes">
+                            <div class="vehicle-image"><img src="assets/images/vehicles/royal-enfield.jpg?v=3" alt="Royal Enfield"><span class="vehicle-category">Bike</span></div>
+                            <div class="vehicle-body">
+                                <h3 class="vehicle-title">Royal Enfield Classic 350</h3>
+                                <div class="vehicle-price">$15 <span>/ day</span></div>
+                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Goa, India</div>
+                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Royal%20Enfield%20Classic%20350&price=15&location=Goa%2C%20India&category=bikes">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <div class="vehicle-card" data-category="cars">
+                            <div class="vehicle-image"><img src="assets/images/vehicles/marutiswift.webp" alt="Maruti Swift"><span class="vehicle-category">Car</span></div>
+                            <div class="vehicle-body">
+                                <h3 class="vehicle-title">Maruti Swift</h3>
+                                <div class="vehicle-price">$35 <span>/ day</span></div>
+                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Mumbai, India</div>
+                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Maruti%20Swift&price=35&location=Mumbai%2C%20India&category=cars">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- Connect with Locals -->
             <div class="section-header-inline mb-3"><h2><i class="bi bi-person-hearts"></i> Connect with Locals</h2><a href="#">See All</a></div>
@@ -238,15 +292,12 @@
     </section>
 
     <div class="roamitra-trust-bar"><div class="container"><div class="row g-3"><div class="col-md-4"><div class="trust-item"><i class="bi bi-people-fill"></i><span>3,000+ travelers already joined the waitlist</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure &amp; private</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-heart-fill"></i><span>Loved by early explorers</span></div></div></div></div></div>
-    <footer class="roamitra-footer"><div class="container"><div class="row g-4"><div class="col-lg-3"><a href="index.html" class="navbar-brand d-flex mb-3"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a><div class="roamitra-footer-social"><a href="#"><i class="bi bi-instagram"></i></a><a href="#"><i class="bi bi-facebook"></i></a><a href="#"><i class="bi bi-twitter-x"></i></a></div></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamitra AI</a></li><li><a href="#">Pricing</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li></ul></div><div class="col-lg-3 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div></div></footer>
-
-    <button class="ai-assistant-fab" id="aiFab"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></button>
-    <div class="ai-assistant-popup" id="aiPopup"><div class="ai-assistant-header"><div class="ai-assistant-header-info"><div class="ai-assistant-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div><h4>Roamitra AI</h4><p>Your travel assistant</p></div></div><button class="ai-assistant-close" id="aiClose"><i class="bi bi-x-lg"></i></button></div><div class="ai-assistant-messages" id="aiMessages"><div class="ai-message bot"><div class="ai-message-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div><div class="ai-message-bubble">Hi! How can I help you with the community today?</div></div></div><div class="ai-assistant-suggestions"><button class="ai-suggestion-chip" data-question="How do I become a host?">Become a Host</button></div><div class="ai-assistant-input"><input type="text" id="aiInput" placeholder="Ask me anything..."><button id="aiSend"><i class="bi bi-send-fill"></i></button></div></div>
+    <footer class="roamitra-footer"><div class="container"><div class="row g-4"><div class="col-lg-3"><a href="explore.html" class="navbar-brand d-flex mb-3"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a><div class="roamitra-footer-social"><a href="#"><i class="bi bi-instagram"></i></a><a href="#"><i class="bi bi-facebook"></i></a><a href="#"><i class="bi bi-twitter-x"></i></a></div></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamini</a></li><li><a href="#">Pricing</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li></ul></div><div class="col-lg-3 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div></div></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
-    <script src="assets/js/nav.js"></script>
-    <script src="assets/js/ai-assistant.js"></script>
+    <script src="assets/js/nav.js?v=ui2"></script>
+    <script src="assets/js/ai-assistant.js?v=ui2"></script>
     <script src="assets/js/community-live.js"></script>
     <script src="assets/js/main.js"></script>
 </body>

@@ -56,11 +56,11 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .section-title {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 800;
     color: var(--color-navy);
-    margin-bottom: 0.375rem;
-    background: linear-gradient(90deg, #0f172a 0%, #1d4ed8 70%);
+    margin-bottom: 0.25rem;
+    background: linear-gradient(90deg, var(--color-navy) 0%, var(--color-accent) 80%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -82,11 +82,11 @@ a {
 
 /* ---- Layout Utilities ---- */
 .section-padding {
-    padding: var(--spacing-2xl) 0;
+    padding: 1.25rem 0;
 }
 
 .section-padding-sm {
-    padding: var(--spacing-xl) 0;
+    padding: 1rem 0;
 }
 
 .section-subtitle {
@@ -99,13 +99,13 @@ a {
 
 /* ---- Search Hero ---- */
 .search-hero {
-    padding: 2rem 0 2.25rem;
+    padding: 0.75rem 0 0.85rem;
     background-color: var(--color-bg);
 }
 
 .search-bar-wrapper {
     position: relative;
-    max-width: 860px;
+    max-width: var(--search-max);
     margin: 0 auto;
 }
 
@@ -121,9 +121,9 @@ a {
 }
 
 .search-bar:focus-within {
-    border-color: var(--color-primary-light);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-    background-color: var(--color-white);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 182, 115, 0.16);
+    background-color: var(--color-surface);
 }
 
 .search-bar .search-icon {
@@ -150,7 +150,7 @@ a {
 }
 
 .search-bar .search-ai-btn {
-    flex-shrink: 0;
+    display: none;
 }
 
 /* ---- Filter Pills ---- */
@@ -265,22 +265,6 @@ a {
     }
 }
 
-/* Ask to Rent palette — site-wide brand */
-:root {
-    --color-primary: #1D4ED8;
-    --color-primary-dark: #1E40AF;
-    --color-primary-light: #3B82F6;
-    --color-primary-bright: #60A5FA;
-    --color-primary-hover: #2563EB;
-    --color-accent: #3B82F6;
-    --color-bg: #EBF4FF;
-    --color-bg-light: #F4F8FF;
-    --color-bg-muted: #E0EDFF;
-    --color-bg-search: #E8F1FF;
-    --font-family: 'Manrope', 'Segoe UI', sans-serif;
-    --font-display: 'Sora', 'Manrope', sans-serif;
-}
-
 body {
     font-family: 'Manrope', 'Segoe UI', sans-serif !important;
 }
@@ -306,19 +290,19 @@ h1, h2, h3, h4, h5, h6,
 .roamitra-navbar .navbar-glass,
 .roamitra-navbar .container.navbar-glass,
 .roamitra-navbar > .container {
-    background: rgba(255, 255, 255, 0.82) !important;
+    background: color-mix(in srgb, var(--color-surface) 86%, transparent) !important;
     backdrop-filter: blur(18px) saturate(1.2);
     -webkit-backdrop-filter: blur(18px) saturate(1.2);
-    border: 1px solid rgba(191, 219, 254, 0.95) !important;
+    border: 1px solid var(--color-border) !important;
     border-radius: 999px !important;
-    padding: 0.4rem 0.9rem !important;
-    box-shadow: 0 10px 32px rgba(29, 78, 216, 0.1);
+    padding: 0.3rem 0.75rem !important;
+    box-shadow: 0 8px 24px rgba(5, 22, 53, 0.08);
 }
 
 .roamitra-navbar.is-scrolled .navbar-glass,
 .roamitra-navbar.is-scrolled > .container {
-    background: rgba(255, 255, 255, 0.94) !important;
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent) !important;
+    box-shadow: 0 12px 28px rgba(5, 22, 53, 0.12);
 }
 
 @media (max-width: 991.98px) {
@@ -331,18 +315,38 @@ h1, h2, h3, h4, h5, h6,
 .roamitra-logo-text {
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    background: linear-gradient(90deg, #1e3a8a, #2563eb, #38bdf8, #1d4ed8);
-    background-size: 220% auto;
+    background: linear-gradient(180deg, #76D885, #47A8A3);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent !important;
 }
 
 .roamitra-nav-links .nav-link.ai-link {
-    color: #fff !important;
-    background: linear-gradient(135deg, #1d4ed8, #38bdf8);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+    color: #051635 !important;
+    background: linear-gradient(135deg, #76D885, #47A8A3);
+    box-shadow: 0 6px 16px rgba(43, 182, 115, 0.28);
 }
+
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.row.g-3,
+.row.g-4 {
+    --bs-gutter-y: 0.75rem;
+}
+
+.mb-4 { margin-bottom: 1rem !important; }
+.mb-5 { margin-bottom: 1.25rem !important; }
+.pt-3 { padding-top: 0.65rem !important; }
 
 .section-subtitle {
     font-family: 'Manrope', sans-serif;

@@ -1,5 +1,9 @@
 {
   "name": "roamitra",
   "private": true,
-  "description": "Roamitra travel site — static public/ + PHP api/ on Vercel"
+  "description": "Roamitra travel site — static public/ + API on Vercel",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "mysql2": "^3.11.5"
+  }
 }

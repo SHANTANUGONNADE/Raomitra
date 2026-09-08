@@ -1,38 +1,35 @@
 /* =============================================
    Roamitra Design System — CSS Variables
-   Exact colors from reference mockup
+   Palette from the roamitra logo (navy + lime/teal)
    ============================================= */
 
 :root {
-    /* Brand Blues — from Ask to Rent card */
-    --color-primary: #1D4ED8;
-    --color-primary-dark: #1E40AF;
-    --color-primary-light: #3B82F6;
-    --color-primary-bright: #60A5FA;
-    --color-primary-hover: #2563EB;
-    --color-accent: #3B82F6;
+    --color-primary: #2BB673;
+    --color-primary-dark: #1A8A58;
+    --color-primary-light: #76D885;
+    --color-primary-bright: #8EE89A;
+    --color-primary-hover: #239A62;
+    --color-accent: #47A8A3;
+    --color-logo-navy: #051635;
 
-    /* Navy / Dark Blue */
-    --color-navy: #121A2B;
-    --color-navy-light: #1B2537;
-    --color-navy-btn: #1A2332;
+    --color-navy: #051635;
+    --color-navy-light: #0A2148;
+    --color-navy-btn: #0A2148;
 
-    /* Neutrals — page wash matches Ask to Rent card */
     --color-white: #FFFFFF;
-    --color-bg: #EBF4FF;
-    --color-bg-light: #F4F8FF;
-    --color-bg-muted: #E0EDFF;
-    --color-bg-search: #E8F1FF;
-    --color-border: #E5E7EB;
-    --color-border-light: #EBEBEB;
+    --color-bg: #F3FBF6;
+    --color-bg-light: #F7FCF9;
+    --color-bg-muted: #E6F6EC;
+    --color-bg-search: #EAF7EF;
+    --color-border: #D5E8DC;
+    --color-border-light: #E4F1E8;
+    --color-surface: #FFFFFF;
 
-    /* Text */
-    --color-text: #111827;
-    --color-text-secondary: #374151;
-    --color-text-muted: #6B7280;
-    --color-text-light: #9CA3AF;
+    --color-text: #0B1B2B;
+    --color-text-secondary: #2C3F4F;
+    --color-text-muted: #5B6E78;
+    --color-text-light: #8AA0A8;
 
-    /* Feature Card Pastels — matched to mockup */
     --color-card-green: #EDFAF3;
     --color-card-green-border: #A7E3C9;
     --color-card-green-icon: #10B981;
@@ -46,17 +43,14 @@
     --color-card-purple-border: #DDD6FE;
     --color-card-purple-icon: #8B5CF6;
 
-    /* Safety banner */
-    --color-banner-blue: #EEF4FF;
-    --color-banner-blue-icon: #3B82F6;
+    --color-banner-blue: #EEF8F2;
+    --color-banner-blue-icon: #2BB673;
 
-    /* Status */
     --color-success: #10B981;
     --color-warning: #F59E0B;
     --color-danger: #EF4444;
     --color-star: #FBBF24;
 
-    /* Typography */
     --font-family: 'Manrope', 'Segoe UI', sans-serif;
     --font-display: 'Sora', 'Manrope', sans-serif;
     --font-size-xs: 0.75rem;
@@ -67,16 +61,14 @@
     --font-size-2xl: 1.5rem;
     --font-size-3xl: 1.875rem;
 
-    /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
-    --spacing-2xl: 3rem;
-    --spacing-3xl: 4rem;
+    --spacing-lg: 1.25rem;
+    --spacing-xl: 1.5rem;
+    --spacing-2xl: 2rem;
+    --spacing-3xl: 2.75rem;
 
-    /* Border Radius */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
@@ -85,17 +77,59 @@
     --radius-pill: 50px;
     --radius-full: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 2px rgba(5, 22, 53, 0.06);
+    --shadow-md: 0 4px 12px rgba(5, 22, 53, 0.08);
+    --shadow-lg: 0 8px 24px rgba(5, 22, 53, 0.1);
+    --shadow-card: 0 1px 4px rgba(5, 22, 53, 0.06);
 
-    /* Transitions */
     --transition-fast: 150ms ease;
     --transition-base: 250ms ease;
 
-    /* Layout */
-    --navbar-height: 68px;
+    --navbar-height: 64px;
     --container-max: 1140px;
+    --search-max: 420px;
+}
+
+[data-theme="dark"] {
+    --color-primary: #76D885;
+    --color-primary-dark: #47A8A3;
+    --color-primary-light: #8EE89A;
+    --color-primary-bright: #A8F0B4;
+    --color-primary-hover: #5FCB78;
+    --color-accent: #47A8A3;
+
+    --color-navy: #E8F5EE;
+    --color-navy-light: #1A3358;
+    --color-navy-btn: #76D885;
+
+    --color-white: #0A2148;
+    --color-bg: #051635;
+    --color-bg-light: #0A2148;
+    --color-bg-muted: #123056;
+    --color-bg-search: #0E2748;
+    --color-border: #1E3F63;
+    --color-border-light: #173552;
+    --color-surface: #0A2148;
+
+    --color-text: #E8F5EE;
+    --color-text-secondary: #C5D9CE;
+    --color-text-muted: #9BB0A8;
+    --color-text-light: #7A928C;
+
+    --color-card-green: #0F3A32;
+    --color-card-green-border: #1F6A58;
+    --color-card-green-icon: #76D885;
+    --color-card-orange: #3A2616;
+    --color-card-orange-border: #7A4A22;
+    --color-card-orange-icon: #FDBA74;
+    --color-card-blue: #122A48;
+    --color-card-blue-border: #2A4F78;
+    --color-card-blue-icon: #7DD3FC;
+    --color-card-purple: #261848;
+    --color-card-purple-border: #4C3480;
+    --color-card-purple-icon: #C4B5FD;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
 }

@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+const bcrypt = require('bcryptjs');
+const mysqlStore = require('./mysql');
 
 const SECRET = process.env.RAOMITRA_SESSION_SECRET || 'raomitra-local-session-key';
 const COOKIE = 'raomitra_auth';
@@ -15,7 +17,15 @@ function nowIso() {
 }
 
 function hashPassword(password) {
-    return crypto.scryptSync(String(password), SALT, 32).toString('hex');
+    return bcrypt.hashSync(String(password), 10);
+}
+
+function verifyPassword(password, hash) {
+    if (!hash) return false;
+    if (hash.startsWith('$2y$') || hash.startsWith('$2a$') || hash.startsWith('$2b$')) {
+        return bcrypt.compareSync(String(password), hash.replace(/^\$2y\$/, '$2a$'));
+    }
+    return hash === crypto.scryptSync(String(password), SALT, 32).toString('hex');
 }
 
 function publicUser(user) {
@@ -201,8 +211,13 @@ function restoreUser(db, token) {
     return user;
 }
 
-function currentUser(req, db) {
+async function currentUser(req, db) {
     const token = unsign(parseCookies(req)[COOKIE]);
+    if (!token) return null;
+    if (mysqlStore.isConfigured() && token.email) {
+        const row = await mysqlStore.findUserByEmail(token.email);
+        if (row) return row;
+    }
     return restoreUser(db, token);
 }
 
@@ -413,8 +428,8 @@ async function handle(req, res) {
         input = await readBody(req);
     }
 
-    const needUser = () => {
-        const user = currentUser(req, db);
+    const needUser = async () => {
+        const user = await currentUser(req, db);
         if (!user) {
             const err = new Error('Please log in to continue.');
             err.status = 401;
@@ -425,7 +440,12 @@ async function handle(req, res) {
 
     try {
         if (method === 'GET' && (p === '/health' || p === '/')) {
-            return send(res, 200, { ok: true, service: 'roamitra', driver: 'vercel-node' });
+            return send(res, 200, {
+                ok: true,
+                service: 'roamitra',
+                driver: 'vercel-node',
+                storage: mysqlStore.storageLabel(),
+            });
         }
 
         if (method === 'POST' && p === '/auth/register') {
@@ -439,13 +459,30 @@ async function handle(req, res) {
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(res, 'Enter a valid email address.');
             if (password.length < 8) return fail(res, 'Password must be at least 8 characters.');
             if (password !== confirm) return fail(res, 'Passwords do not match.');
+            const passwordHash = hashPassword(password);
+            if (mysqlStore.isConfigured()) {
+                try {
+                    if (await mysqlStore.findUserByEmail(email)) {
+                        return fail(res, 'An account with this email already exists.', 409);
+                    }
+                    await mysqlStore.createUser({
+                        full_name: name,
+                        email,
+                        password_hash: passwordHash,
+                        role: 'customer',
+                    });
+                } catch (err) {
+                    return fail(res, 'Database unavailable: ' + err.message, 500);
+                }
+                return send(res, 200, { ok: true, registered: true, message: 'Signup successfully. Please log in to continue.' });
+            }
             if (db.users.some((u) => u.email === email)) {
                 return fail(res, 'An account with this email already exists.', 409);
             }
             const user = addRow(db, 'users', {
                 full_name: name,
                 email,
-                password_hash: hashPassword(password),
+                password_hash: passwordHash,
                 role: 'customer',
                 avatar_url: null,
                 created_at: nowIso(),
@@ -460,12 +497,17 @@ async function handle(req, res) {
             const email = String(input.email || '').trim().toLowerCase();
             const password = String(input.password || '');
             if (!email || !password) return fail(res, 'Enter your email and password.');
-            const row = db.users.find((u) => u.email === email);
-            if (!row || row.password_hash !== hashPassword(password)) {
+            let row = mysqlStore.isConfigured() ? await mysqlStore.findUserByEmail(email) : db.users.find((u) => u.email === email);
+            if (!row && mysqlStore.isConfigured()) {
+                row = db.users.find((u) => u.email === email);
+            }
+            if (!row || !verifyPassword(password, row.password_hash)) {
                 return fail(res, 'Incorrect email or password.', 401);
             }
-            ensureWallet(db, row.id);
-            saveDb(db);
+            if (!mysqlStore.isConfigured()) {
+                ensureWallet(db, row.id);
+                saveDb(db);
+            }
             setAuthCookie(res, row);
             return send(res, 200, { ok: true, user: publicUser(row), message: 'Logged in successfully.' });
         }
@@ -475,17 +517,27 @@ async function handle(req, res) {
             const password = String(input.password || '');
             if (!email || !password) return fail(res, 'Enter your admin email and password.');
             const adminEmails = ['admin@raomitra.com', 'admin@roamitra.com'];
-            const row = adminEmails.includes(email)
-                ? db.users.find((u) => adminEmails.includes(u.email))
-                : db.users.find((u) => u.email === email);
-            if (!row || row.password_hash !== hashPassword(password)) {
+            let row;
+            if (mysqlStore.isConfigured()) {
+                row = adminEmails.includes(email)
+                    ? (await mysqlStore.findUserByEmail('admin@raomitra.com')) || (await mysqlStore.findUserByEmail('admin@roamitra.com'))
+                    : await mysqlStore.findUserByEmail(email);
+            }
+            if (!row) {
+                row = adminEmails.includes(email)
+                    ? db.users.find((u) => adminEmails.includes(u.email))
+                    : db.users.find((u) => u.email === email);
+            }
+            if (!row || !verifyPassword(password, row.password_hash)) {
                 return fail(res, 'Incorrect admin email or password.', 401);
             }
             if (!['admin', 'co_admin'].includes(row.role)) {
                 return fail(res, 'This page is for admin staff only. Use the traveler login.', 403);
             }
-            ensureWallet(db, row.id);
-            saveDb(db);
+            if (!mysqlStore.isConfigured()) {
+                ensureWallet(db, row.id);
+                saveDb(db);
+            }
             setAuthCookie(res, row);
             return send(res, 200, { ok: true, user: publicUser(row), message: 'Admin signed in.' });
         }
@@ -496,13 +548,13 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/auth/me') {
-            const user = currentUser(req, db);
+            const user = await currentUser(req, db);
             if (!user) return fail(res, 'Not authenticated.', 401);
             return send(res, 200, { ok: true, user: publicUser(user) });
         }
 
         if (method === 'GET' && p === '/profile') {
-            const user = needUser();
+            const user = await needUser();
             const wallet = ensureWallet(db, user.id);
             return send(res, 200, {
                 ok: true,
@@ -516,7 +568,7 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/trips') {
-            const user = needUser();
+            const user = await needUser();
             const trips = db.trips.filter((t) => t.user_id === user.id).map((t) => {
                 const cur = db.itineraries.find((i) => i.trip_id === t.id && i.is_current);
                 return Object.assign({}, t, { current_itinerary_id: cur ? cur.id : null });
@@ -525,7 +577,7 @@ async function handle(req, res) {
         }
 
         if (method === 'POST' && p === '/trips') {
-            const user = needUser();
+            const user = await needUser();
             const trip = parseTripInput(input);
             const row = addRow(db, 'trips', Object.assign({}, trip, {
                 user_id: user.id,
@@ -540,7 +592,7 @@ async function handle(req, res) {
 
         const tripShow = p.match(/^\/trips\/(\d+)$/);
         if (method === 'GET' && tripShow) {
-            const user = needUser();
+            const user = await needUser();
             const trip = ownedTrip(db, Number(tripShow[1]), user.id);
             const itinerary = currentItinerary(db, trip.id);
             return send(res, 200, {
@@ -554,7 +606,7 @@ async function handle(req, res) {
 
         const tripGen = p.match(/^\/trips\/(\d+)\/generate$/);
         if (method === 'POST' && tripGen) {
-            const user = needUser();
+            const user = await needUser();
             const trip = ownedTrip(db, Number(tripGen[1]), user.id);
             const data = generateItinerary(trip);
             db.itineraries.forEach((i) => {
@@ -578,7 +630,7 @@ async function handle(req, res) {
 
         const tripSave = p.match(/^\/trips\/(\d+)\/save$/);
         if (method === 'POST' && tripSave) {
-            const user = needUser();
+            const user = await needUser();
             const trip = ownedTrip(db, Number(tripSave[1]), user.id);
             trip.is_saved = 1;
             trip.status = 'saved';
@@ -590,7 +642,7 @@ async function handle(req, res) {
 
         const tripAsst = p.match(/^\/trips\/(\d+)\/assistant$/);
         if (method === 'POST' && tripAsst) {
-            const user = needUser();
+            const user = await needUser();
             const trip = ownedTrip(db, Number(tripAsst[1]), user.id);
             const message = String(input.message || '').trim();
             if (!message) return fail(res, 'Enter a message for the travel assistant.');
@@ -622,7 +674,7 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/notifications') {
-            const user = needUser();
+            const user = await needUser();
             const today = new Date().toISOString().slice(0, 10);
             const notes = db.notifications.filter((n) => n.user_id === user.id).sort((a, b) => b.id - a.id).slice(0, 40);
             return send(res, 200, {
@@ -637,7 +689,7 @@ async function handle(req, res) {
 
         const noteRead = p.match(/^\/notifications\/(\d+)\/read$/);
         if (method === 'POST' && noteRead) {
-            const user = needUser();
+            const user = await needUser();
             const note = db.notifications.find((n) => n.id === Number(noteRead[1]) && n.user_id === user.id);
             if (note) note.is_read = 1;
             saveDb(db);
@@ -645,7 +697,7 @@ async function handle(req, res) {
         }
 
         if (method === 'POST' && p === '/notifications/read-all') {
-            const user = needUser();
+            const user = await needUser();
             db.notifications.forEach((n) => {
                 if (n.user_id === user.id) n.is_read = 1;
             });
@@ -654,7 +706,7 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/wallet') {
-            const user = needUser();
+            const user = await needUser();
             const wallet = ensureWallet(db, user.id);
             return send(res, 200, {
                 ok: true,
@@ -671,7 +723,7 @@ async function handle(req, res) {
             if (!text) return fail(res, 'Enter a phrase to translate.');
             if (!['text', 'voice'].includes(mode)) mode = 'text';
             const translated = await translateText(text, source, target);
-            const user = currentUser(req, db);
+            const user = await currentUser(req, db);
             if (user) {
                 addRow(db, 'translator_history', {
                     user_id: user.id,
@@ -695,7 +747,7 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/translate/history') {
-            const user = needUser();
+            const user = await needUser();
             const prefs = db.translator_prefs.find((r) => r.user_id === user.id) || { source_lang: 'en', target_lang: 'hi' };
             return send(res, 200, {
                 ok: true,
@@ -705,6 +757,10 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/community/posts') {
+            if (mysqlStore.isConfigured()) {
+                const posts = await mysqlStore.listPosts();
+                return send(res, 200, { ok: true, posts: posts || [] });
+            }
             const posts = db.community_posts.slice().reverse().slice(0, 30).map((post) => {
                 const author = db.users.find((u) => u.id === post.user_id);
                 return Object.assign({}, post, {
@@ -716,10 +772,14 @@ async function handle(req, res) {
         }
 
         if (method === 'POST' && p === '/community/posts') {
-            const user = needUser();
+            const user = await needUser();
             const title = String(input.title || '').trim();
             const body = String(input.body || '').trim();
             if (!title || !body) return fail(res, 'Add a title and question.');
+            if (mysqlStore.isConfigured()) {
+                const postId = await mysqlStore.createPost(user.id, title, body);
+                return send(res, 201, { ok: true, post_id: postId });
+            }
             const post = addRow(db, 'community_posts', { user_id: user.id, title, body, created_at: nowIso() });
             notify(db, user.id, 'community', 'Question posted', 'You posted: ' + title, 'community.html');
             saveDb(db);
@@ -728,9 +788,13 @@ async function handle(req, res) {
 
         const replyMatch = p.match(/^\/community\/posts\/(\d+)\/replies$/);
         if (method === 'POST' && replyMatch) {
-            const user = needUser();
+            const user = await needUser();
             const body = String(input.body || '').trim();
             if (!body) return fail(res, 'Reply cannot be empty.');
+            if (mysqlStore.isConfigured()) {
+                await mysqlStore.addReply(Number(replyMatch[1]), user.id, body);
+                return send(res, 200, { ok: true });
+            }
             const post = db.community_posts.find((r) => r.id === Number(replyMatch[1]));
             if (!post) return fail(res, 'Post not found.', 404);
             addRow(db, 'community_replies', { post_id: post.id, user_id: user.id, body, created_at: nowIso() });
@@ -742,7 +806,7 @@ async function handle(req, res) {
         }
 
         if (method === 'POST' && p === '/bookings') {
-            const user = needUser();
+            const user = await needUser();
             const name = String(input.vehicle_name || '').trim();
             const start = String(input.start_date || '');
             const end = String(input.end_date || '');
@@ -773,12 +837,12 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/bookings') {
-            const user = needUser();
+            const user = await needUser();
             return send(res, 200, { ok: true, bookings: db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse() });
         }
 
         if (method === 'POST' && p === '/host/apply') {
-            const user = needUser();
+            const user = await needUser();
             if (['host', 'admin', 'co_admin'].includes(user.role)) {
                 return fail(res, 'Your account is already a host or staff account.');
             }
@@ -819,13 +883,13 @@ async function handle(req, res) {
         }
 
         if (method === 'GET' && p === '/host/me') {
-            const user = needUser();
+            const user = await needUser();
             const application = db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null;
             return send(res, 200, { ok: true, application, user: publicUser(user) });
         }
 
         if (method === 'GET' && p === '/admin/overview') {
-            const user = needUser();
+            const user = await needUser();
             if (!['admin', 'co_admin'].includes(user.role)) return fail(res, 'You do not have access to this page.', 403);
             const apps = db.host_applications.slice().reverse().map((a) => {
                 const u = db.users.find((x) => x.id === a.user_id) || {};
@@ -849,7 +913,7 @@ async function handle(req, res) {
         }
 
         if (method === 'POST' && p === '/admin/hosts/review') {
-            const staff = needUser();
+            const staff = await needUser();
             if (!['admin', 'co_admin'].includes(staff.role)) return fail(res, 'You do not have access to this page.', 403);
             const id = Number(input.id || 0);
             const status = String(input.status || '');

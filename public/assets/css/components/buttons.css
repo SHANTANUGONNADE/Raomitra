@@ -118,13 +118,10 @@
     font-size: 0.875rem;
 }
 
-.btn-feature-arrow.green,
-.btn-feature-arrow.orange,
-.btn-feature-arrow.blue,
-.btn-feature-arrow.purple {
-    background-color: var(--color-card-blue-icon);
-    color: var(--color-white);
-}
+.btn-feature-arrow.green { background-color: var(--color-card-green-icon); color: #fff; }
+.btn-feature-arrow.orange { background-color: var(--color-card-orange-icon); color: #fff; }
+.btn-feature-arrow.blue { background-color: var(--color-card-blue-icon); color: #fff; }
+.btn-feature-arrow.purple { background-color: var(--color-card-purple-icon); color: #fff; }
 
 .btn-feature-arrow:hover {
     transform: scale(1.08);

@@ -34,21 +34,31 @@
     background-color: var(--color-white);
 }
 
-.feature-card.feature-green,
-.feature-card.feature-orange,
-.feature-card.feature-blue,
-.feature-card.feature-purple {
+.feature-card.feature-green {
+    background-color: var(--color-card-green);
+    border-color: var(--color-card-green-border);
+    border-top: 3px solid var(--color-card-green-icon);
+}
+.feature-card.feature-orange {
+    background-color: var(--color-card-orange);
+    border-color: var(--color-card-orange-border);
+    border-top: 3px solid var(--color-card-orange-icon);
+}
+.feature-card.feature-blue {
     background-color: var(--color-card-blue);
     border-color: var(--color-card-blue-border);
     border-top: 3px solid var(--color-card-blue-icon);
 }
-
-.feature-card.feature-green .feature-icon,
-.feature-card.feature-orange .feature-icon,
-.feature-card.feature-blue .feature-icon,
-.feature-card.feature-purple .feature-icon {
-    color: var(--color-card-blue-icon);
+.feature-card.feature-purple {
+    background-color: var(--color-card-purple);
+    border-color: var(--color-card-purple-border);
+    border-top: 3px solid var(--color-card-purple-icon);
 }
+
+.feature-card.feature-green .feature-icon { color: var(--color-card-green-icon); }
+.feature-card.feature-orange .feature-icon { color: var(--color-card-orange-icon); }
+.feature-card.feature-blue .feature-icon { color: var(--color-card-blue-icon); }
+.feature-card.feature-purple .feature-icon { color: var(--color-card-purple-icon); }
 
 .feature-card .feature-badge {
     position: absolute;

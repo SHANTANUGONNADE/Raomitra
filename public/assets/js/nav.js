@@ -3,7 +3,7 @@
  */
 const RoamitraNav = {
     user: null,
-    protectedPages: ['community', 'planner', 'translator', 'profile', 'itinerary', 'booking', 'host'],
+    protectedPages: ['planner', 'translator', 'profile', 'itinerary', 'booking', 'host'],
 
     applyBranding() {
         const logoSrc = RoamitraApi.basePath() + 'assets/images/logo.png';
@@ -33,7 +33,6 @@ const RoamitraNav = {
             return;
         }
         this.renderActions();
-        this.injectRoleLinks();
         this.setActive();
         if (this.user) {
             await this.refreshNotifications();
@@ -52,7 +51,7 @@ const RoamitraNav = {
         if (this.user) {
             return true;
         }
-        const next = (location.pathname.split('/').pop() || 'index.html') + location.search;
+        const next = (location.pathname.split('/').pop() || 'explore.html') + location.search;
         window.location.replace(RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(next));
         return false;
     },
@@ -64,17 +63,15 @@ const RoamitraNav = {
         nav.innerHTML = `
             <div class="container navbar-glass">
                 <div class="navbar-row">
-                    <a href="${base}index.html" class="navbar-brand">
+                    <a href="${base}explore.html" class="navbar-brand">
                         <img src="${base}assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img">
                         <span class="roamitra-logo-text">roamitra</span>
                     </a>
                     <ul class="roamitra-nav-links">
-                        <li><a href="${base}index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
                         <li><a href="${base}explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
                         <li><a href="${base}community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
                         <li><a href="${base}planner.html" class="nav-link" data-nav="planner"><i class="bi bi-map"></i> Plan Trip</a></li>
-                        <li><a href="${base}translator.html" class="nav-link" data-nav="translator"><i class="bi bi-translate"></i> Translator</a></li>
-                        <li><a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamitra AI</a></li>
+                        <li><a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamini</a></li>
                     </ul>
                     <div class="navbar-end">
                         <div class="roamitra-nav-actions"></div>
@@ -85,12 +82,10 @@ const RoamitraNav = {
                 </div>
                 <div class="collapse" id="mobileNav">
                     <div class="roamitra-mobile-nav">
-                        <a href="${base}index.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a>
                         <a href="${base}explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a>
                         <a href="${base}community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a>
                         <a href="${base}planner.html" class="nav-link" data-nav="planner"><i class="bi bi-map"></i> Plan Trip</a>
-                        <a href="${base}translator.html" class="nav-link" data-nav="translator"><i class="bi bi-translate"></i> Translator</a>
-                        <a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamitra AI</a>
+                        <a href="#" class="nav-link ai-link" data-nav="ai"><i class="bi bi-stars"></i> Roamini</a>
                         <div class="mobile-auth-row"></div>
                     </div>
                 </div>
@@ -111,9 +106,7 @@ const RoamitraNav = {
         const mobileRow = document.querySelector('.mobile-auth-row');
         if (desktop) {
             desktop.innerHTML = '';
-            desktop.insertAdjacentHTML('beforeend', `
-                <button class="roamitra-lang-select" type="button" aria-label="Select language">EN <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></button>
-            `);
+            desktop.appendChild(this.themeButton());
             if (this.user) {
                 if (['admin', 'co_admin'].includes(this.user.role)) {
                     desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-outline btn-roamitra-sm">Admin</a>`);
@@ -145,42 +138,36 @@ const RoamitraNav = {
                     <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a>
                 `;
             }
+            mobileRow.prepend(this.themeButton());
         }
         document.querySelectorAll('.js-logout').forEach(btn => {
             btn.addEventListener('click', async () => {
                 try { await RoamitraApi.post('/auth/logout', {}); } catch (e) { /* ignore */ }
-                window.location.href = RoamitraApi.page('index.html');
+                window.location.href = RoamitraApi.page('explore.html');
             });
         });
     },
 
-    injectRoleLinks() {
-        if (!this.user || !['admin', 'co_admin'].includes(this.user.role)) {
-            return;
-        }
-        const href = RoamitraApi.page('admin.html');
-        document.querySelectorAll('.roamitra-nav-links').forEach(list => {
-            if (list.querySelector('[data-nav="admin"]')) return;
-            const ai = list.querySelector('[data-nav="ai"]');
-            const item = document.createElement('li');
-            item.innerHTML = `<a href="${href}" class="nav-link" data-nav="admin"><i class="bi bi-shield-check"></i> Admin</a>`;
-            if (ai && ai.parentElement) {
-                list.insertBefore(item, ai.parentElement);
-            } else {
-                list.appendChild(item);
+    themeButton() {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theme-toggle';
+        btn.setAttribute('aria-label', 'Toggle dark mode');
+        const sync = () => {
+            const dark = (window.RoamitraTheme ? RoamitraTheme.current() : document.documentElement.getAttribute('data-theme')) === 'dark';
+            btn.innerHTML = dark ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon"></i>';
+        };
+        sync();
+        btn.addEventListener('click', () => {
+            if (window.RoamitraTheme) RoamitraTheme.toggle();
+            else {
+                const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('roamitra-theme', next);
             }
+            sync();
         });
-        document.querySelectorAll('.roamitra-mobile-nav').forEach(nav => {
-            if (nav.querySelector('[data-nav="admin"]')) return;
-            const ai = nav.querySelector('[data-nav="ai"]');
-            const link = document.createElement('a');
-            link.href = href;
-            link.className = 'nav-link';
-            link.dataset.nav = 'admin';
-            link.innerHTML = '<i class="bi bi-shield-check"></i> Admin';
-            if (ai) nav.insertBefore(link, ai);
-            else nav.appendChild(link);
-        });
+        return btn;
     },
 
     bellButton() {
