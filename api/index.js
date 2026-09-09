@@ -34,8 +34,11 @@ function publicUser(user) {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        role: user.role,
+        role: String(user.role || 'customer').toLowerCase().trim(),
         avatar_url: user.avatar_url || null,
+        cover_url: user.cover_url || null,
+        bio: user.bio || '',
+        location: user.location || '',
         created_at: user.created_at,
     };
 }
@@ -531,8 +534,8 @@ async function handle(req, res) {
             if (!row || !verifyPassword(password, row.password_hash)) {
                 return fail(res, 'Incorrect admin email or password.', 401);
             }
-            if (!['admin', 'co_admin'].includes(row.role)) {
-                return fail(res, 'This page is for admin staff only. Use the traveler login.', 403);
+            if (!['admin', 'co_admin'].includes(String(row.role || '').toLowerCase())) {
+                return fail(res, 'This account is not an admin yet. Ask an admin to set your role to admin, then sign in again.', 403);
             }
             if (!mysqlStore.isConfigured()) {
                 ensureWallet(db, row.id);
@@ -565,6 +568,69 @@ async function handle(req, res) {
                 bookings: db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse(),
                 host_application: db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null,
             });
+        }
+
+        if (method === 'POST' && p === '/profile') {
+            const user = await needUser();
+            const name = String(input.full_name || '').replace(/\s+/g, ' ').trim();
+            if (!/^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u.test(name)) {
+                return fail(res, 'Full name can contain letters only (spaces, hyphens, and apostrophes are allowed).');
+            }
+            const bio = String(input.bio || '').trim();
+            const location = String(input.location || '').trim();
+            if (bio.length > 400) return fail(res, 'Keep your bio under 400 characters.');
+            if (location.length > 120) return fail(res, 'Keep your location under 120 characters.');
+            const presets = {
+                forest: 'linear-gradient(135deg,#0B3D2E 0%,#1A8A58 45%,#76D885 100%)',
+                ocean: 'linear-gradient(135deg,#051635 0%,#0A4A6E 50%,#47A8A3 100%)',
+                sunset: 'linear-gradient(135deg,#7C2D12 0%,#EA580C 45%,#FBBF24 100%)',
+                dusk: 'linear-gradient(135deg,#1E1B4B 0%,#6D28D9 55%,#F472B6 100%)',
+                night: 'linear-gradient(135deg,#020617 0%,#0F172A 50%,#334155 100%)',
+            };
+            const nextMedia = (value, current, maxLen, allowPreset) => {
+                if (value === undefined || value === null) return current || null;
+                const raw = String(value).trim();
+                if (raw === '' || raw === 'remove') return null;
+                if (raw.startsWith('preset:') && allowPreset) {
+                    const id = raw.slice(7);
+                    if (!presets[id]) throw Object.assign(new Error('Choose a valid cover style.'), { status: 400 });
+                    return presets[id];
+                }
+                if (/^https?:\/\//i.test(raw) && raw.length <= 500) return raw;
+                if (raw.startsWith('linear-gradient(') && allowPreset) return raw;
+                if (/^uploads\/profiles\/[a-z0-9._-]+$/i.test(raw)) return raw;
+                if (!/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(raw.slice(0, 80))) {
+                    throw Object.assign(new Error('Use a JPEG, PNG, or WebP image.'), { status: 400 });
+                }
+                if (raw.length > maxLen) {
+                    throw Object.assign(new Error('That photo is too large. Try a smaller image.'), { status: 400 });
+                }
+                return raw;
+            };
+            let avatar;
+            let cover;
+            try {
+                avatar = nextMedia(input.avatar_url, user.avatar_url, 900000, false);
+                cover = nextMedia(input.cover_url, user.cover_url, 1200000, true);
+            } catch (err) {
+                return fail(res, err.message, err.status || 400);
+            }
+            user.full_name = name;
+            user.bio = bio || null;
+            user.location = location || null;
+            user.avatar_url = avatar;
+            user.cover_url = cover;
+            if (mysqlStore.isConfigured()) {
+                await mysqlStore.updateUserProfile(user.id, {
+                    full_name: name,
+                    bio: bio || null,
+                    location: location || null,
+                    avatar_url: avatar,
+                    cover_url: cover,
+                });
+            }
+            saveDb(db);
+            return send(res, 200, { ok: true, user: publicUser(user), message: 'Profile saved.' });
         }
 
         if (method === 'GET' && p === '/trips') {
@@ -937,6 +1003,36 @@ async function handle(req, res) {
             }
             saveDb(db);
             return send(res, 200, { ok: true, message: status === 'approved' ? 'Host approved.' : 'Application rejected.' });
+        }
+
+        if (method === 'POST' && p === '/admin/users/role') {
+            const staff = await needUser();
+            if (!['admin', 'co_admin'].includes(String(staff.role || '').toLowerCase())) {
+                return fail(res, 'You do not have access to this page.', 403);
+            }
+            const userId = Number(input.user_id || input.id || 0);
+            const role = String(input.role || '').toLowerCase().trim();
+            if (userId < 1 || !['customer', 'host', 'co_admin', 'admin'].includes(role)) {
+                return fail(res, 'Choose a valid user and role.');
+            }
+            const target = db.users.find((u) => Number(u.id) === userId);
+            if (!target) return fail(res, 'User not found.', 404);
+            const current = String(target.role || '').toLowerCase();
+            if (['admin', 'co_admin'].includes(current) && !['admin', 'co_admin'].includes(role)) {
+                const staffLeft = db.users.filter((u) => ['admin', 'co_admin'].includes(String(u.role || '').toLowerCase())).length;
+                if (staffLeft < 2) return fail(res, 'Keep at least one admin account.');
+            }
+            target.role = role;
+            if (mysqlStore.isConfigured() && mysqlStore.updateUserRole) {
+                await mysqlStore.updateUserRole(userId, role);
+            }
+            saveDb(db);
+            return send(res, 200, {
+                ok: true,
+                message: 'Role updated to ' + role + '. Ask that person to log out and log in again.',
+                user_id: userId,
+                role,
+            });
         }
 
         return fail(res, 'Not found.', 404);

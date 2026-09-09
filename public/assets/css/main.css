@@ -15,6 +15,7 @@
 @import 'components/community.css';
 @import 'components/meetups.css';
 @import 'components/profile.css';
+@import 'components/admin.css';
 @import 'components/app.css';
 @import 'components/motion.css';
 
@@ -364,4 +365,117 @@ h1, h2, h3, h4, h5, h6,
     top: 0 !important;
     left: 0 !important;
     transform: none;
+}
+
+[data-theme="dark"] body {
+    --bs-body-bg: var(--color-bg);
+    --bs-body-color: var(--color-text);
+    --bs-border-color: var(--color-border);
+    background:
+        radial-gradient(1200px 420px at 12% -10%, rgba(111, 220, 138, 0.12), transparent 55%),
+        radial-gradient(900px 380px at 90% 0%, rgba(110, 200, 192, 0.08), transparent 50%),
+        var(--color-bg);
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .form-text,
+[data-theme="dark"] .small.text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] textarea.form-control {
+    background-color: var(--color-bg-muted);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--color-bg-muted);
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    box-shadow: 0 0 0 3px rgba(111, 220, 138, 0.18);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+    color: var(--color-text-light);
+}
+
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--color-surface);
+    --bs-table-color: var(--color-text);
+    --bs-table-border-color: var(--color-border);
+    --bs-table-striped-bg: var(--color-bg-muted);
+    --bs-table-hover-bg: var(--color-bg-muted);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .btn-roamitra-primary,
+[data-theme="dark"] .btn-roamitra-navy {
+    color: #062014;
+}
+
+[data-theme="dark"] .btn-roamitra-navy:hover {
+    color: #062014;
+}
+
+[data-theme="dark"] .filter-pill.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #062014;
+}
+
+[data-theme="dark"] .roamitra-nav-links .nav-link.active {
+    color: var(--color-primary-light);
+}
+
+[data-theme="dark"] .roamitra-nav-links .nav-link.ai-link {
+    color: #062014 !important;
+}
+
+[data-theme="dark"] .person-avatar,
+[data-theme="dark"] .feed-post-avatar,
+[data-theme="dark"] .nav-profile-avatar {
+    color: #fff;
+}
+
+[data-theme="dark"] .destination-card .dest-bookmark {
+    background: rgba(22, 33, 28, 0.88);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .auth-error,
+[data-theme="dark"] .form-alert.error {
+    background: #3a1c1c;
+    color: #fecaca;
+}
+
+[data-theme="dark"] .auth-success {
+    background: #16362c;
+    color: #bbf7d0;
+}
+
+[data-theme="dark"] .search-bar {
+    box-shadow: inset 0 0 0 1px rgba(111, 220, 138, 0.08);
+}
+
+[data-theme="dark"] .feature-card,
+[data-theme="dark"] .vehicle-card,
+[data-theme="dark"] .local-card,
+[data-theme="dark"] .host-card,
+[data-theme="dark"] .stay-card,
+[data-theme="dark"] .feed-post,
+[data-theme="dark"] .community-stat-card {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }

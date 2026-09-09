@@ -216,7 +216,11 @@ const RoamitraNav = {
         a.className = 'nav-profile-btn';
         a.setAttribute('aria-label', 'Profile');
         const initial = (this.user.full_name || 'U').trim().charAt(0).toUpperCase();
-        a.innerHTML = `<span class="nav-profile-avatar">${this.escape(initial)}</span>`;
+        if (this.user.avatar_url) {
+            a.innerHTML = `<img class="nav-profile-avatar has-photo" src="${this.escape(RoamitraApi.mediaUrl(this.user.avatar_url))}" alt="">`;
+        } else {
+            a.innerHTML = `<span class="nav-profile-avatar">${this.escape(initial)}</span>`;
+        }
         return a;
     },
 

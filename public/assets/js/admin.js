@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    const hello = document.getElementById('adminHello');
+    if (hello) {
+        hello.textContent = `Signed in as ${user.full_name}. Review hosts, bookings, and member roles.`;
+    }
+
     const escapeHtml = (text) => {
         const d = document.createElement('div');
         d.textContent = text == null ? '' : String(text);
@@ -29,9 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             gate.hidden = true;
             app.hidden = false;
             document.getElementById('adminCounts').innerHTML = `
-                <div class="col-md-4"><div class="planner-card"><div class="small text-muted">Pending hosts</div><strong>${data.counts.pending_hosts}</strong></div></div>
-                <div class="col-md-4"><div class="planner-card"><div class="small text-muted">Recent bookings</div><strong>${data.counts.bookings}</strong></div></div>
-                <div class="col-md-4"><div class="planner-card"><div class="small text-muted">Users</div><strong>${data.counts.users}</strong></div></div>
+                <div class="admin-stat"><i class="bi bi-hourglass-split"></i><div><strong>${data.counts.pending_hosts}</strong><span>Pending hosts</span></div></div>
+                <div class="admin-stat"><i class="bi bi-calendar2-check"></i><div><strong>${data.counts.bookings}</strong><span>Recent bookings</span></div></div>
+                <div class="admin-stat"><i class="bi bi-people"></i><div><strong>${data.counts.users}</strong><span>Members</span></div></div>
             `;
             const apps = data.applications || [];
             renderPending(apps);
@@ -45,28 +50,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     function statusBadge(status) {
-        const map = { pending: 'warning', approved: 'success', rejected: 'danger' };
-        const tone = map[status] || 'secondary';
-        return `<span class="badge text-bg-${tone}">${escapeHtml(status)}</span>`;
+        const key = String(status || '').toLowerCase();
+        return `<span class="admin-badge ${escapeHtml(key)}">${escapeHtml(status)}</span>`;
     }
 
     function hostCard(a, withActions) {
         return `
-            <article class="planner-card mb-3">
-                <div class="d-flex justify-content-between gap-2 flex-wrap">
-                    <div>
-                        <h3 class="h5 mb-1">${escapeHtml(a.full_name)} · ${escapeHtml(a.listing_type)}</h3>
-                        <p class="mb-1 text-muted">${escapeHtml(a.email)} · ${escapeHtml(a.phone)}</p>
-                        <p class="mb-1">${escapeHtml(a.city)}, ${escapeHtml(a.country)} · ${statusBadge(a.status)}</p>
-                        <p class="mb-0">${escapeHtml(a.bio || '')}</p>
-                        ${a.vehicle_info ? `<p class="mb-0 mt-2"><strong>Vehicle:</strong> ${escapeHtml(a.vehicle_info)}</p>` : ''}
-                    </div>
-                    ${withActions && a.status === 'pending' ? `
-                    <div class="d-flex gap-2 align-items-start">
-                        <button type="button" class="btn-roamitra btn-roamitra-primary btn-roamitra-sm js-review" data-id="${a.id}" data-status="approved">Approve</button>
-                        <button type="button" class="btn-roamitra btn-roamitra-outline btn-roamitra-sm js-review" data-id="${a.id}" data-status="rejected">Reject</button>
-                    </div>` : ''}
+            <article class="admin-host-card">
+                <div>
+                    <h3>${escapeHtml(a.full_name)} · ${escapeHtml(a.listing_type)}</h3>
+                    <p>${escapeHtml(a.email)} · ${escapeHtml(a.phone)}</p>
+                    <p>${escapeHtml(a.city)}, ${escapeHtml(a.country)} · ${statusBadge(a.status)}</p>
+                    <p>${escapeHtml(a.bio || '')}</p>
+                    ${a.vehicle_info ? `<p><strong>Vehicle:</strong> ${escapeHtml(a.vehicle_info)}</p>` : ''}
                 </div>
+                ${withActions && a.status === 'pending' ? `
+                <div class="admin-actions">
+                    <button type="button" class="btn-roamitra btn-roamitra-primary btn-roamitra-sm js-review" data-id="${a.id}" data-status="approved">Approve</button>
+                    <button type="button" class="btn-roamitra btn-roamitra-outline btn-roamitra-sm js-review" data-id="${a.id}" data-status="rejected">Reject</button>
+                </div>` : ''}
             </article>`;
     }
 
@@ -95,19 +97,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const box = document.getElementById('pendingHosts');
         const pending = items.filter(a => a.status === 'pending');
         if (!pending.length) {
-            box.innerHTML = `<div class="planner-card"><h2 class="h5 mb-2">Pending host requests</h2>
-                <p class="mb-0 text-muted">New Become a Host requests from members will show here for approval.</p></div>`;
+            box.innerHTML = `<h2>Inbox</h2><div class="admin-empty">No pending host requests. New Become a Host applications will show here.</div>`;
             return;
         }
-        box.innerHTML = `<h2 class="h5 mb-3">Pending host requests (${pending.length})</h2>`
-            + pending.map(a => hostCard(a, true)).join('');
+        box.innerHTML = `<h2>Inbox · ${pending.length} waiting</h2>` + pending.map(a => hostCard(a, true)).join('');
         bindReviews(box);
     }
 
     function renderHosts(items) {
         const box = document.getElementById('tab-hosts');
         if (!items.length) {
-            box.innerHTML = '<p class="text-muted">No host applications yet.</p>';
+            box.innerHTML = '<div class="admin-empty">No host applications yet.</div>';
             return;
         }
         box.innerHTML = items.map(a => hostCard(a, true)).join('');
@@ -117,36 +117,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderBookings(items) {
         const box = document.getElementById('tab-bookings');
         if (!items.length) {
-            box.innerHTML = '<p class="text-muted">No bookings yet.</p>';
+            box.innerHTML = '<div class="admin-empty">No bookings yet.</div>';
             return;
         }
-        box.innerHTML = `<div class="table-responsive planner-card"><table class="table mb-0">
+        box.innerHTML = `<div class="admin-table-wrap"><table class="table mb-0">
             <thead><tr><th>Guest</th><th>Vehicle</th><th>Dates</th><th>Total</th><th>Status</th></tr></thead>
             <tbody>${items.map(b => `<tr>
                 <td>${escapeHtml(b.full_name)}<div class="small text-muted">${escapeHtml(b.email)}</div></td>
                 <td>${escapeHtml(b.vehicle_name)}<div class="small text-muted">${escapeHtml(b.location || '')}</div></td>
                 <td>${escapeHtml(b.start_date)} → ${escapeHtml(b.end_date)}</td>
                 <td>$${escapeHtml(b.total)}</td>
-                <td>${escapeHtml(b.status)}</td>
+                <td>${statusBadge(b.status)}</td>
             </tr>`).join('')}</tbody></table></div>`;
     }
 
     function renderUsers(items) {
         const box = document.getElementById('tab-users');
-        box.innerHTML = `<div class="table-responsive planner-card"><table class="table mb-0">
+        box.innerHTML = `<div class="admin-table-wrap"><table class="table mb-0">
             <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
             <tbody>${items.map(u => `<tr>
                 <td>${escapeHtml(u.full_name)}</td>
                 <td>${escapeHtml(u.email)}</td>
-                <td>${escapeHtml(u.role)}</td>
+                <td>
+                    <select class="form-select form-select-sm js-role" data-id="${u.id}">
+                        ${['customer','host','co_admin','admin'].map(r =>
+                            `<option value="${r}" ${String(u.role).toLowerCase() === r ? 'selected' : ''}>${r}</option>`
+                        ).join('')}
+                    </select>
+                </td>
                 <td>${escapeHtml(u.created_at)}</td>
             </tr>`).join('')}</tbody></table></div>`;
+        box.querySelectorAll('.js-role').forEach(sel => {
+            sel.addEventListener('change', async () => {
+                try {
+                    await RoamitraApi.post('/admin/users/role', {
+                        user_id: Number(sel.dataset.id),
+                        role: sel.value
+                    });
+                    await load();
+                } catch (err) {
+                    alertBox.textContent = err.message || 'Could not update role.';
+                    alertBox.hidden = false;
+                    await load();
+                }
+            });
+        });
     }
 
     document.getElementById('adminTabs').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-tab]');
         if (!btn) return;
-        document.querySelectorAll('#adminTabs .filter-pill').forEach(p => p.classList.toggle('active', p === btn));
+        document.querySelectorAll('#adminTabs .admin-tab-btn').forEach(p => p.classList.toggle('active', p === btn));
         document.querySelectorAll('.admin-tab').forEach(tab => {
             tab.hidden = tab.id !== 'tab-' + btn.dataset.tab;
         });

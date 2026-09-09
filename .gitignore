@@ -9,3 +9,5 @@ Thumbs.db
 .idea/
 *.tmp
 app/helpers/_reset_admin.php
+public/uploads/profiles/*
+!public/uploads/profiles/.gitkeep

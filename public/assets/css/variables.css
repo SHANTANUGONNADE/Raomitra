@@ -91,45 +91,50 @@
 }
 
 [data-theme="dark"] {
-    --color-primary: #76D885;
-    --color-primary-dark: #47A8A3;
+    color-scheme: dark;
+    --color-primary: #6FDC8A;
+    --color-primary-dark: #3FAF78;
     --color-primary-light: #8EE89A;
-    --color-primary-bright: #A8F0B4;
+    --color-primary-bright: #B6F3C0;
     --color-primary-hover: #5FCB78;
-    --color-accent: #47A8A3;
+    --color-accent: #6EC8C0;
 
-    --color-navy: #E8F5EE;
-    --color-navy-light: #1A3358;
-    --color-navy-btn: #76D885;
+    --color-navy: #EAF6EF;
+    --color-navy-light: #24352E;
+    --color-navy-btn: #6FDC8A;
 
-    --color-white: #0A2148;
-    --color-bg: #051635;
-    --color-bg-light: #0A2148;
-    --color-bg-muted: #123056;
-    --color-bg-search: #0E2748;
-    --color-border: #1E3F63;
-    --color-border-light: #173552;
-    --color-surface: #0A2148;
+    --color-white: #18241F;
+    --color-bg: #0B1210;
+    --color-bg-light: #101916;
+    --color-bg-muted: #1B2923;
+    --color-bg-search: #1B2923;
+    --color-border: #2E443A;
+    --color-border-light: #25362F;
+    --color-surface: #16211C;
 
-    --color-text: #E8F5EE;
-    --color-text-secondary: #C5D9CE;
-    --color-text-muted: #9BB0A8;
-    --color-text-light: #7A928C;
+    --color-text: #F2FAF5;
+    --color-text-secondary: #C9DCD2;
+    --color-text-muted: #A3B8AD;
+    --color-text-light: #7F978C;
 
-    --color-card-green: #0F3A32;
-    --color-card-green-border: #1F6A58;
-    --color-card-green-icon: #76D885;
-    --color-card-orange: #3A2616;
-    --color-card-orange-border: #7A4A22;
+    --color-card-green: #16362C;
+    --color-card-green-border: #2A6A54;
+    --color-card-green-icon: #8EE89A;
+    --color-card-orange: #3A2818;
+    --color-card-orange-border: #8A5628;
     --color-card-orange-icon: #FDBA74;
-    --color-card-blue: #122A48;
-    --color-card-blue-border: #2A4F78;
+    --color-card-blue: #173044;
+    --color-card-blue-border: #2F5A78;
     --color-card-blue-icon: #7DD3FC;
-    --color-card-purple: #261848;
-    --color-card-purple-border: #4C3480;
+    --color-card-purple: #2A1C42;
+    --color-card-purple-border: #53407A;
     --color-card-purple-icon: #C4B5FD;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --color-banner-blue: #16362C;
+    --color-banner-blue-icon: #8EE89A;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.38);
+    --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.48);
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.28);
 }

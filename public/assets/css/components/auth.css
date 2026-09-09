@@ -9,8 +9,8 @@
 
 .auth-visual {
     flex: 1;
-    background: linear-gradient(135deg, var(--color-navy) 0%, #0d1525 100%);
-    color: var(--color-white);
+    background: linear-gradient(135deg, #051635 0%, #0d1525 100%);
+    color: #fff;
     padding: 3rem;
     display: flex;
     flex-direction: column;

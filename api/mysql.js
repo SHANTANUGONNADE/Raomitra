@@ -63,6 +63,27 @@ async function getPool() {
     return pool;
 }
 
+async function ensureUserColumn(p, column, ddl) {
+    const [rows] = await p.query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+        [column]
+    );
+    if (!rows[0] || Number(rows[0].n) === 0) {
+        await p.query(`ALTER TABLE users ADD COLUMN ${column} ${ddl}`);
+    }
+}
+
+async function updateUserProfile(userId, fields) {
+    const p = await getPool();
+    if (!p) return null;
+    await p.query(
+        'UPDATE users SET full_name = ?, bio = ?, location = ?, avatar_url = ?, cover_url = ? WHERE id = ?',
+        [fields.full_name, fields.bio, fields.location, fields.avatar_url, fields.cover_url, userId]
+    );
+    return findUserById(userId);
+}
+
 async function ensureSchema(p) {
     await p.query(`
         CREATE TABLE IF NOT EXISTS users (
@@ -71,12 +92,18 @@ async function ensureSchema(p) {
             email VARCHAR(190) NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
             role ENUM('customer','host','co_admin','admin') NOT NULL DEFAULT 'customer',
-            avatar_url VARCHAR(500) NULL,
+            avatar_url MEDIUMTEXT NULL,
+            cover_url MEDIUMTEXT NULL,
+            bio VARCHAR(400) NULL,
+            location VARCHAR(120) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_users_email (email)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await ensureUserColumn(p, 'cover_url', 'MEDIUMTEXT NULL');
+    await ensureUserColumn(p, 'bio', 'VARCHAR(400) NULL');
+    await ensureUserColumn(p, 'location', 'VARCHAR(120) NULL');
     await p.query(`
         CREATE TABLE IF NOT EXISTS wallets (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -182,6 +209,13 @@ async function createPost(userId, title, body) {
     return result.insertId;
 }
 
+async function updateUserRole(userId, role) {
+    const p = await getPool();
+    if (!p) return false;
+    const [result] = await p.query('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
+    return result.affectedRows > 0;
+}
+
 async function addReply(postId, userId, body) {
     const p = await getPool();
     const [result] = await p.query(
@@ -200,6 +234,8 @@ module.exports = {
     listPosts,
     createPost,
     addReply,
+    updateUserRole,
+    updateUserProfile,
     storageLabel() {
         return isConfigured() ? 'mysql:raomitra' : 'vercel-tmp (not phpMyAdmin)';
     },

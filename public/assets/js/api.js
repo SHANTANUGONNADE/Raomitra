@@ -29,6 +29,13 @@ const RoamitraApi = {
         return prefix === '/' ? `/${name}` : prefix + name;
     },
 
+    mediaUrl(value) {
+        if (!value) return '';
+        const raw = String(value);
+        if (/^(data:|blob:|https?:|linear-gradient\()/i.test(raw)) return raw;
+        return this.basePath() + raw.replace(/^\//, '');
+    },
+
     errorMessage(data, res, text) {
         if (data && typeof data.error === 'string' && data.error) return data.error;
         if (data && typeof data.message === 'string' && data.message) return data.message;

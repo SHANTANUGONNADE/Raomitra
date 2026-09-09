@@ -47,6 +47,7 @@ try {
         $method === 'GET' && $path === '/auth/me' => AuthController::me(),
 
         $method === 'GET' && $path === '/profile' => ProfileController::show(),
+        $method === 'POST' && $path === '/profile' => ProfileController::update($input),
 
         $method === 'GET' && $path === '/trips' => TripController::list(),
         $method === 'POST' && $path === '/trips' => TripController::create($input),
@@ -76,6 +77,7 @@ try {
 
         $method === 'GET' && $path === '/admin/overview' => AdminController::overview(),
         $method === 'POST' && $path === '/admin/hosts/review' => AdminController::reviewHost($input),
+        $method === 'POST' && $path === '/admin/users/role' => AdminController::setUserRole($input),
 
         default => Response::error('Not found.', 404),
     };

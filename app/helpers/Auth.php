@@ -47,11 +47,12 @@ final class Auth
             return null;
         }
         $stmt = Database::pdo()->prepare(
-            'SELECT id, full_name, email, role, avatar_url, created_at FROM users WHERE id = ? LIMIT 1'
+            'SELECT id, full_name, email, role, avatar_url, cover_url, bio, location, created_at FROM users WHERE id = ? LIMIT 1'
         );
         $stmt->execute([$id]);
         $user = $stmt->fetch();
         if ($user) {
+            $user['role'] = strtolower(trim((string) ($user['role'] ?? 'customer')));
             return $user;
         }
         $token = self::readToken();
@@ -60,6 +61,7 @@ final class Auth
             $stmt->execute([$id]);
             $user = $stmt->fetch();
             if ($user) {
+                $user['role'] = strtolower(trim((string) ($user['role'] ?? 'customer')));
                 return $user;
             }
         }
@@ -163,30 +165,26 @@ final class Auth
         $email = strtolower((string) $token['email']);
         $name = (string) ($token['full_name'] ?? 'Member');
         $hash = (string) ($token['password_hash'] ?? '');
-        $role = (string) ($token['role'] ?? 'customer');
+        $role = strtolower(trim((string) ($token['role'] ?? 'customer')));
         $avatar = $token['avatar_url'] ?? null;
         if ($hash === '') {
+            return;
+        }
+        $existing = $pdo->prepare('SELECT id FROM users WHERE email = ? OR id = ? LIMIT 1');
+        $existing->execute([$email, $id]);
+        if ($existing->fetch()) {
             return;
         }
         if (Database::isSqlite()) {
             $pdo->prepare(
                 'INSERT INTO users (id, full_name, email, password_hash, role, avatar_url)
                  VALUES (?, ?, ?, ?, ?, ?)
-                 ON CONFLICT(email) DO UPDATE SET
-                    full_name = excluded.full_name,
-                    password_hash = excluded.password_hash,
-                    role = excluded.role,
-                    avatar_url = excluded.avatar_url'
+                 ON CONFLICT(email) DO NOTHING'
             )->execute([$id, $name, $email, $hash, $role, $avatar]);
         } else {
             $pdo->prepare(
-                'INSERT INTO users (id, full_name, email, password_hash, role, avatar_url)
-                 VALUES (?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE
-                    full_name = VALUES(full_name),
-                    password_hash = VALUES(password_hash),
-                    role = VALUES(role),
-                    avatar_url = VALUES(avatar_url)'
+                'INSERT IGNORE INTO users (id, full_name, email, password_hash, role, avatar_url)
+                 VALUES (?, ?, ?, ?, ?, ?)'
             )->execute([$id, $name, $email, $hash, $role, $avatar]);
         }
         WalletService::ensure($id);

@@ -86,8 +86,9 @@ final class AuthController
         if (!$row || !password_verify($password, $row['password_hash'])) {
             Response::error('Incorrect admin email or password.', 401);
         }
-        if (!in_array((string) $row['role'], ['admin', 'co_admin'], true)) {
-            Response::error('This page is for admin staff only. Use the traveler login.', 403);
+        $role = strtolower(trim((string) ($row['role'] ?? '')));
+        if (!in_array($role, ['admin', 'co_admin'], true)) {
+            Response::error('This account is not an admin yet. Ask an admin to set your role to admin, then sign in again.', 403);
         }
         $remember = !empty($input['remember']) && $input['remember'] !== 'false' && $input['remember'] !== '0';
         Auth::login((int) $row['id'], $remember);

@@ -95,4 +95,42 @@ final class AdminController
 
         Response::ok(['message' => $status === 'approved' ? 'Host approved.' : 'Application rejected.']);
     }
+
+    public static function setUserRole(array $input): void
+    {
+        $staff = Auth::requireRole(['admin', 'co_admin']);
+        $userId = (int) ($input['user_id'] ?? $input['id'] ?? 0);
+        $role = strtolower(trim((string) ($input['role'] ?? '')));
+        $allowed = ['customer', 'host', 'co_admin', 'admin'];
+        if ($userId < 1 || !in_array($role, $allowed, true)) {
+            Response::error('Choose a valid user and role.');
+        }
+
+        $pdo = Database::pdo();
+        $stmt = $pdo->prepare('SELECT id, role, email FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $target = $stmt->fetch();
+        if (!$target) {
+            Response::error('User not found.', 404);
+        }
+
+        $currentRole = strtolower(trim((string) $target['role']));
+        if (in_array($currentRole, ['admin', 'co_admin'], true) && !in_array($role, ['admin', 'co_admin'], true)) {
+            $staffLeft = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role IN ('admin','co_admin')")->fetchColumn();
+            if ($staffLeft < 2) {
+                Response::error('Keep at least one admin account.');
+            }
+        }
+
+        $pdo->prepare('UPDATE users SET role = ? WHERE id = ?')->execute([$role, $userId]);
+        if ((int) $staff['id'] === $userId) {
+            Auth::login($userId, false);
+        }
+
+        Response::ok([
+            'message' => 'Role updated to ' . $role . '. Ask that person to log out and log in again.',
+            'user_id' => $userId,
+            'role' => $role,
+        ]);
+    }
 }

@@ -162,10 +162,14 @@ async function submitAuth(form, path, mode) {
         }
         statusBox.textContent = data.message || 'Logged in successfully.';
         btn.innerHTML = 'Signing you in…';
+        const role = String(data.user?.role || '').toLowerCase();
+        const isStaff = role === 'admin' || role === 'co_admin';
         setTimeout(() => {
-            window.location.href = mode === 'admin-login'
-                ? RoamitraApi.page('admin.html')
-                : nextPage();
+            if (mode === 'admin-login' || (isStaff && !new URLSearchParams(window.location.search).get('next'))) {
+                window.location.href = RoamitraApi.page('admin.html');
+                return;
+            }
+            window.location.href = nextPage();
         }, 700);
     } catch (err) {
         statusBox.className = 'auth-error';

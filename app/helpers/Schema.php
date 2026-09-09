@@ -30,7 +30,10 @@ final class Schema
                 email VARCHAR(190) NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 role ENUM('customer','host','co_admin','admin') NOT NULL DEFAULT 'customer',
-                avatar_url VARCHAR(500) NULL,
+                avatar_url MEDIUMTEXT NULL,
+                cover_url MEDIUMTEXT NULL,
+                bio VARCHAR(400) NULL,
+                location VARCHAR(120) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 UNIQUE KEY uniq_users_email (email)
@@ -223,6 +226,14 @@ final class Schema
         self::ensureColumn($pdo, 'trips', 'departure_time', "ALTER TABLE trips ADD COLUMN departure_time ENUM('morning','afternoon','evening','late_night') NULL AFTER arrival_time");
         self::ensureColumn($pdo, 'trips', 'group_size', 'ALTER TABLE trips ADD COLUMN group_size TINYINT UNSIGNED NULL AFTER traveling_with');
         self::ensureColumn($pdo, 'trips', 'is_saved', 'ALTER TABLE trips ADD COLUMN is_saved TINYINT(1) NOT NULL DEFAULT 0 AFTER status');
+        self::ensureColumn($pdo, 'users', 'cover_url', 'ALTER TABLE users ADD COLUMN cover_url MEDIUMTEXT NULL AFTER avatar_url');
+        self::ensureColumn($pdo, 'users', 'bio', 'ALTER TABLE users ADD COLUMN bio VARCHAR(400) NULL AFTER cover_url');
+        self::ensureColumn($pdo, 'users', 'location', 'ALTER TABLE users ADD COLUMN location VARCHAR(120) NULL AFTER bio');
+        try {
+            $pdo->exec('ALTER TABLE users MODIFY avatar_url MEDIUMTEXT NULL');
+        } catch (Throwable $e) {
+            // already wide enough
+        }
     }
 
     private static function ensureColumn(PDO $pdo, string $table, string $column, string $alterSql): void
@@ -274,6 +285,9 @@ final class Schema
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'customer',
                 avatar_url TEXT NULL,
+                cover_url TEXT NULL,
+                bio TEXT NULL,
+                location TEXT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
@@ -437,5 +451,19 @@ final class Schema
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ");
+        self::ensureSqliteColumn($pdo, 'users', 'cover_url', 'TEXT NULL');
+        self::ensureSqliteColumn($pdo, 'users', 'bio', 'TEXT NULL');
+        self::ensureSqliteColumn($pdo, 'users', 'location', 'TEXT NULL');
+    }
+
+    private static function ensureSqliteColumn(PDO $pdo, string $table, string $column, string $ddl): void
+    {
+        $rows = $pdo->query('PRAGMA table_info(' . $table . ')')->fetchAll();
+        foreach ($rows as $row) {
+            if (strcasecmp((string) ($row['name'] ?? ''), $column) === 0) {
+                return;
+            }
+        }
+        $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $ddl);
     }
 }

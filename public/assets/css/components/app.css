@@ -46,6 +46,7 @@
     justify-content: center;
     font-weight: 700;
     font-size: 0.875rem;
+    object-fit: cover;
 }
 
 .nav-notify-wrap {
@@ -141,7 +142,7 @@
 .planner-card,
 .translator-card,
 .itinerary-shell {
-    background: #fff;
+    background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     padding: 1.5rem;
@@ -276,7 +277,7 @@
 }
 
 .itin-day {
-    background: #fff;
+    background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     padding: 1rem 1.25rem;
@@ -329,7 +330,7 @@
 }
 
 .travel-assistant {
-    background: #fff;
+    background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
@@ -475,7 +476,7 @@
     height: 48px;
     border-radius: var(--radius-full);
     border: 1.5px solid var(--color-border);
-    background: #fff;
+    background: var(--color-surface);
     color: var(--color-navy);
     flex-shrink: 0;
 }
@@ -492,7 +493,7 @@
     height: 40px;
     border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
-    background: #fff;
+    background: var(--color-surface);
 }
 
 .reply-form {
