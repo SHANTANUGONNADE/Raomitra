@@ -37,9 +37,7 @@
 
         const moveTo = (el) => {
             if (!el || el.classList.contains('ai-link')) {
-                const active = list.querySelector('.nav-link.active:not(.ai-link)');
-                if (active) moveTo(active);
-                else blob.classList.remove('on');
+                blob.classList.remove('on');
                 return;
             }
             const item = el.closest('li') || el;
@@ -54,18 +52,15 @@
             blob.classList.add('on');
         };
 
-        const active = list.querySelector('.nav-link.active:not(.ai-link)') || list.querySelector('.nav-link:not(.ai-link)');
-        requestAnimationFrame(() => moveTo(active));
+        const hide = () => blob.classList.remove('on');
+
+        hide();
 
         list.querySelectorAll('.nav-link').forEach((link) => {
             link.addEventListener('mouseenter', () => moveTo(link));
         });
-        list.addEventListener('mouseleave', () => {
-            moveTo(list.querySelector('.nav-link.active:not(.ai-link)'));
-        });
-        window.addEventListener('resize', () => {
-            moveTo(list.querySelector('.nav-link.active:not(.ai-link)'));
-        });
+        list.addEventListener('mouseleave', hide);
+        window.addEventListener('resize', hide);
     }
 
     function initReveals() {

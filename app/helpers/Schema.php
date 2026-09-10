@@ -29,7 +29,7 @@ final class Schema
                 full_name VARCHAR(120) NOT NULL,
                 email VARCHAR(190) NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
-                role ENUM('customer','host','co_admin','admin') NOT NULL DEFAULT 'customer',
+                role VARCHAR(32) NOT NULL DEFAULT 'customer',
                 avatar_url MEDIUMTEXT NULL,
                 cover_url MEDIUMTEXT NULL,
                 bio VARCHAR(400) NULL,
@@ -234,6 +234,23 @@ final class Schema
         } catch (Throwable $e) {
             // already wide enough
         }
+        self::widenRoleColumn($pdo);
+    }
+
+    private static function widenRoleColumn(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT DATA_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute(['users', 'role']);
+        $type = strtolower((string) ($stmt->fetchColumn() ?: ''));
+        if ($type === 'enum') {
+            $pdo->exec("ALTER TABLE users MODIFY role VARCHAR(32) NOT NULL DEFAULT 'customer'");
+        }
+        $pdo->exec("UPDATE users SET role = 'admin' WHERE LOWER(TRIM(role)) IN ('admin','administrator','superadmin','super_admin')");
+        $pdo->exec("UPDATE users SET role = 'co_admin' WHERE LOWER(REPLACE(TRIM(role),'-','_')) IN ('co_admin','coadmin')");
+        $pdo->exec("UPDATE users SET role = 'host' WHERE LOWER(TRIM(role)) IN ('host','vendor')");
     }
 
     private static function ensureColumn(PDO $pdo, string $table, string $column, string $alterSql): void

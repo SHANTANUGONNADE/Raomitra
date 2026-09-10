@@ -4,16 +4,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const rate = Number(params.get('price') || 0);
     const locationText = params.get('location') || '';
     const category = params.get('category') || 'Vehicle';
-    const image = params.get('image') || 'assets/images/vehicles/honda-activa.jpg';
+    const catalog = {
+        'honda activa 6g': 'assets/images/vehicles/activa6g.webp',
+        'activa': 'assets/images/vehicles/activa6g.webp',
+        'royal enfield classic 350': 'assets/images/vehicles/royal-enfield.jpg',
+        'royal enfield': 'assets/images/vehicles/royal-enfield.jpg',
+        'maruti swift': 'assets/images/vehicles/marutiswift.webp'
+    };
+    const byCategory = {
+        scooters: 'assets/images/vehicles/activa6g.webp',
+        scooter: 'assets/images/vehicles/activa6g.webp',
+        bikes: 'assets/images/vehicles/royal-enfield.jpg',
+        bike: 'assets/images/vehicles/royal-enfield.jpg',
+        cars: 'assets/images/vehicles/marutiswift.webp',
+        car: 'assets/images/vehicles/marutiswift.webp'
+    };
+    const key = name.toLowerCase();
+    const listed = Object.keys(catalog).find(k => key.includes(k));
+    let image = params.get('image') || (listed ? catalog[listed] : byCategory[category.toLowerCase()]) || 'assets/images/vehicles/activa6g.webp';
+    if (image.includes('honda-activa.jpg')) {
+        image = 'assets/images/vehicles/activa6g.webp';
+    }
+    const base = typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '';
+    const src = /^(https?:|data:)/i.test(image) ? image : base + image.replace(/^\//, '');
 
     document.getElementById('bookName').textContent = name;
     document.getElementById('bookRate').textContent = String(rate);
     document.getElementById('bookLocation').innerHTML = locationText
         ? `<i class="bi bi-geo-alt"></i> ${escapeHtml(locationText)}`
         : '';
-    document.getElementById('bookCategory').textContent = category;
+    const labels = { scooters: 'Scooter', bikes: 'Bike', cars: 'Car' };
+    document.getElementById('bookCategory').textContent = labels[category.toLowerCase()] || category;
     const img = document.getElementById('bookImage');
-    img.src = image;
+    img.src = src;
     img.alt = name;
 
     const start = document.getElementById('start_date');

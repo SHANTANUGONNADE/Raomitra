@@ -91,7 +91,7 @@ async function ensureSchema(p) {
             full_name VARCHAR(120) NOT NULL,
             email VARCHAR(190) NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            role ENUM('customer','host','co_admin','admin') NOT NULL DEFAULT 'customer',
+            role VARCHAR(32) NOT NULL DEFAULT 'customer',
             avatar_url MEDIUMTEXT NULL,
             cover_url MEDIUMTEXT NULL,
             bio VARCHAR(400) NULL,
@@ -104,6 +104,11 @@ async function ensureSchema(p) {
     await ensureUserColumn(p, 'cover_url', 'MEDIUMTEXT NULL');
     await ensureUserColumn(p, 'bio', 'VARCHAR(400) NULL');
     await ensureUserColumn(p, 'location', 'VARCHAR(120) NULL');
+    try {
+        await p.query("ALTER TABLE users MODIFY role VARCHAR(32) NOT NULL DEFAULT 'customer'");
+    } catch (e) { /* already varchar */ }
+    await p.query("UPDATE users SET role = 'admin' WHERE LOWER(TRIM(role)) IN ('admin','administrator','superadmin','super_admin')");
+    await p.query("UPDATE users SET role = 'co_admin' WHERE LOWER(REPLACE(TRIM(role),'-','_')) IN ('co_admin','coadmin')");
     await p.query(`
         CREATE TABLE IF NOT EXISTS wallets (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -34,7 +34,7 @@ final class Auth
         if (!$user) {
             Response::error('Please log in to continue.', 401);
         }
-        if (!in_array((string) $user['role'], $roles, true)) {
+        if (!in_array(self::normalizeRole((string) $user['role']), $roles, true)) {
             Response::error('You do not have access to this page.', 403);
         }
         return $user;
@@ -52,7 +52,7 @@ final class Auth
         $stmt->execute([$id]);
         $user = $stmt->fetch();
         if ($user) {
-            $user['role'] = strtolower(trim((string) ($user['role'] ?? 'customer')));
+            $user['role'] = self::normalizeRole((string) ($user['role'] ?? 'customer'));
             return $user;
         }
         $token = self::readToken();
@@ -61,7 +61,7 @@ final class Auth
             $stmt->execute([$id]);
             $user = $stmt->fetch();
             if ($user) {
-                $user['role'] = strtolower(trim((string) ($user['role'] ?? 'customer')));
+                $user['role'] = self::normalizeRole((string) ($user['role'] ?? 'customer'));
                 return $user;
             }
         }
@@ -107,6 +107,22 @@ final class Auth
             setcookie(self::COOKIE, '', $opts);
         }
         session_destroy();
+    }
+
+    public static function normalizeRole(?string $role): string
+    {
+        $value = strtolower(trim((string) $role));
+        $value = str_replace([' ', '-'], '_', $value);
+        if (in_array($value, ['admin', 'administrator', 'superadmin', 'super_admin'], true)) {
+            return 'admin';
+        }
+        if (in_array($value, ['co_admin', 'coadmin', 'co_administrator'], true)) {
+            return 'co_admin';
+        }
+        if (in_array($value, ['host', 'vendor', 'owner'], true)) {
+            return 'host';
+        }
+        return 'customer';
     }
 
     private static function secret(): string
@@ -165,7 +181,7 @@ final class Auth
         $email = strtolower((string) $token['email']);
         $name = (string) ($token['full_name'] ?? 'Member');
         $hash = (string) ($token['password_hash'] ?? '');
-        $role = strtolower(trim((string) ($token['role'] ?? 'customer')));
+        $role = self::normalizeRole((string) ($token['role'] ?? 'customer'));
         $avatar = $token['avatar_url'] ?? null;
         if ($hash === '') {
             return;

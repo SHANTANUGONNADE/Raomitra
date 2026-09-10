@@ -7,7 +7,7 @@
     <title>Explore — Roamitra</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=ui-dark2" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-chat4" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="explore">
@@ -19,7 +19,7 @@
             <div class="search-bar-wrapper">
                 <div class="search-bar">
                     <i class="bi bi-search search-icon"></i>
-                    <input type="text" placeholder="Search destinations, attractions, locals..." aria-label="Search">
+                    <input type="search" id="exploreSearch" placeholder="Search Bali, Tokyo, Paris, Iceland..." aria-label="Search destinations" autocomplete="off">
                 </div>
             </div>
             <div class="explore-tabs-wrap mt-2">
@@ -32,80 +32,35 @@
     <!-- For You Panel -->
     <section class="section-padding-sm pt-3 explore-panel active" id="panel-for-you">
         <div class="container">
+            <p class="explore-kicker">Destination guide</p>
+            <h1 class="explore-page-title">Find your next trip</h1>
+            <p class="explore-page-lead">Search a place, flip the spotlight, or open the full mosaic.</p>
             <div class="section-header-inline">
                 <h2><i class="bi bi-globe-americas"></i> Featured Destinations</h2>
-                <a href="#">See All <i class="bi bi-arrow-right"></i></a>
+                <a href="#destCylinderScene" id="seeAllDestinations"><span class="js-dest-all-label">See All</span> <i class="bi bi-grid-1x2"></i></a>
             </div>
-            <div class="row g-3 mb-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="bali">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&h=400&fit=crop" alt="Bali, Indonesia" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
-                        </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Bali, Indonesia</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.8</span><span>16.7k travelers</span></div>
-                            <p class="dest-desc">Tropical paradise with stunning temples, rice terraces, and vibrant culture.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">Beach</span><span class="dest-tag">Culture</span><span class="dest-tag">Adventure</span>
-                            </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,200 <span>/ week</span></div>
-                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="bali">Explore</button>
-                            </div>
-                        </div>
-                    </div>
+            <p id="destSearchStatus" class="small text-muted mb-2" hidden></p>
+            <div class="dest-stage mb-4" id="destCylinderScene">
+                <div class="dest-spotlight-row" id="destSpotlightRow">
+                    <button type="button" class="dest-cyl-nav dest-cyl-prev" aria-label="Previous destination"><i class="bi bi-chevron-left"></i></button>
+                    <div class="dest-spotlight js-open-destination" id="destSpotlight" data-place="bali"></div>
+                    <div class="dest-stack" id="destStack"></div>
+                    <button type="button" class="dest-cyl-nav dest-cyl-next" aria-label="Next destination"><i class="bi bi-chevron-right"></i></button>
                 </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="tokyo">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop" alt="Tokyo, Japan" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
-                        </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Tokyo, Japan</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.9</span><span>22.1k travelers</span></div>
-                            <p class="dest-desc">A dazzling blend of ultramodern and traditional, from neon-lit skyscrapers to historic temples.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">City</span><span class="dest-tag">Food</span><span class="dest-tag">Culture</span>
-                            </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,450 <span>/ week</span></div>
-                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="tokyo">Explore</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="paris">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop" alt="Paris, France" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
-                        </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Paris, France</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.7</span><span>18.5k travelers</span></div>
-                            <p class="dest-desc">The City of Light enchants with its art, cuisine, and iconic landmarks.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">Romance</span><span class="dest-tag">Art</span><span class="dest-tag">Food</span>
-                            </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,350 <span>/ week</span></div>
-                                <button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-place="paris">Explore</button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="dest-film" id="destFilm"></div>
+                <div class="dest-bento" id="destCylinder" hidden></div>
+                <div class="dest-coverflow-meta">
+                    <span id="destSlideLabel">1 of 15</span>
                 </div>
             </div>
 
             <div class="row g-4">
                 <div class="col-lg-6">
-                    <div class="section-header-inline">
+                    <div class="section-header-inline" id="people-nearby">
                         <h2><i class="bi bi-people"></i> People Nearby Traveling</h2>
-                        <a href="#">See All</a>
+                        <a href="#people-nearby" class="js-see-all" data-expand="#explorePeopleList" aria-expanded="false"><span class="js-see-all-label">See All</span></a>
                     </div>
-                    <div class="bg-white border rounded-4 p-3">
+                    <div class="bg-white border rounded-4 p-3" id="explorePeopleList">
                         <div class="person-row">
                             <div class="person-avatar">EW</div>
                             <div class="person-info">
@@ -133,14 +88,41 @@
                             </div>
                             <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
                         </div>
+                        <div class="person-row see-all-extra">
+                            <div class="person-avatar" style="background:linear-gradient(135deg,#059669,#14B8A6);">JP</div>
+                            <div class="person-info">
+                                <div class="person-name">Jules Park <span class="star-rating"><i class="bi bi-star-fill"></i> 4.7</span></div>
+                                <div class="person-location">Currently in Kyoto, Japan</div>
+                                <div class="person-tags"><span class="person-tag">Temples</span><span class="person-tag">Food</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                        <div class="person-row see-all-extra">
+                            <div class="person-avatar" style="background:linear-gradient(135deg,#7C3AED,#EC4899);">AM</div>
+                            <div class="person-info">
+                                <div class="person-name">Amina Rahman <span class="star-rating"><i class="bi bi-star-fill"></i> 4.9</span></div>
+                                <div class="person-location">Currently in Marrakech, Morocco</div>
+                                <div class="person-tags"><span class="person-tag">Markets</span><span class="person-tag">Photography</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                        <div class="person-row see-all-extra">
+                            <div class="person-avatar" style="background:linear-gradient(135deg,#0EA5E9,#1D4ED8);">NL</div>
+                            <div class="person-info">
+                                <div class="person-name">Noah Lee <span class="star-rating"><i class="bi bi-star-fill"></i> 4.6</span></div>
+                                <div class="person-location">Currently in Sydney, Australia</div>
+                                <div class="person-tags"><span class="person-tag">Beaches</span><span class="person-tag">Hiking</span></div>
+                            </div>
+                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <div class="section-header-inline">
+                    <div class="section-header-inline" id="nearby-places">
                         <h2><i class="bi bi-pin-map"></i> Nearby Places</h2>
-                        <a href="#">See All</a>
+                        <a href="#nearby-places" class="js-see-all" data-expand="#explorePlacesList" aria-expanded="false"><span class="js-see-all-label">See All</span></a>
                     </div>
-                    <div class="bg-white border rounded-4 p-3">
+                    <div class="bg-white border rounded-4 p-3" id="explorePlacesList">
                         <a href="destination.html?place=yosemite" class="place-row js-open-destination" data-place="yosemite">
                             <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=120&h=120&fit=crop" alt="Yosemite" class="place-thumb" loading="lazy">
                             <div class="place-info"><h4>Yosemite National Park</h4><p>180 miles · National Park</p></div>
@@ -155,6 +137,21 @@
                             <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&h=120&fit=crop" alt="Big Sur" class="place-thumb" loading="lazy">
                             <div class="place-info"><h4>Big Sur Coastline</h4><p>120 miles · Scenic Drive</p></div>
                             <div class="place-rating"><i class="bi bi-star-fill"></i> 4.7</div>
+                        </a>
+                        <a href="destination.html?place=santorini" class="place-row js-open-destination see-all-extra" data-place="santorini">
+                            <img src="https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=120&h=120&fit=crop" alt="Santorini" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Santorini, Greece</h4><p>Island · Caldera views</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
+                        </a>
+                        <a href="destination.html?place=iceland" class="place-row js-open-destination see-all-extra" data-place="iceland">
+                            <img src="https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=120&h=120&fit=crop" alt="Iceland" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Reykjavík &amp; Ring Road</h4><p>Nature · Waterfalls</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.8</div>
+                        </a>
+                        <a href="destination.html?place=kyoto" class="place-row js-open-destination see-all-extra" data-place="kyoto">
+                            <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=120&h=120&fit=crop" alt="Kyoto" class="place-thumb" loading="lazy">
+                            <div class="place-info"><h4>Kyoto, Japan</h4><p>Temples · Culture</p></div>
+                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
                         </a>
                     </div>
                 </div>
@@ -302,9 +299,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
     <script src="assets/js/nav.js?v=ui1"></script>
-    <script src="assets/js/ai-assistant.js?v=ui1"></script>
-    <script src="assets/js/destination.js?v=dest-open2"></script>
-    <script src="assets/js/explore.js?v=dest-open2"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="assets/js/ai-assistant.js?v=romi4"></script>
+    <script src="assets/js/destination.js?v=cyl1"></script>
+    <script src="assets/js/explore.js?v=spot1"></script>
+    <script src="assets/js/main.js?v=seeall1"></script>
 </body>
 </html>

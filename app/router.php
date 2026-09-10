@@ -62,6 +62,8 @@ try {
 
         $method === 'GET' && $path === '/wallet' => WalletController::show(),
 
+        $method === 'POST' && $path === '/roamini/chat' => RoaminiController::chat($input),
+
         $method === 'POST' && $path === '/translate' => TranslateController::translate($input),
         $method === 'GET' && $path === '/translate/history' => TranslateController::history(),
 

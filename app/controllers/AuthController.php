@@ -54,7 +54,7 @@ final class AuthController
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
             Response::error('Enter your email and password.');
         }
-        $stmt = Database::pdo()->prepare('SELECT id, password_hash FROM users WHERE email = ? LIMIT 1');
+        $stmt = Database::pdo()->prepare('SELECT id, password_hash, role FROM users WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         $row = $stmt->fetch();
         if (!$row || !password_verify($password, $row['password_hash'])) {
@@ -63,7 +63,8 @@ final class AuthController
         $remember = !empty($input['remember']) && $input['remember'] !== 'false' && $input['remember'] !== '0';
         Auth::login((int) $row['id'], $remember);
         WalletService::ensure((int) $row['id']);
-        Response::ok(['user' => Auth::user(), 'message' => 'Logged in successfully.']);
+        $user = Auth::user();
+        Response::ok(['user' => $user, 'message' => 'Logged in successfully.']);
     }
 
     public static function adminLogin(array $input): void
@@ -86,9 +87,12 @@ final class AuthController
         if (!$row || !password_verify($password, $row['password_hash'])) {
             Response::error('Incorrect admin email or password.', 401);
         }
-        $role = strtolower(trim((string) ($row['role'] ?? '')));
+        $role = Auth::normalizeRole((string) ($row['role'] ?? ''));
         if (!in_array($role, ['admin', 'co_admin'], true)) {
-            Response::error('This account is not an admin yet. Ask an admin to set your role to admin, then sign in again.', 403);
+            Response::error(
+                'This account is still "' . ($role ?: 'customer') . '" in the website database. In Workbench set users.role to exactly admin, then log out and log in again.',
+                403
+            );
         }
         $remember = !empty($input['remember']) && $input['remember'] !== 'false' && $input['remember'] !== '0';
         Auth::login((int) $row['id'], $remember);

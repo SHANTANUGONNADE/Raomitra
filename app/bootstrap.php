@@ -32,11 +32,12 @@ $config = require $root . '/app/config/config.php';
 $helpers = [
     'Database', 'Schema', 'SessionStore', 'Response', 'Auth',
     'WalletService', 'NotificationService', 'ItineraryEngine',
-    'PlacesCatalog', 'TranslatorService',
+    'PlacesCatalog', 'TranslatorService', 'RoaminiEngine',
 ];
 $controllers = [
     'AuthController', 'ProfileController', 'TripController',
     'NotificationController', 'WalletController', 'TranslateController',
+    'RoaminiController',
     'CommunityController', 'BookingController', 'HostController', 'AdminController',
 ];
 foreach ($helpers as $class) {

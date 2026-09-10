@@ -6,13 +6,13 @@
 
 @import 'variables.css';
 @import 'components/buttons.css';
-@import 'components/navbar.css';
+@import 'components/navbar.css?v=navliq1';
 @import 'components/footer.css';
 @import 'components/cards.css';
-@import 'components/ai-assistant.css';
+@import 'components/ai-assistant.css?v=chat4';
 @import 'components/auth.css';
-@import 'components/explore.css';
-@import 'components/community.css';
+@import 'components/explore.css?v=spot1';
+@import 'components/community.css?v=lay4';
 @import 'components/meetups.css';
 @import 'components/profile.css';
 @import 'components/admin.css';
@@ -478,4 +478,24 @@ h1, h2, h3, h4, h5, h6,
 [data-theme="dark"] .feed-post,
 [data-theme="dark"] .community-stat-card {
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.dest-bento {
+    display: none;
+}
+
+.dest-stage.is-grid .dest-bento {
+    display: grid;
+}
+
+@media (max-width: 991.98px) {
+    .dest-bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 639.98px) {
+    .dest-bento {
+        grid-template-columns: 1fr;
+    }
 }

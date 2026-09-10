@@ -28,13 +28,21 @@ function verifyPassword(password, hash) {
     return hash === crypto.scryptSync(String(password), SALT, 32).toString('hex');
 }
 
+function normalizeRole(role) {
+    const value = String(role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    if (['admin', 'administrator', 'superadmin', 'super_admin'].includes(value)) return 'admin';
+    if (['co_admin', 'coadmin', 'co_administrator'].includes(value)) return 'co_admin';
+    if (['host', 'vendor', 'owner'].includes(value)) return 'host';
+    return 'customer';
+}
+
 function publicUser(user) {
     if (!user) return null;
     return {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        role: String(user.role || 'customer').toLowerCase().trim(),
+        role: normalizeRole(user.role),
         avatar_url: user.avatar_url || null,
         cover_url: user.cover_url || null,
         bio: user.bio || '',
@@ -219,9 +227,15 @@ async function currentUser(req, db) {
     if (!token) return null;
     if (mysqlStore.isConfigured() && token.email) {
         const row = await mysqlStore.findUserByEmail(token.email);
-        if (row) return row;
+        if (row) {
+            row.role = normalizeRole(row.role);
+            return row;
+        }
+        return null;
     }
-    return restoreUser(db, token);
+    const user = restoreUser(db, token);
+    if (user) user.role = normalizeRole(user.role);
+    return user;
 }
 
 function send(res, status, data) {
@@ -323,6 +337,117 @@ function generateItinerary(trip) {
             estimated_total: count * 80,
         },
     };
+}
+
+async function roaminiChat(message, history) {
+    const q = String(message || '').trim();
+    if (!q) return 'Ask me anything — travel, Roamitra, or a general question — and I will answer.';
+    let lower = q.toLowerCase().replace(/[-_]/g, ' ');
+    lower = lower.replace(/\bsigin\b/g, 'sign in').replace(/\bsignin\b/g, 'sign in').replace(/\bsignup\b/g, 'sign up').replace(/\blog in\b/g, 'login');
+    if (/^(hi|hello|hey|yo|namaste|good morning|good afternoon|good evening)\b/i.test(q)) {
+        return 'Hello! I am Roamini, your Roamitra assistant. Ask me about destinations, Ask to Rent, Ask to Host, trip planning, or how to use the site.';
+    }
+    if (/what( is|'s)? (your )?name|who are you/i.test(lower)) {
+        return 'I am Roamini, the travel assistant on Roamitra. I help with destinations, bookings, hosts, meetups, and how to use the site.';
+    }
+    if (/\b(log ?in|sign ?in|sigin|signin|login)\b/i.test(q) || lower.includes('sign in')) {
+        return 'To sign in to Roamitra: click Log in at the top right, enter the email and password you used to sign up, then submit. If you do not have an account yet, click Sign up first. After you are logged in you can book rentals, plan trips, and use Community.';
+    }
+    if (lower.includes('sign up') || lower.includes('register') || lower.includes('create account')) {
+        return 'To create a Roamitra account: click Sign up at the top right, enter your name, email, and password, then submit. Then use Log in with the same email.';
+    }
+    if (lower.includes('become a host') || lower.includes('ask to host')) {
+        return 'To become a host, log in and open Ask to Host. Submit your city, phone, and a short bio. After admin approval you get a verified host badge and can welcome travelers.';
+    }
+    if (lower.includes('ask to rent') || lower.includes('booking') || lower.includes('rent a')) {
+        return 'Open Community → Ask to Rent, pick a vehicle, then Book Now. Choose pickup and return dates. You need to be logged in.';
+    }
+    if (lower.includes('meetup')) {
+        return 'Meetups are group activities with other travelers. Open Community → Meetups to find events in your city.';
+    }
+    if (lower.includes('cancel')) {
+        return 'Most Roamitra bookings can be cancelled up to 48 hours before for a full refund. Check the listing for vehicle and meetup terms.';
+    }
+    if (lower.includes('bali')) {
+        return 'Bali is a tropical favorite: temples, rice terraces, beaches, and Ubud culture. Explore packages often start around $1,200/week. Ask to Rent for scooters and connect with locals for tips.';
+    }
+    if (lower.includes('destination') || lower.includes('where should i go') || lower.includes('recommend')) {
+        return 'Popular Roamitra picks include Bali, Tokyo, Paris, Rome, Barcelona, Santorini, Dubai, Iceland, Kyoto, New York, Marrakech, Sydney, Yosemite, Lake Tahoe, and Big Sur. Search Explore or tell me your budget and style.';
+    }
+    if (/^(how to|how do i|how can i|how do you)\b/i.test(lower)) {
+        return 'On Roamitra you can: Log in / Sign up (top right), Explore destinations, Plan Trip for an itinerary, Community for questions, Ask to Rent vehicles, Ask to Host, and Meetups. Tell me which of those you want step-by-step.';
+    }
+    const openaiKey = process.env.OPENAI_API_KEY || '';
+    if (openaiKey) {
+        try {
+            const messages = [
+                {
+                    role: 'system',
+                    content: 'You are Roamini, the helpful assistant for Roamitra. Answer any question clearly. Prefer practical travel advice when relevant. If the question is not about travel, still answer it. Keep replies under 180 words unless steps are needed.',
+                },
+            ];
+            (Array.isArray(history) ? history.slice(-8) : []).forEach((turn) => {
+                const role = turn && turn.role === 'assistant' ? 'assistant' : 'user';
+                const content = String((turn && turn.content) || '').trim();
+                if (content) messages.push({ role, content });
+            });
+            messages.push({ role: 'user', content: q });
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + openaiKey,
+                },
+                body: JSON.stringify({
+                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    temperature: 0.5,
+                    max_tokens: 500,
+                    messages,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+                if (text && String(text).trim()) return String(text).trim();
+            }
+        } catch (e) { /* fall through */ }
+    }
+    const search = q.replace(/[?!.]+/g, ' ').replace(/^(please |can you |could you |what is |what's |whats |who is |who's |tell me about |explain |define )/i, '').trim();
+    const factual = /^(what|who|where|when|which|why)\b/i.test(q) || /\b(tell me about|explain|define)\b/i.test(q);
+    if (!factual) {
+        return 'On Roamitra: Log in / Sign up (top right), Explore, Plan Trip, Community, Ask to Rent, Ask to Host, and Meetups. For a place or topic, ask “what is Kyoto” or tell me the city you want help with.';
+    }
+    try {
+        const wikiSearch = await fetch('https://en.wikipedia.org/w/api.php?action=opensearch&limit=1&namespace=0&format=json&search=' + encodeURIComponent(search), {
+            headers: { 'User-Agent': 'RoamitraRoamini/1.0' },
+        });
+        if (wikiSearch.ok) {
+            const w = await wikiSearch.json();
+            const title = w && w[1] && w[1][0];
+            if (title) {
+                const sumRes = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(String(title).replace(/ /g, '_')), {
+                    headers: { 'User-Agent': 'RoamitraRoamini/1.0', Accept: 'application/json' },
+                });
+                if (sumRes.ok) {
+                    const sum = await sumRes.json();
+                    if (sum && sum.extract) return String(sum.extract);
+                }
+                if (w[2] && w[2][0]) return String(w[2][0]);
+            }
+        }
+    } catch (e) { /* fall through */ }
+    try {
+        const ddg = await fetch('https://api.duckduckgo.com/?format=json&no_html=1&skip_disambig=1&q=' + encodeURIComponent(q));
+        if (ddg.ok) {
+            const data = await ddg.json();
+            if (data.AbstractText) return String(data.AbstractText);
+            if (data.Definition) return String(data.Definition);
+            if (data.RelatedTopics && data.RelatedTopics[0] && data.RelatedTopics[0].Text) {
+                return String(data.RelatedTopics[0].Text);
+            }
+        }
+    } catch (e) { /* fall through */ }
+    return 'Here is a useful take: tell me the city, dates, and whether you want stays, rentals, hosts, or an itinerary if this is travel. For a general topic, try a short phrase like “what is Kyoto”. Your question was: “' + q.slice(0, 180) + '”.';
 }
 
 async function translateText(text, source, target) {
@@ -501,12 +626,13 @@ async function handle(req, res) {
             const password = String(input.password || '');
             if (!email || !password) return fail(res, 'Enter your email and password.');
             let row = mysqlStore.isConfigured() ? await mysqlStore.findUserByEmail(email) : db.users.find((u) => u.email === email);
-            if (!row && mysqlStore.isConfigured()) {
-                row = db.users.find((u) => u.email === email);
-            }
             if (!row || !verifyPassword(password, row.password_hash)) {
                 return fail(res, 'Incorrect email or password.', 401);
             }
+            if (mysqlStore.isConfigured()) {
+                row = await mysqlStore.findUserByEmail(email);
+            }
+            row.role = normalizeRole(row.role);
             if (!mysqlStore.isConfigured()) {
                 ensureWallet(db, row.id);
                 saveDb(db);
@@ -534,8 +660,8 @@ async function handle(req, res) {
             if (!row || !verifyPassword(password, row.password_hash)) {
                 return fail(res, 'Incorrect admin email or password.', 401);
             }
-            if (!['admin', 'co_admin'].includes(String(row.role || '').toLowerCase())) {
-                return fail(res, 'This account is not an admin yet. Ask an admin to set your role to admin, then sign in again.', 403);
+            if (!['admin', 'co_admin'].includes(normalizeRole(row.role))) {
+                return fail(res, 'This account is still "' + normalizeRole(row.role) + '" in the website database. In Workbench set users.role to exactly admin, then log out and log in again.', 403);
             }
             if (!mysqlStore.isConfigured()) {
                 ensureWallet(db, row.id);
@@ -779,6 +905,13 @@ async function handle(req, res) {
                 wallet,
                 transactions: db.wallet_transactions.filter((t) => t.wallet_id === wallet.id).slice().reverse(),
             });
+        }
+
+        if (method === 'POST' && p === '/roamini/chat') {
+            const message = String(input.message || input.text || '').trim();
+            if (!message) return fail(res, 'Type a question for Roamini.');
+            const reply = await roaminiChat(message, input.history || []);
+            return send(res, 200, { ok: true, reply });
         }
 
         if (method === 'POST' && p === '/translate') {

@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof RoamitraApi !== 'undefined') {
         RoamitraNav.init();
     }
-    const src = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '') + 'assets/js/motion.js?v=m3';
+    const src = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '') + 'assets/js/motion.js?v=m4';
     if (!document.querySelector('script[data-roamitra-motion]')) {
         const script = document.createElement('script');
         script.src = src;
