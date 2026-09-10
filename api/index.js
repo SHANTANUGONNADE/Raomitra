@@ -270,9 +270,45 @@ async function readBody(req) {
     }
 }
 
-function routePath(req) {
+function requestUrl(req) {
     const host = req.headers.host || 'localhost';
-    const url = new URL(req.url || '/', 'https://' + host);
+    return new URL(req.url || '/', 'https://' + host);
+}
+
+function isNewUser(createdAt, days) {
+    const created = new Date(String(createdAt || '').replace(' ', 'T'));
+    if (Number.isNaN(created.getTime())) return false;
+    return (Date.now() - created.getTime()) <= days * 86400000;
+}
+
+function listUsersFromStore(db, { filter = 'all', days = 7, q = '' } = {}) {
+    const safeDays = Math.max(1, Math.min(90, Number(days) || 7));
+    const search = String(q || '').trim().toLowerCase();
+    let users = db.users.slice();
+    const total = users.length;
+    const newCount = users.filter((u) => isNewUser(u.created_at, safeDays)).length;
+    if (filter === 'new') {
+        users = users.filter((u) => isNewUser(u.created_at, safeDays));
+    }
+    if (search) {
+        users = users.filter((u) => {
+            const name = String(u.full_name || '').toLowerCase();
+            const email = String(u.email || '').toLowerCase();
+            return name.includes(search) || email.includes(search);
+        });
+    }
+    users.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+    return {
+        users: users.map(publicUser),
+        total,
+        new_count: newCount,
+        days: safeDays,
+        filter: filter === 'new' ? 'new' : 'all',
+    };
+}
+
+function routePath(req) {
+    const url = requestUrl(req);
     let r = url.searchParams.get('r') || '';
     if (!r) {
         const pathname = url.pathname.replace(/\/+$/, '');
@@ -1098,16 +1134,44 @@ async function handle(req, res) {
                 const u = db.users.find((x) => x.id === b.user_id) || {};
                 return Object.assign({}, b, { full_name: u.full_name, email: u.email });
             });
+            let userCounts = { total: db.users.length, new_count: db.users.filter((u) => isNewUser(u.created_at, 7)).length };
+            if (mysqlStore.isConfigured() && mysqlStore.listUsers) {
+                const listed = await mysqlStore.listUsers({ filter: 'all', days: 7 });
+                if (listed) userCounts = { total: listed.total, new_count: listed.new_count };
+            }
             return send(res, 200, {
                 ok: true,
                 counts: {
                     pending_hosts: db.host_applications.filter((a) => a.status === 'pending').length,
                     bookings: bookings.length,
-                    users: db.users.length,
+                    users: userCounts.total,
+                    new_users: userCounts.new_count,
                 },
                 applications: apps,
                 bookings,
-                users: db.users.map(publicUser),
+            });
+        }
+
+        if (method === 'GET' && p === '/admin/users') {
+            const user = await needUser();
+            if (!['admin', 'co_admin'].includes(user.role)) return fail(res, 'You do not have access to this page.', 403);
+            const params = requestUrl(req).searchParams;
+            const query = {
+                filter: String(params.get('filter') || 'all').toLowerCase(),
+                days: Number(params.get('days') || 7),
+                q: String(params.get('q') || ''),
+            };
+            let listed = null;
+            if (mysqlStore.isConfigured() && mysqlStore.listUsers) {
+                listed = await mysqlStore.listUsers(query);
+            }
+            if (!listed) listed = listUsersFromStore(db, query);
+            return send(res, 200, {
+                ok: true,
+                filter: listed.filter,
+                days: listed.days,
+                counts: { users: listed.total, new_users: listed.new_count },
+                users: listed.users,
             });
         }
 

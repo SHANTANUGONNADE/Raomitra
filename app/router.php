@@ -78,6 +78,7 @@ try {
         $method === 'GET' && $path === '/host/me' => HostController::mine(),
 
         $method === 'GET' && $path === '/admin/overview' => AdminController::overview(),
+        $method === 'GET' && $path === '/admin/users' => AdminController::listUsers(),
         $method === 'POST' && $path === '/admin/hosts/review' => AdminController::reviewHost($input),
         $method === 'POST' && $path === '/admin/users/role' => AdminController::setUserRole($input),
 

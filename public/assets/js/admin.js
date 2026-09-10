@@ -18,8 +18,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const hello = document.getElementById('adminHello');
     if (hello) {
-        hello.textContent = `Signed in as ${user.full_name}. Review hosts, bookings, and member roles.`;
+        hello.textContent = `Signed in as ${user.full_name}. Review hosts, bookings, and every member in the database.`;
     }
+
+    let userFilter = 'all';
+    let userSearch = '';
+    let userSearchTimer = null;
 
     const escapeHtml = (text) => {
         const d = document.createElement('div');
@@ -34,20 +38,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             gate.hidden = true;
             app.hidden = false;
             document.getElementById('adminCounts').innerHTML = `
-                <div class="admin-stat"><i class="bi bi-hourglass-split"></i><div><strong>${data.counts.pending_hosts}</strong><span>Pending hosts</span></div></div>
-                <div class="admin-stat"><i class="bi bi-calendar2-check"></i><div><strong>${data.counts.bookings}</strong><span>Recent bookings</span></div></div>
-                <div class="admin-stat"><i class="bi bi-people"></i><div><strong>${data.counts.users}</strong><span>Members</span></div></div>
+                <button type="button" class="admin-stat" data-jump="hosts"><i class="bi bi-hourglass-split"></i><div><strong>${data.counts.pending_hosts}</strong><span>Pending hosts</span></div></button>
+                <button type="button" class="admin-stat" data-jump="bookings"><i class="bi bi-calendar2-check"></i><div><strong>${data.counts.bookings}</strong><span>Recent bookings</span></div></button>
+                <button type="button" class="admin-stat" data-jump="users" data-user-filter="all"><i class="bi bi-people"></i><div><strong>${data.counts.users}</strong><span>All users</span></div></button>
+                <button type="button" class="admin-stat" data-jump="users" data-user-filter="new"><i class="bi bi-person-plus"></i><div><strong>${data.counts.new_users || 0}</strong><span>New users</span></div></button>
             `;
+            document.querySelectorAll('#adminCounts [data-jump]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.jump;
+                    if (btn.dataset.userFilter) userFilter = btn.dataset.userFilter;
+                    openTab(tab);
+                    if (tab === 'users') loadUsers();
+                });
+            });
             const apps = data.applications || [];
             renderPending(apps);
             renderHosts(apps);
             renderBookings(data.bookings || []);
-            renderUsers(data.users || []);
+            await loadUsers();
         } catch (err) {
             alertBox.textContent = err.message || 'Could not load admin data.';
             alertBox.hidden = false;
         }
     };
+
+    function openTab(name) {
+        document.querySelectorAll('#adminTabs .admin-tab-btn').forEach(p => {
+            p.classList.toggle('active', p.dataset.tab === name);
+        });
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.hidden = tab.id !== 'tab-' + name;
+        });
+    }
 
     function statusBadge(status) {
         const key = String(status || '').toLowerCase();
@@ -131,12 +153,56 @@ document.addEventListener('DOMContentLoaded', async () => {
             </tr>`).join('')}</tbody></table></div>`;
     }
 
-    function renderUsers(items) {
+    function formatJoined(value) {
+        const raw = String(value || '');
+        const date = new Date(raw.replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return raw;
+        return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    function isNewJoin(value, days) {
+        const date = new Date(String(value || '').replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return false;
+        return (Date.now() - date.getTime()) <= days * 86400000;
+    }
+
+    async function loadUsers() {
         const box = document.getElementById('tab-users');
-        box.innerHTML = `<div class="admin-table-wrap"><table class="table mb-0">
+        const query = new URLSearchParams({ filter: userFilter, days: '7' });
+        if (userSearch) query.set('q', userSearch);
+        try {
+            const data = await RoamitraApi.get('/admin/users?' + query.toString());
+            renderUsers(data);
+        } catch (err) {
+            box.innerHTML = `<div class="admin-empty">${escapeHtml(err.message || 'Could not load users.')}</div>`;
+        }
+    }
+
+    function renderUsers(data) {
+        const box = document.getElementById('tab-users');
+        const items = data.users || [];
+        const total = data.counts?.users ?? items.length;
+        const fresh = data.counts?.new_users ?? 0;
+        const days = data.days || 7;
+        const emptyText = userFilter === 'new'
+            ? `No new signups in the last ${days} days.`
+            : (userSearch ? 'No users match that search.' : 'No users in the database yet.');
+
+        box.innerHTML = `
+            <div class="admin-users-toolbar">
+                <div class="admin-subtabs">
+                    <button type="button" class="admin-subtab ${userFilter === 'all' ? 'active' : ''}" data-user-filter="all">All users (${total})</button>
+                    <button type="button" class="admin-subtab ${userFilter === 'new' ? 'active' : ''}" data-user-filter="new">New users (${fresh})</button>
+                </div>
+                <label class="admin-user-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="adminUserSearch" placeholder="Search name or email" value="${escapeHtml(userSearch)}" autocomplete="off">
+                </label>
+            </div>
+            ${items.length ? `<div class="admin-table-wrap"><table class="table mb-0">
             <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
             <tbody>${items.map(u => `<tr>
-                <td>${escapeHtml(u.full_name)}</td>
+                <td>${escapeHtml(u.full_name)}${isNewJoin(u.created_at, days) ? ' <span class="admin-badge approved">new</span>' : ''}<div class="small text-muted">${escapeHtml(u.location || '')}</div></td>
                 <td>${escapeHtml(u.email)}</td>
                 <td>
                     <select class="form-select form-select-sm js-role" data-id="${u.id}">
@@ -145,8 +211,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ).join('')}
                     </select>
                 </td>
-                <td>${escapeHtml(u.created_at)}</td>
-            </tr>`).join('')}</tbody></table></div>`;
+                <td>${escapeHtml(formatJoined(u.created_at))}</td>
+            </tr>`).join('')}</tbody></table></div>
+            <p class="admin-users-meta">Showing ${items.length} ${userFilter === 'new' ? 'new ' : ''}user${items.length === 1 ? '' : 's'} from the database.</p>` : `<div class="admin-empty">${escapeHtml(emptyText)}</div>`}`;
+
+        box.querySelectorAll('[data-user-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                userFilter = btn.dataset.userFilter;
+                loadUsers();
+            });
+        });
+        const searchInput = document.getElementById('adminUserSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                clearTimeout(userSearchTimer);
+                userSearchTimer = setTimeout(() => {
+                    userSearch = searchInput.value.trim();
+                    loadUsers();
+                }, 250);
+            });
+        }
         box.querySelectorAll('.js-role').forEach(sel => {
             sel.addEventListener('change', async () => {
                 try {
@@ -167,12 +251,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('adminTabs').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-tab]');
         if (!btn) return;
-        document.querySelectorAll('#adminTabs .admin-tab-btn').forEach(p => p.classList.toggle('active', p === btn));
-        document.querySelectorAll('.admin-tab').forEach(tab => {
-            tab.hidden = tab.id !== 'tab-' + btn.dataset.tab;
-        });
+        openTab(btn.dataset.tab);
+        if (btn.dataset.tab === 'users') loadUsers();
     });
 
     await load();
-    setInterval(load, 20000);
+    setInterval(() => {
+        const typing = document.activeElement && document.activeElement.id === 'adminUserSearch';
+        if (!typing) load();
+    }, 20000);
 });

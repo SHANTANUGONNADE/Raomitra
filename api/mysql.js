@@ -221,6 +221,39 @@ async function updateUserRole(userId, role) {
     return result.affectedRows > 0;
 }
 
+async function listUsers({ filter = 'all', days = 7, q = '' } = {}) {
+    const p = await getPool();
+    if (!p) return null;
+    const safeDays = Math.max(1, Math.min(90, Number(days) || 7));
+    const [[totals]] = await p.query(
+        `SELECT COUNT(*) AS total,
+                SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ${safeDays} DAY) THEN 1 ELSE 0 END) AS new_count
+         FROM users`
+    );
+    const where = [];
+    const params = [];
+    if (filter === 'new') {
+        where.push(`created_at >= DATE_SUB(NOW(), INTERVAL ${safeDays} DAY)`);
+    }
+    const search = String(q || '').trim();
+    if (search) {
+        where.push('(full_name LIKE ? OR email LIKE ?)');
+        const like = '%' + search.replace(/[%_]/g, '\\$&') + '%';
+        params.push(like, like);
+    }
+    let sql = 'SELECT id, full_name, email, role, location, created_at FROM users';
+    if (where.length) sql += ' WHERE ' + where.join(' AND ');
+    sql += ' ORDER BY created_at DESC';
+    const [rows] = await p.query(sql, params);
+    return {
+        users: rows,
+        total: Number(totals.total || 0),
+        new_count: Number(totals.new_count || 0),
+        days: safeDays,
+        filter: filter === 'new' ? 'new' : 'all',
+    };
+}
+
 async function addReply(postId, userId, body) {
     const p = await getPool();
     const [result] = await p.query(
@@ -240,6 +273,7 @@ module.exports = {
     createPost,
     addReply,
     updateUserRole,
+    listUsers,
     updateUserProfile,
     storageLabel() {
         return isConfigured() ? 'mysql:raomitra' : 'vercel-tmp (not phpMyAdmin)';

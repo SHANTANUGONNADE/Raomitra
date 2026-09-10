@@ -25,10 +25,6 @@ final class AdminController
              LIMIT 80"
         )->fetchAll();
 
-        $users = $pdo->query(
-            'SELECT id, full_name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 80'
-        )->fetchAll();
-
         $pending = 0;
         foreach ($apps as $app) {
             if (($app['status'] ?? '') === 'pending') {
@@ -36,16 +32,74 @@ final class AdminController
             }
         }
 
+        $counts = self::userCounts($pdo, 7);
+
         Response::ok([
             'counts' => [
                 'pending_hosts' => $pending,
                 'bookings' => count($bookings),
-                'users' => (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
+                'users' => $counts['total'],
+                'new_users' => $counts['new'],
             ],
             'applications' => $apps,
             'bookings' => $bookings,
+        ]);
+    }
+
+    public static function listUsers(): void
+    {
+        Auth::requireRole(['admin', 'co_admin']);
+        $filter = strtolower(trim((string) ($_GET['filter'] ?? 'all')));
+        if (!in_array($filter, ['all', 'new'], true)) {
+            $filter = 'all';
+        }
+        $days = (int) ($_GET['days'] ?? 7);
+        $days = max(1, min(90, $days));
+        $search = trim((string) ($_GET['q'] ?? ''));
+
+        $pdo = Database::pdo();
+        $where = [];
+        if ($filter === 'new') {
+            $where[] = self::newUsersSinceSql($days);
+        }
+        if ($search !== '') {
+            $safe = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+            $like = '%' . $safe . '%';
+            $where[] = '(full_name LIKE ' . $pdo->quote($like) . ' OR email LIKE ' . $pdo->quote($like) . ')';
+        }
+        $sql = 'SELECT id, full_name, email, role, location, created_at FROM users';
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $sql .= ' ORDER BY created_at DESC';
+        $users = $pdo->query($sql)->fetchAll();
+        $counts = self::userCounts($pdo, $days);
+
+        Response::ok([
+            'filter' => $filter,
+            'days' => $days,
+            'counts' => [
+                'users' => $counts['total'],
+                'new_users' => $counts['new'],
+            ],
             'users' => $users,
         ]);
+    }
+
+    private static function newUsersSinceSql(int $days): string
+    {
+        $days = max(1, min(90, $days));
+        if (Database::isSqlite()) {
+            return "created_at >= datetime('now', '-{$days} days')";
+        }
+        return "created_at >= DATE_SUB(NOW(), INTERVAL {$days} DAY)";
+    }
+
+    private static function userCounts(\PDO $pdo, int $days): array
+    {
+        $total = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+        $new = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE ' . self::newUsersSinceSql($days))->fetchColumn();
+        return ['total' => $total, 'new' => $new];
     }
 
     public static function reviewHost(array $input): void

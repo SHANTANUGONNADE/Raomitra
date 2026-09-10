@@ -13,7 +13,12 @@ const RoamitraApi = {
     },
 
     url(path) {
-        return `${this.endpoint()}?r=${encodeURIComponent(path)}`;
+        const raw = String(path || '');
+        const qIndex = raw.indexOf('?');
+        const route = qIndex === -1 ? raw : raw.slice(0, qIndex);
+        const extra = qIndex === -1 ? '' : raw.slice(qIndex + 1);
+        const base = `${this.endpoint()}?r=${encodeURIComponent(route)}`;
+        return extra ? `${base}&${extra}` : base;
     },
 
     basePath() {
