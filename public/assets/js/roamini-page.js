@@ -555,8 +555,21 @@
     document.querySelectorAll('input[name="pace"]').forEach((input) => {
         input.onchange = () => { paceTouched = true; };
     });
-    menuBtn.onclick = () => openMenu(!side.classList.contains('open'));
-    backdrop.onclick = () => openMenu(false);
+    let menuOpenedAt = 0;
+    function setMenu(open) {
+        if (open) menuOpenedAt = Date.now();
+        openMenu(open);
+    }
+    menuBtn.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setMenu(!side.classList.contains('open'));
+    };
+    document.getElementById('raiSideClose').onclick = () => setMenu(false);
+    backdrop.onclick = () => {
+        if (Date.now() - menuOpenedAt < 400) return;
+        setMenu(false);
+    };
     document.getElementById('raiMenuItin').onclick = () => {
         openMenu(false);
         openItinerary('');

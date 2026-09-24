@@ -193,7 +193,7 @@
     width: 260px;
     background: #0c3330;
     color: #e7f6f3;
-    z-index: 2200;
+    z-index: 2300;
     padding: 22px 14px 18px;
     overflow: auto;
     display: flex;
@@ -203,6 +203,26 @@
 }
 .rai-side.open { transform: none; }
 
+.rai-side-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.rai-side-close {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    font-size: 1.05rem;
+    display: inline-grid;
+    place-items: center;
+}
+
 .rai-brand {
     display: flex;
     align-items: center;
@@ -210,6 +230,7 @@
     color: #fff;
     text-decoration: none;
     margin: 0 8px 22px;
+    min-width: 0;
 }
 
 .rai-brand img {
@@ -274,8 +295,9 @@
     position: fixed;
     inset: 0;
     background: rgba(8, 20, 18, 0.45);
-    z-index: 2190;
+    z-index: 2290;
 }
+.rai-backdrop[hidden] { display: none !important; }
 
 .rai-studio {
     width: min(1180px, calc(100% - 28px));
@@ -464,16 +486,24 @@
     .rai-suggest { grid-column: 1 / -1; margin-top: 4px; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 991.98px) {
     .rai-top {
         gap: 10px;
         width: min(480px, calc(100% - 28px));
         margin: 10px auto 0;
-        padding: 8px 0 4px;
+        padding: 8px 2px 4px;
     }
 
-    .rai-menu-btn { margin-left: -8px; }
+    .rai-menu-btn {
+        width: 44px;
+        height: 44px;
+        margin-left: 0;
+    }
 
+    .rai-side { width: min(300px, 86vw); }
+}
+
+@media (max-width: 720px) {
     .rai-app { padding-bottom: 16px; }
     .rai-studio-main,
     .rai-chat { min-width: 0; }

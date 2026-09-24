@@ -83,7 +83,8 @@ const RoamitraNav = {
         `;
         const toggler = nav.querySelector('.roamitra-navbar-toggler');
         if (toggler) {
-            toggler.addEventListener('click', () => {
+            toggler.addEventListener('click', (event) => {
+                event.stopPropagation();
                 const open = nav.classList.toggle('is-open');
                 toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
                 toggler.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
@@ -98,7 +99,7 @@ const RoamitraNav = {
             };
             document.addEventListener('click', (event) => {
                 if (!nav.classList.contains('is-open')) return;
-                if (nav.contains(event.target)) return;
+                if (toggler.contains(event.target) || nav.contains(event.target)) return;
                 closeMenu();
             });
         }
