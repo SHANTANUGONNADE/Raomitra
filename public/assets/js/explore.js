@@ -196,7 +196,7 @@ function applyCoverflow() {
                 '<p>' + escapeHtml(d.desc) + '</p>' +
                 '<div class="dest-spot-meta"><span><i class="bi bi-star-fill"></i> ' + escapeHtml(d.rating || '') + '</span><span>' + escapeHtml(d.travelers || '') + '</span><span>' + escapeHtml(d.price || '') + ' / week</span></div>' +
                 '<div class="dest-spot-tags">' + destTags(d) + '</div>' +
-                '<button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy" data-place="' + escapeHtml(key) + '">Explore this trip</button>' +
+                '<button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy" data-place="' + escapeHtml(key) + '">Explore</button>' +
             '</div>';
     }
 
@@ -225,7 +225,10 @@ function applyCoverflow() {
             );
         }).join('');
         const active = filmEl.querySelector('.is-active');
-        if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        if (active) {
+            const left = active.offsetLeft - (filmEl.clientWidth - active.offsetWidth) / 2;
+            filmEl.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        }
     }
 }
 
@@ -281,6 +284,23 @@ function initDestCylinder() {
     });
     document.querySelector('.dest-cyl-prev')?.addEventListener('click', () => rollCylinder(-1));
     document.querySelector('.dest-cyl-next')?.addEventListener('click', () => rollCylinder(1));
+    const stage = document.getElementById('destCylinderScene');
+    let destTimer = setInterval(() => {
+        if (document.hidden || destGridOpen) return;
+        if (document.getElementById('destination-detail') && !document.getElementById('destination-detail').hidden) return;
+        rollCylinder(1);
+    }, 1700);
+    stage?.addEventListener('mouseenter', () => {
+        clearInterval(destTimer);
+        destTimer = null;
+    });
+    stage?.addEventListener('mouseleave', () => {
+        if (destTimer) return;
+        destTimer = setInterval(() => {
+            if (document.hidden || destGridOpen) return;
+            rollCylinder(1);
+        }, 1700);
+    });
     document.getElementById('destCylinderScene')?.addEventListener('click', (e) => {
         const pick = e.target.closest('[data-select-place]');
         if (!pick) return;

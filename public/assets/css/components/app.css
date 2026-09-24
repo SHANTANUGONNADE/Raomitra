@@ -461,6 +461,22 @@
     font-size: 0.875rem;
 }
 
+.translate-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.translate-actions .btn-roamitra {
+    width: 100%;
+}
+
+#micBtn.listening {
+    background: #b42318;
+    border-color: #b42318;
+    color: #fff;
+}
+
 .translate-compose {
     display: flex;
     gap: 0.5rem;
@@ -521,5 +537,11 @@
     }
     .planner-options {
         grid-template-columns: 1fr 1fr;
+    }
+    .lang-row {
+        grid-template-columns: 1fr;
+    }
+    .reply-form {
+        flex-direction: column;
     }
 }

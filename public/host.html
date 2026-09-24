@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="assets/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=ui-dark2" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep24m" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="host">
@@ -16,8 +16,151 @@
 
     <section class="section-padding">
         <div class="container" style="max-width:760px;">
-            <p class="planner-kicker mb-1">Ask to Host</p>
-            <h1 class="section-title">Become a host</h1>
+            <div class="host-hero">
+                <div class="host-hero-kicker"><i class="bi bi-house-door"></i> Become a Host</div>
+                <h1>Welcome Travelers, Build Community</h1>
+                <p>Meet amazing people, share experiences, and earn rewards by opening your home to fellow travelers.</p>
+                <div class="host-perks">
+                    <span><i class="bi bi-people"></i> Meet Travelers</span>
+                    <span><i class="bi bi-heart"></i> Share Experiences</span>
+                    <span><i class="bi bi-award"></i> Earn Rewards</span>
+                </div>
+                <a class="host-hero-btn" href="#hostApply">Become a Host</a>
+            </div>
+
+            <h2 class="host-block-title"><i class="bi bi-star-fill" style="color:#eab308;"></i> Featured Hosts</h2>
+            <div class="host-feature-wrap">
+                <button type="button" class="host-feature-prev" id="hostPrev" aria-label="Previous hosts"><i class="bi bi-chevron-left"></i></button>
+                <div class="host-feature-row" id="hostFeatured">
+                    <article class="host-feature-card">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&h=400&q=60" alt="Emma Wilson" referrerpolicy="no-referrer">
+                        <div>
+                            <strong>Emma Wilson <i class="bi bi-patch-check-fill" style="color:#3b82f6;"></i></strong>
+                            <p><i class="bi bi-geo-alt"></i> San Francisco</p>
+                            <small><span><i class="bi bi-star-fill" style="color:#eab308;"></i> 5</span><span class="host-live"><i class="bi bi-circle-fill"></i> Active</span></small>
+                        </div>
+                    </article>
+                    <article class="host-feature-card">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=60" alt="Jake Thompson" referrerpolicy="no-referrer">
+                        <div>
+                            <strong>Jake Thompson <i class="bi bi-patch-check-fill" style="color:#3b82f6;"></i></strong>
+                            <p><i class="bi bi-geo-alt"></i> Tokyo</p>
+                            <small><span><i class="bi bi-star-fill" style="color:#eab308;"></i> 4.9</span><span class="host-live"><i class="bi bi-circle-fill"></i> Active</span></small>
+                        </div>
+                    </article>
+                    <article class="host-feature-card">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&h=400&q=60" alt="Priya Sharma" referrerpolicy="no-referrer">
+                        <div>
+                            <strong>Priya Sharma <i class="bi bi-patch-check-fill" style="color:#3b82f6;"></i></strong>
+                            <p><i class="bi bi-geo-alt"></i> Bali</p>
+                            <small><span><i class="bi bi-star-fill" style="color:#eab308;"></i> 4.8</span><span class="host-live"><i class="bi bi-circle-fill"></i> Active</span></small>
+                        </div>
+                    </article>
+                    <article class="host-feature-card">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=60" alt="Raj Patel" referrerpolicy="no-referrer">
+                        <div>
+                            <strong>Raj Patel <i class="bi bi-patch-check-fill" style="color:#3b82f6;"></i></strong>
+                            <p><i class="bi bi-geo-alt"></i> Goa</p>
+                            <small><span><i class="bi bi-star-fill" style="color:#eab308;"></i> 4.8</span><span class="host-live"><i class="bi bi-circle-fill"></i> Active</span></small>
+                        </div>
+                    </article>
+                </div>
+                <button type="button" class="host-feature-next" id="hostNext" aria-label="Next hosts"><i class="bi bi-chevron-right"></i></button>
+            </div>
+
+            <h2 class="host-block-title">All Hosts</h2>
+            <article class="host-person">
+                <div class="host-person-top">
+                    <div class="host-avatar-wrap">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=60" alt="Emma Wilson" referrerpolicy="no-referrer">
+                        <span class="host-online"></span>
+                    </div>
+                    <div>
+                        <h2>Emma Wilson <i class="bi bi-patch-check-fill"></i></h2>
+                        <p class="host-loc"><i class="bi bi-geo-alt"></i> San Francisco, United States</p>
+                        <p class="host-since">Hosting since 2024</p>
+                    </div>
+                    <span class="host-score"><i class="bi bi-star-fill"></i> 5</span>
+                </div>
+                <p class="host-bio">Digital nomad who loves meeting fellow travelers and sharing local tips!</p>
+                <div class="host-stats">
+                    <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>95%</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 1 hour</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Private Room</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>28</strong></span></div>
+                </div>
+                <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Spanish</span></div>
+                <div class="host-tags"><span class="host-chip">Surfing</span><span class="host-chip">Photography</span><span class="host-chip">Food</span><span class="host-chip">Hiking</span></div>
+                <div class="host-person-foot">
+                    <div class="host-foot-meta">
+                        <span><i class="bi bi-people"></i> 3 mutual connections</span>
+                        <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                    </div>
+                    <a class="host-ask" href="#hostApply">Ask to<br>Host</a>
+                </div>
+            </article>
+            <article class="host-person">
+                <div class="host-person-top">
+                    <div class="host-avatar-wrap">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=60" alt="Jake Thompson" referrerpolicy="no-referrer">
+                        <span class="host-online"></span>
+                    </div>
+                    <div>
+                        <h2>Jake Thompson <i class="bi bi-patch-check-fill"></i></h2>
+                        <p class="host-loc"><i class="bi bi-geo-alt"></i> Tokyo, Japan</p>
+                        <p class="host-since">Hosting since 2023</p>
+                    </div>
+                    <span class="host-score"><i class="bi bi-star-fill"></i> 4.9</span>
+                </div>
+                <p class="host-bio">Tech professional passionate about Japanese culture. Love hosting travelers!</p>
+                <div class="host-stats">
+                    <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>98%</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 2 hours</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Entire Place</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>41</strong></span></div>
+                </div>
+                <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Japanese</span></div>
+                <div class="host-tags"><span class="host-chip">Food</span><span class="host-chip">City</span><span class="host-chip">Temples</span></div>
+                <div class="host-person-foot">
+                    <div class="host-foot-meta">
+                        <span><i class="bi bi-people"></i> 2 mutual connections</span>
+                        <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                    </div>
+                    <a class="host-ask" href="#hostApply">Ask to<br>Host</a>
+                </div>
+            </article>
+            <article class="host-person">
+                <div class="host-person-top">
+                    <div class="host-avatar-wrap">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&h=200&q=60" alt="Priya Sharma" referrerpolicy="no-referrer">
+                        <span class="host-online"></span>
+                    </div>
+                    <div>
+                        <h2>Priya Sharma <i class="bi bi-patch-check-fill"></i></h2>
+                        <p class="host-loc"><i class="bi bi-geo-alt"></i> Bali, Indonesia</p>
+                        <p class="host-since">Hosting since 2022</p>
+                    </div>
+                    <span class="host-score"><i class="bi bi-star-fill"></i> 4.8</span>
+                </div>
+                <p class="host-bio">Rice-terrace walks, warungs, and sunrise tips. I help travelers skip the crowded spots.</p>
+                <div class="host-stats">
+                    <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>96%</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 1 hour</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Private Room</strong></span></div>
+                    <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>63</strong></span></div>
+                </div>
+                <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Hindi</span></div>
+                <div class="host-tags"><span class="host-chip">Temples</span><span class="host-chip">Food</span><span class="host-chip">Surf</span></div>
+                <div class="host-person-foot">
+                    <div class="host-foot-meta">
+                        <span><i class="bi bi-people"></i> 5 mutual connections</span>
+                        <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                    </div>
+                    <a class="host-ask" href="#hostApply">Ask to<br>Host</a>
+                </div>
+            </article>
+
+            <div id="hostApply">
             <p class="section-subtitle">Send a request to host travelers or list a vehicle. It appears on the Admin dashboard for approval.</p>
 
             <div id="hostStatus" class="form-alert" hidden></div>
@@ -63,13 +206,14 @@
                 </div>
                 <button type="submit" class="btn-roamitra btn-roamitra-navy" id="hostSubmit">Submit application</button>
             </form>
+            </div>
         </div>
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
-    <script src="assets/js/nav.js"></script>
-    <script src="assets/js/ai-assistant.js"></script>
-    <script src="assets/js/host.js?v=hostreq1"></script>
+    <script src="assets/js/nav.js?v=navmenu5"></script>
+    <script src="assets/js/ai-assistant.js?v=roamini2"></script>
+    <script src="assets/js/host.js?v=hosts2"></script>
 </body>
 </html>

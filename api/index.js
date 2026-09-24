@@ -330,6 +330,39 @@ function daysBetween(start, end) {
     return Math.max(1, Math.round((b - a) / 86400 / 1000) + 1);
 }
 
+function activityImage(category, title) {
+    const name = String(title || '').toLowerCase();
+    const hints = [
+        ['ubud art', 'photo-1555400038-63f5ba517a47'],
+        ['canggu', 'photo-1495474472287-4d71bcdd2085'],
+        ['babi guling', 'photo-1569050467447-ce54b3bbc37d'],
+        ['revolver', 'photo-1442512595331-e89e73853f31'],
+        ['tanah lot', 'photo-1573790387438-4da905039392'],
+        ['uluwatu', 'photo-1537996194471-e657df975ab4'],
+        ['cafe', 'photo-1495474472287-4d71bcdd2085'],
+        ['market', 'photo-1555400038-63f5ba517a47'],
+        ['beach', 'photo-1507525428034-b723cf961d3e'],
+        ['temple', 'photo-1537996194471-e657df975ab4'],
+    ];
+    const hit = hints.find(([needle]) => name.includes(needle));
+    if (hit) return 'https://images.unsplash.com/' + hit[1] + '?auto=format&fit=crop&w=480&q=60';
+    const sets = {
+        food: ['photo-1414235077428-338989a2e8c0', 'photo-1504674900247-0877df9cc836', 'photo-1559339352-11d035aa65de'],
+        cafe: ['photo-1495474472287-4d71bcdd2085', 'photo-1501339847302-ac426a4a7cbb'],
+        restaurant: ['photo-1414235077428-338989a2e8c0', 'photo-1569050467447-ce54b3bbc37d'],
+        market: ['photo-1555400038-63f5ba517a47', 'photo-1488459716781-31db52582fe9'],
+        nature: ['photo-1501785888041-af3ef285b470', 'photo-1518548419970-58e3b4079ab2'],
+        culture: ['photo-1524492412937-b28074a5d7da', 'photo-1548013146-72479768bada'],
+        temple: ['photo-1537996194471-e657df975ab4', 'photo-1573790387438-4da905039392'],
+        beach: ['photo-1507525428034-b723cf961d3e', 'photo-1512343879784-a960bf40e7f2'],
+        accommodation: ['photo-1566073771259-6a8506099945', 'photo-1522708323590-d24dbb6b0267'],
+    };
+    const list = sets[category] || ['photo-1467269204594-9661b134dd2b', 'photo-1476514525535-07fb3b4ae5f1', 'photo-1500530855697-b586d89ba3ee'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    return 'https://images.unsplash.com/' + list[hash % list.length] + '?auto=format&fit=crop&w=480&q=60';
+}
+
 function generateItinerary(trip) {
     const count = Math.min(14, daysBetween(trip.start_date, trip.end_date));
     const days = [];
@@ -349,6 +382,7 @@ function generateItinerary(trip) {
                     end: '11:00',
                     cost: i === 0 ? 0 : 25,
                     notes: 'Planned for ' + trip.destination,
+                    image: activityImage(i === 0 ? 'accommodation' : 'culture', i === 0 ? 'Hotel check-in' : 'Local sightseeing'),
                 },
                 {
                     title: 'Lunch & neighborhood walk',
@@ -357,6 +391,7 @@ function generateItinerary(trip) {
                     end: '14:00',
                     cost: 20,
                     notes: 'Casual local meal',
+                    image: activityImage('food', 'Lunch & neighborhood walk'),
                 },
             ],
         });
@@ -486,18 +521,54 @@ async function roaminiChat(message, history) {
     return 'Here is a useful take: tell me the city, dates, and whether you want stays, rentals, hosts, or an itinerary if this is travel. For a general topic, try a short phrase like “what is Kyoto”. Your question was: “' + q.slice(0, 180) + '”.';
 }
 
+function normPhrase(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+async function clients5Translate(text, source, target) {
+    const sl = source === 'autodetect' || source === 'auto' ? 'auto' : source;
+    const url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl='
+        + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(target) + '&q=' + encodeURIComponent(text);
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!res.ok) return '';
+    const data = await res.json();
+    if (!Array.isArray(data)) return '';
+    return data.filter((part) => typeof part === 'string').join('').trim();
+}
+
+async function myMemoryTranslate(text, source, target) {
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text)
+        + '&langpair=' + encodeURIComponent(source + '|' + target);
+    const res = await fetch(url);
+    if (!res.ok) return '';
+    const data = await res.json();
+    const want = normPhrase(text);
+    const matches = Array.isArray(data.matches) ? data.matches : [];
+    const exact = matches.filter((match) => {
+        const translation = String(match && match.translation || '').trim();
+        return translation && normPhrase(match.segment) === want
+            && !/MYMEMORY WARNING|INVALID LANGUAGE PAIR/i.test(translation);
+    });
+    exact.sort((a, b) => Number(b.quality || 0) - Number(a.quality || 0));
+    return exact.length ? String(exact[0].translation).trim() : '';
+}
+
 async function translateText(text, source, target) {
     if (source === target) return text;
     const sl = source === 'autodetect' || source === 'auto' ? 'auto' : source;
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl='
-        + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Translation service is unavailable. Try again shortly.');
-    const data = await res.json();
-    if (!Array.isArray(data) || !Array.isArray(data[0])) {
-        throw new Error('Translation service is unavailable. Try again shortly.');
+    let out = await clients5Translate(text, sl, target);
+    if (!out) {
+        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl='
+            + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
+        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && Array.isArray(data[0])) {
+                out = data[0].map((chunk) => (chunk && chunk[0] ? chunk[0] : '')).join('').trim();
+            }
+        }
     }
-    const out = data[0].map((chunk) => (chunk && chunk[0] ? chunk[0] : '')).join('').trim();
+    if (!out) out = await myMemoryTranslate(text, sl, target);
     if (!out) throw new Error('Translation service is unavailable. Try again shortly.');
     return out;
 }
@@ -721,14 +792,22 @@ async function handle(req, res) {
         if (method === 'GET' && p === '/profile') {
             const user = await needUser();
             const wallet = ensureWallet(db, user.id);
+            let bookings = db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse();
+            let hostApplication = db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null;
+            if (mysqlStore.isConfigured()) {
+                const liveBookings = await mysqlStore.listBookingsForUser(user.id);
+                const liveHost = await mysqlStore.latestHostForUser(user.id);
+                if (liveBookings) bookings = liveBookings;
+                hostApplication = liveHost;
+            }
             return send(res, 200, {
                 ok: true,
                 user: publicUser(user),
                 wallet,
                 transactions: db.wallet_transactions.filter((t) => t.wallet_id === wallet.id).slice().reverse().slice(0, 30),
                 trips: db.trips.filter((t) => t.user_id === user.id).sort((a, b) => String(b.start_date).localeCompare(String(a.start_date))),
-                bookings: db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse(),
-                host_application: db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null,
+                bookings,
+                host_application: hostApplication,
             });
         }
 
@@ -832,6 +911,16 @@ async function handle(req, res) {
             });
         }
 
+        const tripUpdate = p.match(/^\/trips\/(\d+)\/update$/);
+        if (method === 'POST' && tripUpdate) {
+            const user = await needUser();
+            const trip = ownedTrip(db, Number(tripUpdate[1]), user.id);
+            const next = parseTripInput(input);
+            Object.assign(trip, next, { updated_at: nowIso() });
+            saveDb(db);
+            return send(res, 200, { ok: true, trip });
+        }
+
         const tripGen = p.match(/^\/trips\/(\d+)\/generate$/);
         if (method === 'POST' && tripGen) {
             const user = await needUser();
@@ -851,7 +940,16 @@ async function handle(req, res) {
             });
             trip.status = 'generated';
             trip.updated_at = nowIso();
-            notify(db, user.id, 'itinerary', 'Itinerary generated', 'Your ' + trip.destination + ' itinerary is ready.', 'itinerary.html?trip=' + trip.id);
+            if (!db.itinerary_messages.some((m) => m.trip_id === trip.id)) {
+                addRow(db, 'itinerary_messages', {
+                    trip_id: trip.id,
+                    itinerary_id: row.id,
+                    role: 'assistant',
+                    message: "Hi there! I'm Roamini. I've created this itinerary just for you. How does it look?",
+                    created_at: nowIso(),
+                });
+            }
+            notify(db, user.id, 'itinerary', 'Itinerary generated', 'Your ' + trip.destination + ' itinerary is ready.', 'roamini.html?view=itinerary&trip=' + trip.id);
             saveDb(db);
             return send(res, 200, { ok: true, trip, itinerary: Object.assign({}, data, { id: row.id, version }) });
         }
@@ -1051,7 +1149,7 @@ async function handle(req, res) {
             const days = daysBetween(start, end);
             const rate = Math.max(0, Number(input.daily_rate || 0));
             const total = Math.round(rate * days * 100) / 100;
-            const booking = addRow(db, 'vehicle_bookings', {
+            const bookingFields = {
                 user_id: user.id,
                 vehicle_name: name,
                 category: String(input.category || '').trim() || null,
@@ -1064,15 +1162,26 @@ async function handle(req, res) {
                 notes: String(input.notes || '').trim() || null,
                 status: 'confirmed',
                 created_at: nowIso(),
-            });
+            };
+            let booking;
+            if (mysqlStore.isConfigured()) {
+                booking = await mysqlStore.createBooking(bookingFields);
+            } else {
+                booking = addRow(db, 'vehicle_bookings', bookingFields);
+                saveDb(db);
+            }
             notify(db, user.id, 'booking', 'Booking confirmed', name + ' is reserved for ' + days + ' day(s). Total $' + total.toFixed(2) + '.', 'profile.html');
             notifyStaff(db, 'booking', 'New vehicle booking', user.full_name + ' booked ' + name + '.', 'admin.html');
-            saveDb(db);
+            if (!mysqlStore.isConfigured()) saveDb(db);
             return send(res, 200, { ok: true, booking, message: 'Your booking is confirmed.' });
         }
 
         if (method === 'GET' && p === '/bookings') {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                const bookings = await mysqlStore.listBookingsForUser(user.id);
+                return send(res, 200, { ok: true, bookings: bookings || [] });
+            }
             return send(res, 200, { ok: true, bookings: db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse() });
         }
 
@@ -1093,10 +1202,7 @@ async function handle(req, res) {
             if (!phone || phone.length > 40) return fail(res, 'Enter a contact phone number.');
             if (bio.length < 20) return fail(res, 'Tell travelers a bit more about yourself (at least 20 characters).');
             if (type === 'vehicle' && !vehicleInfo) return fail(res, 'Describe the vehicle you want to list.');
-            if (db.host_applications.some((a) => a.user_id === user.id && a.status === 'pending')) {
-                return fail(res, 'You already have a host application waiting for review.');
-            }
-            const application = addRow(db, 'host_applications', {
+            const applicationFields = {
                 user_id: user.id,
                 listing_type: type,
                 city,
@@ -1110,30 +1216,49 @@ async function handle(req, res) {
                 reviewed_by: null,
                 created_at: nowIso(),
                 updated_at: nowIso(),
-            });
+            };
+            let application;
+            if (mysqlStore.isConfigured()) {
+                application = await mysqlStore.createHostApplication(applicationFields);
+            } else {
+                if (db.host_applications.some((a) => a.user_id === user.id && a.status === 'pending')) {
+                    return fail(res, 'You already have a host application waiting for review.');
+                }
+                application = addRow(db, 'host_applications', applicationFields);
+                saveDb(db);
+            }
             notify(db, user.id, 'host', 'Host request sent to admin', 'Your Become a Host request is now in the admin dashboard for review.', 'host.html');
             notifyStaff(db, 'host', 'New host request', user.full_name + ' asked to become a ' + (type === 'vehicle' ? 'vehicle owner' : 'host') + ' in ' + city + '.', 'admin.html');
-            saveDb(db);
+            if (!mysqlStore.isConfigured()) saveDb(db);
             return send(res, 200, { ok: true, application, message: 'Your host request was sent to admin. You will be notified after review.' });
         }
 
         if (method === 'GET' && p === '/host/me') {
             const user = await needUser();
-            const application = db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null;
+            let application = db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null;
+            if (mysqlStore.isConfigured()) {
+                application = await mysqlStore.latestHostForUser(user.id);
+            }
             return send(res, 200, { ok: true, application, user: publicUser(user) });
         }
 
         if (method === 'GET' && p === '/admin/overview') {
             const user = await needUser();
             if (!['admin', 'co_admin'].includes(user.role)) return fail(res, 'You do not have access to this page.', 403);
-            const apps = db.host_applications.slice().reverse().map((a) => {
+            let apps = db.host_applications.slice().reverse().map((a) => {
                 const u = db.users.find((x) => x.id === a.user_id) || {};
                 return Object.assign({}, a, { full_name: u.full_name, email: u.email });
             });
-            const bookings = db.vehicle_bookings.slice().reverse().slice(0, 80).map((b) => {
+            let bookings = db.vehicle_bookings.slice().reverse().slice(0, 80).map((b) => {
                 const u = db.users.find((x) => x.id === b.user_id) || {};
                 return Object.assign({}, b, { full_name: u.full_name, email: u.email });
             });
+            if (mysqlStore.isConfigured()) {
+                const liveApps = await mysqlStore.listHostApplications();
+                const liveBookings = await mysqlStore.listBookingsRecent(80);
+                if (liveApps) apps = liveApps;
+                if (liveBookings) bookings = liveBookings;
+            }
             let userCounts = { total: db.users.length, new_count: db.users.filter((u) => isNewUser(u.created_at, 7)).length };
             if (mysqlStore.isConfigured() && mysqlStore.listUsers) {
                 const listed = await mysqlStore.listUsers({ filter: 'all', days: 7 });
@@ -1142,7 +1267,7 @@ async function handle(req, res) {
             return send(res, 200, {
                 ok: true,
                 counts: {
-                    pending_hosts: db.host_applications.filter((a) => a.status === 'pending').length,
+                    pending_hosts: apps.filter((a) => a.status === 'pending').length,
                     bookings: bookings.length,
                     users: userCounts.total,
                     new_users: userCounts.new_count,
@@ -1184,21 +1309,28 @@ async function handle(req, res) {
             if (id < 1 || !['approved', 'rejected'].includes(status)) {
                 return fail(res, 'Choose approve or reject for a valid application.');
             }
-            const app = db.host_applications.find((a) => a.id === id);
-            if (!app) return fail(res, 'Application not found.', 404);
-            if (app.status !== 'pending') return fail(res, 'This application was already reviewed.');
-            app.status = status;
-            app.review_note = note || null;
-            app.reviewed_by = staff.id;
-            app.updated_at = nowIso();
+            let app = db.host_applications.find((a) => a.id === id);
+            if (mysqlStore.isConfigured()) {
+                app = await mysqlStore.reviewHostApplication(id, status, note, staff.id);
+            } else {
+                if (!app) return fail(res, 'Application not found.', 404);
+                if (app.status !== 'pending') return fail(res, 'This application was already reviewed.');
+                app.status = status;
+                app.review_note = note || null;
+                app.reviewed_by = staff.id;
+                app.updated_at = nowIso();
+                if (status === 'approved') {
+                    const member = db.users.find((u) => u.id === app.user_id);
+                    if (member && member.role === 'customer') member.role = 'host';
+                }
+                saveDb(db);
+            }
             if (status === 'approved') {
-                const member = db.users.find((u) => u.id === app.user_id);
-                if (member && member.role === 'customer') member.role = 'host';
                 notify(db, app.user_id, 'host', 'You are now a verified host', note || 'Your host application was approved. You can list stays or vehicles with Roamitra.', 'profile.html');
             } else {
                 notify(db, app.user_id, 'host', 'Host application not approved', note || 'Your application was not approved. You can update details and apply again.', 'host.html');
             }
-            saveDb(db);
+            if (!mysqlStore.isConfigured()) saveDb(db);
             return send(res, 200, { ok: true, message: status === 'approved' ? 'Host approved.' : 'Application rejected.' });
         }
 
@@ -1212,17 +1344,21 @@ async function handle(req, res) {
             if (userId < 1 || !['customer', 'host', 'co_admin', 'admin'].includes(role)) {
                 return fail(res, 'Choose a valid user and role.');
             }
-            const target = db.users.find((u) => Number(u.id) === userId);
-            if (!target) return fail(res, 'User not found.', 404);
-            const current = String(target.role || '').toLowerCase();
-            if (['admin', 'co_admin'].includes(current) && !['admin', 'co_admin'].includes(role)) {
-                const staffLeft = db.users.filter((u) => ['admin', 'co_admin'].includes(String(u.role || '').toLowerCase())).length;
-                if (staffLeft < 2) return fail(res, 'Keep at least one admin account.');
-            }
-            target.role = role;
             if (mysqlStore.isConfigured() && mysqlStore.updateUserRole) {
-                await mysqlStore.updateUserRole(userId, role);
+                const saved = await mysqlStore.updateUserRole(userId, role);
+                if (!saved) return fail(res, 'Could not save that role. The account is still unchanged.', 422);
+            } else {
+                const target = db.users.find((u) => Number(u.id) === userId);
+                if (!target) return fail(res, 'User not found.', 404);
+                const current = String(target.role || '').toLowerCase();
+                if (['admin', 'co_admin'].includes(current) && !['admin', 'co_admin'].includes(role)) {
+                    const staffLeft = db.users.filter((u) => ['admin', 'co_admin'].includes(String(u.role || '').toLowerCase())).length;
+                    if (staffLeft < 2) return fail(res, 'Keep at least one admin account.');
+                }
+                target.role = role;
             }
+            const jsonUser = db.users.find((u) => Number(u.id) === userId);
+            if (jsonUser) jsonUser.role = role;
             saveDb(db);
             return send(res, 200, {
                 ok: true,

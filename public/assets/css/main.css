@@ -5,18 +5,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap');
 
 @import 'variables.css';
-@import 'components/buttons.css';
-@import 'components/navbar.css?v=navliq1';
+@import 'components/buttons.css?v=btnblack1';
+@import 'components/navbar.css?v=navmenu6';
 @import 'components/footer.css';
 @import 'components/cards.css';
-@import 'components/ai-assistant.css?v=chat4';
-@import 'components/auth.css';
-@import 'components/explore.css?v=spot1';
-@import 'components/community.css?v=lay4';
-@import 'components/meetups.css';
-@import 'components/profile.css';
-@import 'components/admin.css';
-@import 'components/app.css';
+@import 'components/ai-assistant.css?v=roamini1';
+@import 'components/roamini-page.css?v=page15';
+@import 'components/auth.css?v=slides3';
+@import 'components/explore.css?v=locedit1';
+@import 'components/host.css?v=hosts2';
+@import 'components/community.css?v=under6';
+@import 'components/meetups.css?v=join4';
+@import 'components/profile.css?v=cust3';
+@import 'components/admin.css?v=adm3';
+@import 'components/app.css?v=voice4';
 @import 'components/motion.css';
 
 /* ---- Base Reset & Typography ---- */
@@ -27,7 +29,8 @@
 }
 
 html {
-    scroll-behavior: smooth;
+    overflow-x: clip;
+    overflow-anchor: none;
 }
 
 body {
@@ -37,6 +40,8 @@ body {
     background-color: var(--color-bg);
     line-height: 1.65;
     letter-spacing: -0.01em;
+    overflow-x: clip;
+    overflow-anchor: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -307,19 +312,43 @@ h1, h2, h3, h4, h5, h6,
 }
 
 @media (max-width: 991.98px) {
+    .roamitra-navbar {
+        position: sticky !important;
+        top: 0;
+        left: auto;
+        right: auto;
+        background: var(--color-bg) !important;
+    }
+
     .roamitra-navbar .navbar-glass,
     .roamitra-navbar > .container {
         border-radius: 22px !important;
+        background: var(--color-surface) !important;
+        overflow: visible !important;
     }
 }
 
 .roamitra-logo-text {
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    background: linear-gradient(180deg, #76D885, #47A8A3);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent !important;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    -webkit-text-fill-color: #083024 !important;
+    color: #083024 !important;
+    animation: none !important;
+    text-transform: none !important;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .roamitra-logo-text {
+    -webkit-text-fill-color: #B8F7C8 !important;
+    color: #B8F7C8 !important;
+}
+
+.auth-visual .roamitra-logo-text {
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
 }
 
 .roamitra-nav-links .nav-link.ai-link {
@@ -422,12 +451,23 @@ h1, h2, h3, h4, h5, h6,
 }
 
 [data-theme="dark"] .btn-roamitra-primary,
-[data-theme="dark"] .btn-roamitra-navy {
-    color: #062014;
+[data-theme="dark"] .btn-roamitra-navy,
+[data-theme="dark"] .btn-roamitra-outline,
+[data-theme="dark"] .btn-roamitra-ghost,
+[data-theme="dark"] .btn-roamitra-ai {
+    background-color: #111111;
+    color: #ffffff;
+    border-color: #3a3a3a;
 }
 
-[data-theme="dark"] .btn-roamitra-navy:hover {
-    color: #062014;
+[data-theme="dark"] .btn-roamitra-primary:hover,
+[data-theme="dark"] .btn-roamitra-navy:hover,
+[data-theme="dark"] .btn-roamitra-outline:hover,
+[data-theme="dark"] .btn-roamitra-ghost:hover,
+[data-theme="dark"] .btn-roamitra-ai:hover {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #4a4a4a;
 }
 
 [data-theme="dark"] .filter-pill.active {

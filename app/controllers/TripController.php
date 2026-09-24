@@ -59,6 +59,10 @@ final class TripController
             'SELECT id, version, is_current, summary, created_at FROM itineraries WHERE trip_id = ? ORDER BY version DESC'
         );
         $versions->execute([$id]);
+        if ($itinerary) {
+            self::ensureGreeting($id, (int) ($itinerary['id'] ?? 0));
+            self::storeActivityImages($id, $itinerary);
+        }
         $messages = Database::pdo()->prepare(
             'SELECT id, role, message, created_at FROM itinerary_messages WHERE trip_id = ? ORDER BY id ASC'
         );
@@ -69,6 +73,34 @@ final class TripController
             'versions' => $versions->fetchAll(),
             'messages' => $messages->fetchAll(),
         ]);
+    }
+
+    public static function update(int $id, array $input): void
+    {
+        $userId = Auth::requireUser();
+        self::getOwned($id, $userId);
+        $trip = self::validate($input, false);
+        Database::pdo()->prepare(
+            'UPDATE trips
+             SET destination = ?, start_date = ?, end_date = ?, budget = ?, budget_currency = ?,
+                 traveling_with = ?, group_size = ?, arrival_time = ?, departure_time = ?, preferences = ?, pace = ?
+             WHERE id = ? AND user_id = ?'
+        )->execute([
+            $trip['destination'],
+            $trip['start_date'],
+            $trip['end_date'],
+            $trip['budget'],
+            $trip['budget_currency'],
+            $trip['traveling_with'],
+            $trip['group_size'],
+            $trip['arrival_time'],
+            $trip['departure_time'],
+            json_encode($trip['preferences'], JSON_UNESCAPED_UNICODE),
+            $trip['pace'],
+            $id,
+            $userId,
+        ]);
+        Response::ok(['trip' => self::getOwned($id, $userId)]);
     }
 
     public static function save(int $id): void
@@ -106,13 +138,14 @@ final class TripController
         )->execute([$id, $version, json_encode($data, JSON_UNESCAPED_UNICODE), $data['summary'] ?? null]);
         $itineraryId = (int) $pdo->lastInsertId();
         $pdo->prepare("UPDATE trips SET status = 'generated' WHERE id = ?")->execute([$id]);
+        self::ensureGreeting($id, $itineraryId);
 
         NotificationService::create(
             $userId,
             'itinerary',
             'Itinerary generated',
             'Your ' . $trip['destination'] . ' itinerary is ready.',
-            'itinerary.html?trip=' . $id
+            'roamini.html?view=itinerary&trip=' . $id
         );
 
         Response::ok([
@@ -270,6 +303,55 @@ final class TripController
         $stmt = Database::pdo()->prepare('SELECT COALESCE(MAX(version), 0) FROM itineraries WHERE trip_id = ?');
         $stmt->execute([$tripId]);
         return (int) $stmt->fetchColumn() + 1;
+    }
+
+    private static function ensureGreeting(int $tripId, int $itineraryId): void
+    {
+        $pdo = Database::pdo();
+        $count = $pdo->prepare('SELECT COUNT(*) FROM itinerary_messages WHERE trip_id = ?');
+        $count->execute([$tripId]);
+        if ((int) $count->fetchColumn() > 0) {
+            return;
+        }
+        $pdo->prepare('INSERT INTO itinerary_messages (trip_id, itinerary_id, role, message) VALUES (?, ?, ?, ?)')
+            ->execute([
+                $tripId,
+                $itineraryId > 0 ? $itineraryId : null,
+                'assistant',
+                "Hi there! I'm Roamini. I've created this itinerary just for you. How does it look?",
+            ]);
+    }
+
+    private static function storeActivityImages(int $tripId, array &$itinerary): void
+    {
+        if (empty($itinerary['days']) || !is_array($itinerary['days'])) {
+            return;
+        }
+        $changed = false;
+        foreach ($itinerary['days'] as &$day) {
+            if (empty($day['activities']) || !is_array($day['activities'])) {
+                continue;
+            }
+            foreach ($day['activities'] as &$activity) {
+                if (!empty($activity['image'])) {
+                    continue;
+                }
+                $activity['image'] = ItineraryEngine::imageFor(
+                    (string) ($activity['category'] ?? 'culture'),
+                    (string) ($activity['title'] ?? 'stop')
+                );
+                $changed = true;
+            }
+            unset($activity);
+        }
+        unset($day);
+        if (!$changed || empty($itinerary['id'])) {
+            return;
+        }
+        $stored = $itinerary;
+        unset($stored['id'], $stored['version'], $stored['created_at']);
+        Database::pdo()->prepare('UPDATE itineraries SET itinerary_json = ? WHERE id = ? AND trip_id = ?')
+            ->execute([json_encode($stored, JSON_UNESCAPED_UNICODE), (int) $itinerary['id'], $tripId]);
     }
 
     private static function messages(int $tripId): array

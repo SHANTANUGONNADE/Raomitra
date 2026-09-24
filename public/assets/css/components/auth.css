@@ -19,13 +19,62 @@
     overflow: hidden;
 }
 
-.auth-visual-bg {
+.auth-slides {
     position: absolute;
     inset: 0;
-    background-image: url('https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&h=1600&fit=crop');
+}
+
+.auth-slides span {
+    position: absolute;
+    inset: 0;
     background-size: cover;
     background-position: center;
-    opacity: 0.35;
+    opacity: 0;
+    animation: authSlide 16s infinite;
+}
+
+.auth-slides span:nth-child(1) { animation-delay: 0s; }
+.auth-slides span:nth-child(2) { animation-delay: 4s; }
+.auth-slides span:nth-child(3) { animation-delay: 8s; }
+.auth-slides span:nth-child(4) { animation-delay: 12s; }
+
+.auth-visual::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(5, 22, 53, 0.55), rgba(5, 22, 53, 0.72));
+    z-index: 0;
+}
+
+.auth-slides-wide span {
+    animation: authSlideWide 14s infinite;
+}
+
+.auth-slides-wide span:nth-child(1) { animation-delay: 0s; }
+.auth-slides-wide span:nth-child(2) { animation-delay: 1.4s; }
+.auth-slides-wide span:nth-child(3) { animation-delay: 2.8s; }
+.auth-slides-wide span:nth-child(4) { animation-delay: 4.2s; }
+.auth-slides-wide span:nth-child(5) { animation-delay: 5.6s; }
+.auth-slides-wide span:nth-child(6) { animation-delay: 7s; }
+.auth-slides-wide span:nth-child(7) { animation-delay: 8.4s; }
+.auth-slides-wide span:nth-child(8) { animation-delay: 9.8s; }
+.auth-slides-wide span:nth-child(9) { animation-delay: 11.2s; }
+.auth-slides-wide span:nth-child(10) { animation-delay: 12.6s; }
+
+@keyframes authSlideWide {
+    0% { opacity: 0; }
+    4% { opacity: 1; }
+    10% { opacity: 1; }
+    14% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@keyframes authSlide {
+    0% { opacity: 0; }
+    6% { opacity: 1; }
+    25% { opacity: 1; }
+    33% { opacity: 0; }
+    100% { opacity: 0; }
 }
 
 .auth-visual-content {
@@ -342,5 +391,20 @@
 
     .auth-form-panel {
         max-width: 100%;
+        padding: 1.5rem 1rem 2rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .auth-visual {
+        padding: 1.25rem 1rem 1.5rem;
+    }
+
+    .auth-visual h1 {
+        font-size: 1.35rem;
+    }
+
+    .auth-stats {
+        gap: 0.85rem 1.25rem;
     }
 }

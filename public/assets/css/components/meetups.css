@@ -68,6 +68,69 @@
     gap: 1rem;
 }
 
+.meetup-create {
+    background: var(--color-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.meetup-create h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem;
+}
+
+.meetup-create > p {
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+}
+
+.meetup-create label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.meetup-create input,
+.meetup-create select,
+.meetup-create textarea {
+    display: block;
+    width: 100%;
+    margin-top: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.meetup-create-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.25rem 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .meetup-create-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.meetup-create-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.meetup-create-note {
+    min-height: 1.2em;
+    color: var(--color-primary-dark, #0f766e);
+    font-size: 0.88rem;
+}
+
 .meetup-featured {
     background: var(--color-white);
     border: 1px solid var(--color-border-light);
@@ -592,4 +655,202 @@
     .navbar-user span {
         display: none;
     }
+}
+
+.lm-head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0.2rem 0 0.85rem;
+}
+
+.lm-head h2 {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.lm-back {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.lm-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.lm-pills,
+.lm-tagbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.lm-pills button,
+.lm-filters,
+.lm-tagbar button {
+    border: 0;
+    background: #e7eef6;
+    color: #1e293b;
+    border-radius: 999px;
+    padding: 0.48rem 0.95rem;
+    font-weight: 700;
+}
+
+.lm-pills button.on,
+.lm-tagbar button.on {
+    background: #0b1f3a;
+    color: #fff;
+}
+
+.lm-filters {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid color-mix(in srgb, var(--color-text) 48%, var(--color-border));
+    white-space: nowrap;
+}
+
+.lm-filters:hover {
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.lm-tagbar {
+    margin-bottom: 0.75rem;
+}
+
+.lm-tagbar[hidden] { display: none !important; }
+
+.lm-create,
+.lm-join {
+    width: 100%;
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 800;
+    background: linear-gradient(90deg, #0b1f3a 0%, #14915d 55%, #1ec98a 100%);
+}
+
+.lm-create { padding: 0.9rem 1rem; margin-bottom: 0.9rem; }
+.lm-join { padding: 0.82rem 1rem; }
+.lm-join:disabled { opacity: 0.72; }
+
+.lm-form {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 0.9rem;
+}
+
+.lm-form[hidden] { display: none !important; }
+
+.lm-form label {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.lm-form input {
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0.55rem 0.7rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    width: 100%;
+}
+
+.lm-form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.lm-form-actions button {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.55rem 0.9rem;
+    font-weight: 700;
+    background: #0b1f3a;
+    color: #fff;
+}
+.lm-form-actions [data-cancel] { background: var(--color-bg-muted); color: var(--color-text); }
+
+.lm-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.lm-banner {
+    height: 148px;
+    position: relative;
+}
+
+.lm-banner img {
+    position: absolute;
+    left: 16px;
+    bottom: -22px;
+    width: 54px;
+    height: 54px;
+    max-width: none;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+}
+
+.lm-body { padding: 2rem 1rem 1rem; }
+.lm-body h3 { margin: 0 0 0.15rem; font-size: 1.2rem; font-weight: 800; }
+.lm-host { margin: 0 0 0.55rem; color: var(--color-text-muted); }
+.lm-body p { margin: 0.12rem 0; color: var(--color-text); }
+.lm-body p i { width: 1.1rem; color: var(--color-text-muted); }
+.lm-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0.85rem; }
+.lm-tags span {
+    background: #eef3f8;
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.lm-note {
+    margin: 0 0 0.75rem;
+    color: #047857;
+    font-weight: 700;
+}
+.lm-note[hidden] { display: none !important; }
+
+[data-meetup-root] {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+button.host-hero-btn,
+button.host-ask {
+    cursor: pointer;
+    font: inherit;
+}
+
+.comm-host-apply,
+#commHostTop,
+.comm-under {
+    scroll-margin-top: 5.5rem;
+}
+
+@media (max-width: 575.98px) {
+    .lm-tools { align-items: flex-start; }
+    .lm-head h2 { font-size: 1.25rem; }
+    .lm-card { border-radius: 20px; }
 }

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saveBtn = document.getElementById('saveTripBtn');
 
     if (!tripId) {
-        root.innerHTML = '<div class="form-alert error">No trip selected. <a href="planner.html">Plan a trip</a>.</div>';
+        root.innerHTML = '<div class="form-alert error">No trip selected. <a href="roamini.html">Plan a trip</a>.</div>';
         return;
     }
 
@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('tripMeta').textContent =
             `${trip.start_date} → ${trip.end_date} · ${trip.traveling_with}${trip.traveling_with === 'group' ? ' · ' + trip.group_size + ' people' : ''} · Arrival ${label(trip.arrival_time)} · Depart ${label(trip.departure_time)}`;
         document.getElementById('versionLabel').textContent = `Version ${itinerary.version}`;
+        const editBtn = document.getElementById('editTripBtn');
+        if (editBtn) {
+            editBtn.href = RoamitraApi.page('roamini.html') + '?plan=' + encodeURIComponent(trip.id);
+        }
 
         const daysHtml = (itinerary.days || []).map(day => `
             <article class="itin-day">

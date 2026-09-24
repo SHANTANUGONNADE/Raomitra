@@ -217,8 +217,13 @@ async function createPost(userId, title, body) {
 async function updateUserRole(userId, role) {
     const p = await getPool();
     if (!p) return false;
-    const [result] = await p.query('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
-    return result.affectedRows > 0;
+    try {
+        await p.query("ALTER TABLE users MODIFY role VARCHAR(32) NOT NULL DEFAULT 'customer'");
+    } catch (e) { /* already a wide text column */ }
+    await p.query('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
+    const [rows] = await p.query('SELECT role FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (!rows.length) return false;
+    return String(rows[0].role || '').toLowerCase() === String(role).toLowerCase();
 }
 
 async function listUsers({ filter = 'all', days = 7, q = '' } = {}) {
@@ -263,6 +268,196 @@ async function addReply(postId, userId, body) {
     return result.insertId;
 }
 
+async function ensureOpsTables(p) {
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS host_applications (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            listing_type VARCHAR(20) NOT NULL DEFAULT 'host',
+            city VARCHAR(120) NOT NULL,
+            country VARCHAR(120) NOT NULL DEFAULT 'India',
+            phone VARCHAR(40) NOT NULL,
+            bio TEXT NOT NULL,
+            experience VARCHAR(80) NULL,
+            vehicle_info VARCHAR(255) NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            review_note VARCHAR(255) NULL,
+            reviewed_by INT UNSIGNED NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_host_apps_user (user_id, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS vehicle_bookings (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            vehicle_name VARCHAR(180) NOT NULL,
+            category VARCHAR(40) NULL,
+            location VARCHAR(180) NULL,
+            daily_rate DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            days SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+            total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+            notes VARCHAR(255) NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'confirmed',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_bookings_user (user_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+}
+
+const BOOKING_SELECT = `
+    SELECT b.id, b.user_id, b.vehicle_name, b.category, b.location,
+           b.daily_rate, DATE_FORMAT(b.start_date, '%Y-%m-%d') AS start_date,
+           DATE_FORMAT(b.end_date, '%Y-%m-%d') AS end_date, b.days, b.total,
+           b.notes, b.status, DATE_FORMAT(b.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+           u.full_name, u.email
+    FROM vehicle_bookings b
+    LEFT JOIN users u ON u.id = b.user_id
+`;
+
+const HOST_SELECT = `
+    SELECT a.id, a.user_id, a.listing_type, a.city, a.country, a.phone, a.bio,
+           a.experience, a.vehicle_info, a.status, a.review_note, a.reviewed_by,
+           DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+           DATE_FORMAT(a.updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at,
+           u.full_name, u.email
+    FROM host_applications a
+    LEFT JOIN users u ON u.id = a.user_id
+`;
+
+function moneyRow(row) {
+    if (!row) return null;
+    const out = Object.assign({}, row);
+    if (out.daily_rate != null) out.daily_rate = Number(out.daily_rate);
+    if (out.total != null) out.total = Number(out.total);
+    if (out.days != null) out.days = Number(out.days);
+    return out;
+}
+
+async function createBooking(fields) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [result] = await p.query(
+        `INSERT INTO vehicle_bookings
+         (user_id, vehicle_name, category, location, daily_rate, start_date, end_date, days, total, notes, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            fields.user_id,
+            fields.vehicle_name,
+            fields.category,
+            fields.location,
+            fields.daily_rate,
+            fields.start_date,
+            fields.end_date,
+            fields.days,
+            fields.total,
+            fields.notes,
+            fields.status || 'confirmed',
+        ]
+    );
+    const [rows] = await p.query(BOOKING_SELECT + ' WHERE b.id = ? LIMIT 1', [result.insertId]);
+    return moneyRow(rows[0] || null);
+}
+
+async function listBookingsForUser(userId) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(BOOKING_SELECT + ' WHERE b.user_id = ? ORDER BY b.id DESC', [userId]);
+    return rows.map(moneyRow);
+}
+
+async function listBookingsRecent(limit) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const cap = Math.max(1, Math.min(80, Number(limit) || 80));
+    const [rows] = await p.query(BOOKING_SELECT + ' ORDER BY b.id DESC LIMIT ' + cap);
+    return rows.map(moneyRow);
+}
+
+async function createHostApplication(fields) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [pending] = await p.query(
+        "SELECT id FROM host_applications WHERE user_id = ? AND status = 'pending' LIMIT 1",
+        [fields.user_id]
+    );
+    if (pending.length) {
+        const err = new Error('You already have a host application waiting for review.');
+        err.status = 400;
+        throw err;
+    }
+    const [result] = await p.query(
+        `INSERT INTO host_applications
+         (user_id, listing_type, city, country, phone, bio, experience, vehicle_info, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [
+            fields.user_id,
+            fields.listing_type,
+            fields.city,
+            fields.country,
+            fields.phone,
+            fields.bio,
+            fields.experience,
+            fields.vehicle_info,
+        ]
+    );
+    const [rows] = await p.query(HOST_SELECT + ' WHERE a.id = ? LIMIT 1', [result.insertId]);
+    return rows[0] || null;
+}
+
+async function latestHostForUser(userId) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(HOST_SELECT + ' WHERE a.user_id = ? ORDER BY a.id DESC LIMIT 1', [userId]);
+    return rows[0] || null;
+}
+
+async function listHostApplications() {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(HOST_SELECT + ' ORDER BY a.id DESC');
+    return rows;
+}
+
+async function reviewHostApplication(id, status, note, reviewerId) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(HOST_SELECT + ' WHERE a.id = ? LIMIT 1', [id]);
+    const app = rows[0];
+    if (!app) {
+        const err = new Error('Application not found.');
+        err.status = 404;
+        throw err;
+    }
+    if (app.status !== 'pending') {
+        const err = new Error('This application was already reviewed.');
+        err.status = 400;
+        throw err;
+    }
+    await p.query(
+        'UPDATE host_applications SET status = ?, review_note = ?, reviewed_by = ? WHERE id = ?',
+        [status, note || null, reviewerId, id]
+    );
+    if (status === 'approved') {
+        await p.query(
+            "UPDATE users SET role = 'host' WHERE id = ? AND role = 'customer'",
+            [app.user_id]
+        );
+    }
+    const [next] = await p.query(HOST_SELECT + ' WHERE a.id = ? LIMIT 1', [id]);
+    return next[0] || null;
+}
+
 module.exports = {
     isConfigured,
     getPool,
@@ -275,6 +470,13 @@ module.exports = {
     updateUserRole,
     listUsers,
     updateUserProfile,
+    createBooking,
+    listBookingsForUser,
+    listBookingsRecent,
+    createHostApplication,
+    latestHostForUser,
+    listHostApplications,
+    reviewHostApplication,
     storageLabel() {
         return isConfigured() ? 'mysql:raomitra' : 'vercel-tmp (not phpMyAdmin)';
     },

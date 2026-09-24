@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="assets/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=ui-dark2" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep24m" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="translator">
@@ -17,7 +17,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <a href="explore.html" class="navbar-brand">
                     <img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img">
-                    <span class="roamitra-logo-text">roamitra</span>
+                    <span class="roamitra-logo-text">Roamitra</span>
                 </a>
                 <ul class="roamitra-nav-links d-none d-lg-flex">
                     <li><a href="explore.html" class="nav-link" data-nav="home"><i class="bi bi-house"></i> Home</a></li>
@@ -64,16 +64,15 @@
                 </div>
 
                 <label class="form-label fw-semibold" for="sourceText">Phrase</label>
-                <div class="translate-compose mb-3">
-                    <textarea class="form-control" id="sourceText" name="text" rows="4" placeholder="Type something to translate…"></textarea>
-                    <button type="button" class="mic-btn" id="micBtn" aria-label="Speak to translate" aria-pressed="false">
-                        <i class="bi bi-mic"></i>
+                <textarea class="form-control mb-3" id="sourceText" name="text" rows="4" placeholder="Type a phrase, or tap Speak"></textarea>
+                <div class="translate-actions mb-3">
+                    <button type="button" class="btn-roamitra btn-roamitra-navy" id="micBtn" aria-label="Speak to translate" aria-pressed="false">
+                        <i class="bi bi-mic"></i> <span>Speak</span>
                     </button>
+                    <button type="submit" class="btn-roamitra btn-roamitra-navy">Translate</button>
                 </div>
 
                 <div id="translateStatus" class="form-alert" hidden></div>
-                <button type="submit" class="btn-roamitra btn-roamitra-navy">Translate text</button>
-                <p class="small text-muted mt-2 mb-0">Voice: tap the microphone, speak, then we transcribe, translate, and read the result back.</p>
 
                 <div id="translateResult" class="translated-box" hidden>
                     <div class="small text-muted mb-1">Translation</div>
@@ -93,8 +92,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
-    <script src="assets/js/nav.js"></script>
-    <script src="assets/js/ai-assistant.js"></script>
-    <script src="assets/js/translator.js"></script>
+    <script src="assets/js/nav.js?v=navmenu5"></script>
+    <script src="assets/js/ai-assistant.js?v=roamini2"></script>
+    <script src="assets/js/translator.js?v=voice5"></script>
 </body>
 </html>

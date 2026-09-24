@@ -33,10 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     } catch (err) {
-        if (err.status === 401) {
-            const next = (location.pathname.split('/').pop() || 'host.html') + location.search;
-            window.location.replace(RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(next));
-            return;
+        if (err.status !== 401 && statusBox) {
+            statusBox.className = 'form-alert error';
+            statusBox.textContent = err.message || 'Could not load your host request.';
+            statusBox.hidden = false;
         }
     }
 
@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showExisting(data.application);
             }
         } catch (err) {
+            if (err.status === 401) {
+                window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('host.html#hostApply');
+                return;
+            }
             statusBox.className = 'form-alert error';
             statusBox.textContent = err.message || 'Could not submit application.';
             statusBox.hidden = false;
@@ -71,6 +75,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p class="mb-0">${escapeHtml(app.city || '')}${app.review_note ? ' — ' + escapeHtml(app.review_note) : ''}</p>
             ${status === 'pending' ? '<p class="mb-0 mt-2 text-muted">Admin can see this request on the Admin dashboard.</p>' : ''}`;
     }
+
+    const featured = document.getElementById('hostFeatured');
+    const stepHosts = (dir) => {
+        if (!featured) return;
+        const card = featured.querySelector('.host-feature-card');
+        const amount = (card ? card.offsetWidth : 180) + 14;
+        const max = featured.scrollWidth - featured.clientWidth;
+        if (dir > 0 && featured.scrollLeft >= max - 8) featured.scrollTo({ left: 0, behavior: 'smooth' });
+        else featured.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    };
+    document.getElementById('hostNext')?.addEventListener('click', () => stepHosts(1));
+    document.getElementById('hostPrev')?.addEventListener('click', () => stepHosts(-1));
+    setInterval(() => stepHosts(1), 2800);
 
     function escapeHtml(text) {
         const d = document.createElement('div');

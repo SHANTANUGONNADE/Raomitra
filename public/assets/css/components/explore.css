@@ -342,6 +342,23 @@
     color: var(--color-primary-light);
 }
 
+.location-chip .bi-pencil {
+    font-size: 0.72rem;
+    margin-left: 0.15rem;
+}
+
+.location-chip-input {
+    width: 10.5rem;
+    max-width: 46vw;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    padding: 0;
+}
+
 .feed-filters {
     display: flex;
     flex-wrap: wrap;
@@ -483,18 +500,22 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: 1.5rem;
-    color: var(--color-white);
+    color: #fff;
 }
 
-.destination-hero-overlay h1 {
+.destination-hero-overlay h1,
+[data-theme="dark"] .destination-hero-overlay h1 {
     font-size: 1.75rem;
     font-weight: 800;
     margin: 0 0 0.35rem;
+    color: #fff;
 }
 
-.destination-hero-overlay p {
+.destination-hero-overlay p,
+[data-theme="dark"] .destination-hero-overlay p {
     margin: 0;
     opacity: 0.92;
+    color: #fff;
 }
 
 .destination-facts {

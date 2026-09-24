@@ -2,6 +2,205 @@
  * Roamini — fullscreen travel assistant
  */
 
+function roamitraSpeechLang(code) {
+    const map = { en: 'en-US', hi: 'hi-IN', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', ja: 'ja-JP', ta: 'ta-IN', kn: 'kn-IN', te: 'te-IN', bn: 'bn-IN', ar: 'ar-SA' };
+    if (code === 'zh-CN' || code === 'zh') return 'zh-CN';
+    return map[code] || code || 'en-US';
+}
+
+function roamitraLoadVoices() {
+    return new Promise((resolve) => {
+        if (!window.speechSynthesis) {
+            resolve([]);
+            return;
+        }
+        const existing = window.speechSynthesis.getVoices();
+        if (existing.length) {
+            resolve(existing);
+            return;
+        }
+        const finish = () => resolve(window.speechSynthesis.getVoices());
+        window.speechSynthesis.addEventListener('voiceschanged', finish, { once: true });
+        window.speechSynthesis.getVoices();
+        setTimeout(finish, 700);
+    });
+}
+
+const WHISPER_LANG = {
+    en: 'english', hi: 'hindi', es: 'spanish', fr: 'french', de: 'german', it: 'italian',
+    pt: 'portuguese', ja: 'japanese', ko: 'korean', ar: 'arabic', ru: 'russian', ta: 'tamil',
+    te: 'telugu', kn: 'kannada', ml: 'malayalam', bn: 'bengali', mr: 'marathi', gu: 'gujarati',
+    th: 'thai', vi: 'vietnamese', tr: 'turkish', nl: 'dutch', 'zh-CN': 'chinese', zh: 'chinese'
+};
+
+let whisperPipe = null;
+let whisperLoading = null;
+
+let whisperStatus = null;
+
+function loadWhisper(onStatus) {
+    if (onStatus) whisperStatus = onStatus;
+    if (whisperPipe) return Promise.resolve(whisperPipe);
+    if (!whisperLoading) {
+        whisperLoading = (async () => {
+            if (whisperStatus) whisperStatus('Preparing voice… the first time can take a moment.');
+            const transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+            transformers.env.allowLocalModels = false;
+            transformers.env.useBrowserCache = true;
+            if (transformers.env.backends?.onnx?.wasm) {
+                transformers.env.backends.onnx.wasm.numThreads = 1;
+            }
+            whisperPipe = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+                progress_callback: (data) => {
+                    if (!whisperStatus || !data || data.status !== 'progress' || !data.total) return;
+                    const pct = Math.min(100, Math.round((data.loaded / data.total) * 100));
+                    if (pct >= 100) return;
+                    whisperStatus('Preparing voice… ' + pct + '%');
+                }
+            });
+            return whisperPipe;
+        })().catch((err) => {
+            whisperLoading = null;
+            throw err;
+        });
+    }
+    return whisperLoading;
+}
+
+async function audioBlobTo16k(blob) {
+    const ctx = new AudioContext();
+    try {
+        await ctx.resume();
+        const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+        const length = Math.max(1, Math.ceil(decoded.duration * 16000));
+        const offline = new OfflineAudioContext(1, length, 16000);
+        const source = offline.createBufferSource();
+        source.buffer = decoded;
+        source.connect(offline.destination);
+        source.start(0);
+        const rendered = await offline.startRendering();
+        return new Float32Array(rendered.getChannelData(0));
+    } finally {
+        ctx.close();
+    }
+}
+
+window.RoamitraVoice = {
+    listen({ lang, onStatus, onText, onError }) {
+        let finished = false;
+        let recorder = null;
+        let stream = null;
+        const chunks = [];
+        const report = (msg) => onStatus(msg);
+        const fail = (msg) => {
+            if (whisperStatus === report) whisperStatus = null;
+            onError(msg);
+        };
+        const succeed = (text) => {
+            if (whisperStatus === report) whisperStatus = null;
+            onText(text);
+        };
+        const stopTracks = () => {
+            if (stream) stream.getTracks().forEach((track) => track.stop());
+        };
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            if (recorder && recorder.state !== 'inactive') recorder.stop();
+            else stopTracks();
+        };
+        (async () => {
+            try {
+                if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
+                    fail('Voice input needs Chrome or Edge.');
+                    return;
+                }
+                report('Allow the microphone, then speak.');
+                loadWhisper(report).catch(() => {});
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (finished) {
+                    stopTracks();
+                    return;
+                }
+                report('Listening… speak, then tap Stop.');
+                const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+                const mime = types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
+                recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+                recorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size) chunks.push(event.data);
+                };
+                recorder.onstop = async () => {
+                    stopTracks();
+                    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                    if (blob.size < 800) {
+                        fail('No speech was detected. Try again.');
+                        return;
+                    }
+                    try {
+                        const pipe = await loadWhisper(report);
+                        report('Transcribing…');
+                        const audio = await audioBlobTo16k(blob);
+                        const language = WHISPER_LANG[lang] || WHISPER_LANG[String(lang || '').slice(0, 2)];
+                        const options = { task: 'transcribe' };
+                        if (language) options.language = language;
+                        const output = await pipe(audio, options);
+                        const text = String((output && output.text) || '').replace(/\s+/g, ' ').trim();
+                        if (!text || /^\s*(\([^)]*\)|\[[^\]]*\])\s*$/.test(text) || /blank_audio/i.test(text)) {
+                            fail('Could not hear that clearly. Try again.');
+                            return;
+                        }
+                        succeed(text);
+                    } catch (err) {
+                        const detail = err && err.message ? String(err.message).replace(/\s+/g, ' ').trim().slice(0, 140) : '';
+                        fail(detail
+                            ? 'Voice could not finish. ' + detail
+                            : 'Could not transcribe that. Stay online for the first voice setup, then try again.');
+                    }
+                };
+                recorder.start(250);
+                setTimeout(finish, 9000);
+            } catch (err) {
+                finished = true;
+                stopTracks();
+                if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+                    fail('Microphone permission was denied.');
+                } else {
+                    fail('Could not start the microphone.');
+                }
+            }
+        })();
+        return finish;
+    }
+};
+
+async function roamitraTranslateDirect(text, source, target) {
+    const sl = source === 'auto' || source === 'autodetect' ? 'auto' : source;
+    const url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl='
+        + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(target)
+        + '&q=' + encodeURIComponent(String(text || '').slice(0, 450));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Translation service is unavailable.');
+    const data = await res.json();
+    const out = Array.isArray(data) ? data.filter((part) => typeof part === 'string').join('').trim() : '';
+    if (!out) throw new Error('Translation service is unavailable.');
+    return out;
+}
+
+async function roamitraSpeak(text, lang) {
+    if (!text || !window.speechSynthesis) return;
+    const voices = await roamitraLoadVoices();
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = roamitraSpeechLang(lang);
+    const prefix = u.lang.toLowerCase().slice(0, 2);
+    const match = voices.find((v) => v.lang.toLowerCase() === u.lang.toLowerCase())
+        || voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
+    if (match) u.voice = match;
+    u.rate = 0.95;
+    window.speechSynthesis.resume();
+    setTimeout(() => window.speechSynthesis.speak(u), 60);
+}
+
 const RoamitraAI = {
     isOpen: false,
     isTyping: false,
@@ -39,7 +238,8 @@ const RoamitraAI = {
             && document.getElementById('aiInput')
             && document.getElementById('aiSend')
             && document.getElementById('aiClose')
-            && document.getElementById('romiLangPop');
+            && document.getElementById('romiLangPop')
+            && document.getElementById('romiLangActions');
         if (complete) {
             this.renameLabels();
             return;
@@ -47,6 +247,8 @@ const RoamitraAI = {
         document.getElementById('aiFab')?.remove();
         document.getElementById('aiPopup')?.remove();
         document.getElementById('romiLangPop')?.remove();
+        document.getElementById('roaminiDrawer')?.remove();
+        document.getElementById('roaminiBackdrop')?.remove();
         const src = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '') + 'assets/images/ai-bot.jpeg';
         const langOpts = this.langs.map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
         document.body.insertAdjacentHTML('beforeend', `
@@ -54,15 +256,22 @@ const RoamitraAI = {
                 <img src="${src}" alt="" class="ai-bot-photo">
             </button>
             <div class="romi-lang-pop" id="romiLangPop" role="dialog" aria-label="Translate">
-                <h5><i class="bi bi-translate"></i> Translate</h5>
+                <div class="romi-lang-head">
+                    <h5><i class="bi bi-translate"></i> Translate</h5>
+                    <button type="button" class="romi-lang-close" id="romiLangClose" aria-label="Close translate"><i class="bi bi-x-lg"></i></button>
+                </div>
                 <div class="romi-lang-row">
                     <select id="romiSrcLang">${langOpts}</select>
                     <select id="romiTgtLang">${langOpts}</select>
                 </div>
-                <textarea id="romiSrcText" placeholder="Type a phrase…"></textarea>
-                <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" id="romiTranslateBtn">Translate</button>
-                <p id="romiLangOut" class="small mt-2 mb-0"></p>
-                <a class="small" href="${typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('translator.html') : 'translator.html'}">Open full translator</a>
+                <textarea id="romiSrcText" rows="3" placeholder="Type a phrase, or tap Speak"></textarea>
+                <div class="romi-lang-actions" id="romiLangActions">
+                    <button type="button" class="romi-speak" id="romiMicBtn" aria-label="Speak to translate" aria-pressed="false"><i class="bi bi-mic"></i> <span>Speak</span></button>
+                    <button type="button" class="btn-roamitra btn-roamitra-navy" id="romiTranslateBtn">Translate</button>
+                </div>
+                <p id="romiLangOut" class="romi-lang-out" hidden></p>
+                <button type="button" class="romi-play" id="romiSpeakBtn" hidden><i class="bi bi-volume-up"></i> Play translation</button>
+                <a class="romi-lang-more" href="${typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('translator.html') : 'translator.html'}">Open full translator</a>
             </div>
             <div class="ai-assistant-popup" id="aiPopup" role="dialog" aria-modal="true" aria-label="Roamini">
                 <div class="ai-assistant-header">
@@ -169,7 +378,41 @@ const RoamitraAI = {
                 this.sendMessage();
             };
         });
-        document.getElementById('romiTranslateBtn')?.addEventListener('click', () => this.runTranslate());
+        const translateBtn = document.getElementById('romiTranslateBtn');
+        if (translateBtn) translateBtn.onclick = () => this.runTranslate('text');
+        const micBtn = document.getElementById('romiMicBtn');
+        if (micBtn) micBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.startVoice();
+        };
+        const langClose = document.getElementById('romiLangClose');
+        if (langClose) langClose.onclick = (e) => {
+            e.stopPropagation();
+            this.langPop?.classList.remove('open');
+        };
+        const speakBtn = document.getElementById('romiSpeakBtn');
+        if (speakBtn) speakBtn.onclick = () => {
+            const out = document.getElementById('romiLangOut');
+            const lang = document.getElementById('romiTgtLang')?.value || 'hi';
+            if (out && out.dataset.text) roamitraSpeak(out.dataset.text, lang);
+        };
+        const navToggle = document.getElementById('roaminiNavToggle');
+        if (navToggle) navToggle.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleDrawer();
+        };
+        const drawerToggle = document.getElementById('roaminiDrawerToggle');
+        if (drawerToggle) drawerToggle.onclick = () => this.closeDrawer();
+        const drawerClose = document.getElementById('roaminiDrawerClose');
+        if (drawerClose) drawerClose.onclick = () => this.closeDrawer();
+        const backdrop = document.getElementById('roaminiBackdrop');
+        if (backdrop) backdrop.onclick = () => this.closeDrawer();
+        const newPlan = document.getElementById('roaminiNewPlan');
+        if (newPlan) newPlan.onclick = () => this.openPlan();
+        const tripSearch = document.getElementById('roaminiTripSearch');
+        if (tripSearch) tripSearch.oninput = () => this.paintTrips();
+        roamitraLoadVoices();
 
         if (!document.getElementById('romiLangHint')) {
             const hint = document.createElement('button');
@@ -190,25 +433,366 @@ const RoamitraAI = {
         this.langPop?.classList.toggle('open');
     },
 
-    async runTranslate() {
+    toggleDrawer() {
+        const drawer = document.getElementById('roaminiDrawer');
+        if (!drawer) return;
+        if (drawer.classList.contains('open')) this.closeDrawer();
+        else this.openDrawer();
+    },
+
+    openDrawer() {
+        document.getElementById('roaminiDrawer')?.classList.add('open');
+        document.getElementById('roaminiBackdrop')?.classList.add('open');
+        document.getElementById('roaminiNavToggle')?.setAttribute('aria-expanded', 'true');
+        this.showTripList();
+        this.loadDrawerTrips();
+    },
+
+    closeDrawer() {
+        const drawer = document.getElementById('roaminiDrawer');
+        drawer?.classList.remove('open', 'planning');
+        document.getElementById('roaminiBackdrop')?.classList.remove('open');
+        document.getElementById('roaminiNavToggle')?.setAttribute('aria-expanded', 'false');
+    },
+
+    showTripList() {
+        document.getElementById('roaminiDrawer')?.classList.remove('planning');
+    },
+
+    async loadDrawerTrips() {
+        this.drawerTrips = [];
+        const userBox = document.getElementById('roaminiUser');
+        let user = null;
+        try {
+            user = typeof RoamitraApi !== 'undefined' ? await RoamitraApi.me() : null;
+        } catch (e) { user = null; }
+        if (userBox) {
+            if (!user) {
+                const login = typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('login.html') : 'login.html';
+                userBox.innerHTML = `<a href="${login}">Log in to see your trips</a>`;
+            } else {
+                const initial = String(user.full_name || 'U').trim().charAt(0).toUpperCase();
+                const photo = user.avatar_url
+                    ? `<img src="${user.avatar_url}" alt="">`
+                    : `<span class="roamini-user-fallback">${initial}</span>`;
+                userBox.innerHTML = `${photo}<div><strong>${this.escapeHtml(user.full_name || 'Traveler')}</strong><span>${this.escapeHtml(user.email || '')}</span></div>`;
+            }
+        }
+        if (!user) {
+            this.paintTrips();
+            return;
+        }
+        try {
+            const data = await RoamitraApi.get('/profile');
+            this.drawerTrips = data.trips || [];
+        } catch (e) {
+            this.drawerTrips = [];
+        }
+        this.paintTrips();
+    },
+
+    paintTrips() {
+        const box = document.getElementById('roaminiTripList');
+        if (!box) return;
+        const q = (document.getElementById('roaminiTripSearch')?.value || '').trim().toLowerCase();
+        const trips = (this.drawerTrips || []).filter((t) => !q || String(t.destination || '').toLowerCase().includes(q));
+        const today = new Date().toISOString().slice(0, 10);
+        const groups = { upcoming: [], draft: [], saved: [] };
+        trips.forEach((trip) => {
+            if (Number(trip.is_saved) === 1) groups.saved.push(trip);
+            else if (trip.status === 'draft' || trip.status === 'planning') groups.draft.push(trip);
+            else if (String(trip.start_date || '') >= today) groups.upcoming.push(trip);
+            else groups.saved.push(trip);
+        });
+        const section = (label, items, empty) => {
+            const rows = items.length
+                ? items.map((trip) => {
+                    const when = trip.status === 'draft' || trip.status === 'planning'
+                        ? (trip.status === 'draft' ? 'In progress' : 'Planning')
+                        : (Number(trip.is_saved) === 1
+                            ? this.tripDays(trip) + ' days'
+                            : `${this.shortDate(trip.start_date)} - ${this.shortDate(trip.end_date)}`);
+                    return `<button type="button" class="roamini-trip" data-trip="${trip.id}"><i class="bi bi-calendar3"></i><span><strong>${this.escapeHtml(trip.destination || 'Trip')}</strong><span>${this.escapeHtml(when)}</span></span></button>`;
+                }).join('')
+                : `<p class="small" style="opacity:.65">${empty}</p>`;
+            return `<div class="roamini-group-label">${label}</div>${rows}`;
+        };
+        box.innerHTML = section('UPCOMING TRIPS', groups.upcoming, 'No upcoming trips yet.')
+            + section('DRAFT TRIPS', groups.draft, 'No drafts yet.')
+            + section('SAVED TRIPS', groups.saved, 'No saved trips yet.');
+        box.querySelectorAll('[data-trip]').forEach((btn) => {
+            btn.onclick = () => {
+                window.location.href = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('itinerary.html') : 'itinerary.html')
+                    + '?trip=' + encodeURIComponent(btn.dataset.trip);
+            };
+        });
+    },
+
+    shortDate(value) {
+        if (!value) return '';
+        const date = new Date(String(value).slice(0, 10) + 'T00:00:00');
+        if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    },
+
+    tripDays(trip) {
+        const start = new Date(String(trip.start_date || '').slice(0, 10) + 'T00:00:00');
+        const end = new Date(String(trip.end_date || '').slice(0, 10) + 'T00:00:00');
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 1;
+        return Math.max(1, Math.round((end - start) / 86400000) + 1);
+    },
+
+    openPlan(prefill) {
+        this.openDrawer();
+        const drawer = document.getElementById('roaminiDrawer');
+        const plan = document.getElementById('roaminiPlan');
+        if (!drawer || !plan) return;
+        drawer.classList.add('planning');
+        const styles = [
+            ['luxury', 'Luxury', '✨'],
+            ['local', 'Local', '📍'],
+            ['adventure', 'Adventure', '💼'],
+            ['food', 'Food Explorer', '🍴'],
+            ['solo', 'Solo Explorer', '🎒'],
+            ['nature', 'Nature Escape', '🌿'],
+            ['slow', 'Slow Travel', '⏱️'],
+            ['custom', 'Your Choice', '✏️']
+        ];
+        const withWho = ['solo', 'couple', 'family', 'friends', 'group'];
+        const times = ['morning', 'afternoon', 'evening', 'late_night'];
+        plan.innerHTML = `
+            <div class="roamini-plan-head">
+                <button type="button" class="roamini-icon-btn" id="roaminiPlanBack" aria-label="Back to trips"><i class="bi bi-list"></i></button>
+                <div><strong>Roamini AI</strong><span class="roamini-plan-sub">AI-powered travel planning</span></div>
+            </div>
+            <form class="roamini-drawer-body" id="roaminiPlanForm">
+                <div style="text-align:center;margin:0.4rem 0 1rem;">
+                    <div style="width:64px;height:64px;border-radius:18px;background:#10284f;color:#3dde6a;display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;"><i class="bi bi-geo-alt"></i></div>
+                    <h3 style="margin:0.8rem 0 0.2rem;font-size:1.35rem;">Plan with Roamini AI</h3>
+                    <p style="margin:0;color:#6b7c90;">Answer a few questions and let AI create your perfect itinerary</p>
+                </div>
+                <div class="roamini-field">
+                    <label for="romiDest"><i class="bi bi-geo-alt"></i> Where are you going?</label>
+                    <input id="romiDest" required placeholder="Bali, Indonesia">
+                </div>
+                <div class="roamini-field">
+                    <label for="romiDays"><i class="bi bi-calendar3"></i> How many days?</label>
+                    <input id="romiDays" type="number" min="1" max="30" value="3" required>
+                </div>
+                <div class="roamini-field">
+                    <label for="romiBudget"><i class="bi bi-currency-dollar"></i> Your budget (USD)</label>
+                    <input id="romiBudget" type="number" min="0" step="1" placeholder="325">
+                </div>
+                <div class="roamini-field">
+                    <label>Who are you traveling with?</label>
+                    <div class="roamini-choice-row">${withWho.map((v, i) => `<label><input type="radio" name="romiWith" value="${v}" ${i === 0 ? 'checked' : ''}> ${v[0].toUpperCase() + v.slice(1)}</label>`).join('')}</div>
+                </div>
+                <div class="roamini-field" id="romiGroupWrap" hidden>
+                    <label for="romiGroup">How many people are traveling?</label>
+                    <input id="romiGroup" type="number" min="3" max="12" placeholder="4">
+                </div>
+                <div class="roamini-field">
+                    <label>Arrival time</label>
+                    <div class="roamini-choice-row">${times.map((v, i) => `<label><input type="radio" name="romiArrive" value="${v}" ${i === 0 ? 'checked' : ''}> ${v.replace('_', ' ')}</label>`).join('')}</div>
+                </div>
+                <div class="roamini-field">
+                    <label>Departure time</label>
+                    <div class="roamini-choice-row">${times.map((v, i) => `<label><input type="radio" name="romiDepart" value="${v}" ${i === 2 ? 'checked' : ''}> ${v.replace('_', ' ')}</label>`).join('')}</div>
+                </div>
+                <div class="roamini-field">
+                    <label>Travel Style <span style="font-weight:500;color:#6b7c90;">(Multi-select)</span></label>
+                    <div class="roamini-style-grid">${styles.map(([id, label, emo]) => `<button type="button" class="roamini-style" data-style="${id}"><span class="emo">${emo}</span>${label}</button>`).join('')}</div>
+                </div>
+                <p id="romiPlanStatus" class="small" hidden></p>
+                <button type="submit" class="roamini-generate" id="romiGenerate">Generate My Itinerary</button>
+                <p class="roamini-plan-note">AI will generate a personalized plan with activities</p>
+            </form>`;
+        document.getElementById('roaminiPlanBack').onclick = () => this.showTripList();
+        plan.querySelectorAll('.roamini-style').forEach((btn) => {
+            btn.onclick = () => {
+                btn.classList.toggle('selected');
+                this.refreshPlanButton();
+            };
+        });
+        plan.querySelectorAll('input').forEach((input) => {
+            input.addEventListener('input', () => this.refreshPlanButton());
+            input.addEventListener('change', () => {
+                if (input.name === 'romiWith') {
+                    const wrap = document.getElementById('romiGroupWrap');
+                    if (wrap) wrap.hidden = input.value !== 'group' || !input.checked;
+                }
+                this.refreshPlanButton();
+            });
+        });
+        document.getElementById('roaminiPlanForm').onsubmit = (e) => this.submitPlan(e);
+        if (prefill && prefill.destination) document.getElementById('romiDest').value = prefill.destination;
+        if (prefill && prefill.id) this.fillPlanFromTrip(prefill.id);
+        this.refreshPlanButton();
+    },
+
+    refreshPlanButton() {
+        const btn = document.getElementById('romiGenerate');
+        const dest = document.getElementById('romiDest');
+        if (!btn || !dest) return;
+        btn.classList.toggle('ready', dest.value.trim().length > 1);
+    },
+
+    async fillPlanFromTrip(id) {
+        try {
+            const data = await RoamitraApi.get('/trips/' + id);
+            const trip = data.trip || {};
+            const dest = document.getElementById('romiDest');
+            const days = document.getElementById('romiDays');
+            const budget = document.getElementById('romiBudget');
+            if (dest) dest.value = trip.destination || '';
+            if (days) days.value = String(this.tripDays(trip));
+            if (budget && trip.budget != null) budget.value = trip.budget;
+            const withRadio = document.querySelector(`input[name="romiWith"][value="${trip.traveling_with}"]`);
+            if (withRadio) withRadio.checked = true;
+            const arrive = document.querySelector(`input[name="romiArrive"][value="${trip.arrival_time}"]`);
+            const depart = document.querySelector(`input[name="romiDepart"][value="${trip.departure_time}"]`);
+            if (arrive) arrive.checked = true;
+            if (depart) depart.checked = true;
+            document.getElementById('roaminiPlanForm').dataset.edit = String(id);
+            this.refreshPlanButton();
+        } catch (e) { /* new plan if the trip cannot be loaded */ }
+    },
+
+    async submitPlan(e) {
+        e.preventDefault();
+        const form = document.getElementById('roaminiPlanForm');
+        const status = document.getElementById('romiPlanStatus');
+        const btn = document.getElementById('romiGenerate');
+        const user = typeof RoamitraApi !== 'undefined' ? await RoamitraApi.me() : null;
+        if (!user) {
+            window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(location.pathname.split('/').pop() || 'explore.html');
+            return;
+        }
+        const destination = document.getElementById('romiDest').value.trim();
+        const days = Math.max(1, Math.min(30, Number(document.getElementById('romiDays').value) || 1));
+        const start = new Date();
+        const end = new Date();
+        end.setDate(end.getDate() + days - 1);
+        const iso = (d) => d.toISOString().slice(0, 10);
+        const withWho = document.querySelector('input[name="romiWith"]:checked')?.value || 'solo';
+        const styles = [...form.querySelectorAll('.roamini-style.selected')].map((el) => el.dataset.style);
+        const prefMap = { luxury: 'shopping', local: 'culture', adventure: 'adventure', food: 'food', nature: 'nature', solo: 'beach', custom: 'art' };
+        const data = {
+            destination,
+            start_date: iso(start),
+            end_date: iso(end),
+            budget: document.getElementById('romiBudget').value,
+            traveling_with: styles.includes('solo') ? 'solo' : withWho,
+            group_size: document.getElementById('romiGroup')?.value || '',
+            arrival_time: document.querySelector('input[name="romiArrive"]:checked')?.value || 'morning',
+            departure_time: document.querySelector('input[name="romiDepart"]:checked')?.value || 'evening',
+            pace: styles.includes('slow') ? 'relaxed' : 'moderate',
+            preferences: styles.map((s) => prefMap[s]).filter(Boolean)
+        };
+        btn.disabled = true;
+        btn.textContent = 'Creating trip…';
+        try {
+            let tripId = form.dataset.edit || '';
+            if (tripId) {
+                const updated = await RoamitraApi.post('/trips/' + tripId + '/update', data);
+                tripId = updated.trip.id;
+            } else {
+                const created = await RoamitraApi.post('/trips', data);
+                tripId = created.trip.id;
+            }
+            btn.textContent = 'Generating itinerary…';
+            const gen = await RoamitraApi.post('/trips/' + tripId + '/generate', {});
+            window.location.href = RoamitraApi.page('itinerary.html') + '?trip=' + gen.trip.id;
+        } catch (err) {
+            status.hidden = false;
+            status.textContent = err.message || 'Could not generate that itinerary.';
+            btn.disabled = false;
+            btn.textContent = 'Generate My Itinerary';
+        }
+    },
+
+    async runTranslate(mode) {
         const out = document.getElementById('romiLangOut');
+        const speakBtn = document.getElementById('romiSpeakBtn');
         const text = document.getElementById('romiSrcText')?.value.trim();
+        const source = document.getElementById('romiSrcLang')?.value || 'en';
+        const target = document.getElementById('romiTgtLang')?.value || 'hi';
         if (!out) return;
+        out.hidden = false;
         if (!text) {
-            out.textContent = 'Type a phrase first.';
+            out.textContent = 'Type a phrase, or tap Speak.';
             return;
         }
         out.textContent = 'Translating…';
+        if (speakBtn) speakBtn.hidden = true;
+        let translated = '';
         try {
             const data = await RoamitraApi.post('/translate', {
                 text,
-                source_lang: document.getElementById('romiSrcLang').value,
-                target_lang: document.getElementById('romiTgtLang').value
+                source_lang: source,
+                target_lang: target,
+                mode: mode === 'voice' ? 'voice' : 'text'
             });
-            out.textContent = data.translated || data.text || JSON.stringify(data);
+            translated = data.translated_text || data.translated || data.text || '';
         } catch (err) {
-            out.textContent = err.message || 'Could not translate right now.';
+            try {
+                translated = await roamitraTranslateDirect(text, source, target);
+            } catch (fallbackErr) {
+                out.textContent = err.message || 'Could not translate right now.';
+                return;
+            }
         }
+        if (!translated) {
+            out.textContent = 'Could not translate right now.';
+            return;
+        }
+        out.dataset.text = translated;
+        out.textContent = translated;
+        if (speakBtn) speakBtn.hidden = false;
+        if (mode === 'voice') roamitraSpeak(translated, target);
+    },
+
+    startVoice() {
+        const mic = document.getElementById('romiMicBtn');
+        const input = document.getElementById('romiSrcText');
+        const out = document.getElementById('romiLangOut');
+        const setSpeak = (listening) => {
+            if (!mic) return;
+            mic.classList.toggle('listening', listening);
+            mic.setAttribute('aria-pressed', listening ? 'true' : 'false');
+            mic.innerHTML = listening
+                ? '<i class="bi bi-stop-fill"></i> <span>Stop</span>'
+                : '<i class="bi bi-mic"></i> <span>Speak</span>';
+        };
+        if (this.voiceStop) {
+            const stop = this.voiceStop;
+            this.voiceStop = null;
+            setSpeak(false);
+            stop();
+            return;
+        }
+        setSpeak(true);
+        this.voiceStop = window.RoamitraVoice.listen({
+            lang: document.getElementById('romiSrcLang')?.value || 'en',
+            onStatus: (msg) => {
+                if (!out) return;
+                out.hidden = false;
+                out.textContent = msg;
+            },
+            onText: (text) => {
+                this.voiceStop = null;
+                setSpeak(false);
+                if (input) input.value = text;
+                this.runTranslate('voice');
+            },
+            onError: (msg) => {
+                this.voiceStop = null;
+                setSpeak(false);
+                if (!out) return;
+                out.hidden = false;
+                out.textContent = msg;
+            }
+        });
     },
 
     toggle() {
@@ -374,4 +958,13 @@ const RoamitraAI = {
 
 document.addEventListener('DOMContentLoaded', () => {
     RoamitraAI.mount();
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get('plan');
+    const destination = params.get('destination');
+    if ((plan || destination) && document.body.dataset.page !== 'roamini') {
+        const q = new URLSearchParams();
+        if (plan) q.set('plan', plan);
+        if (destination) q.set('destination', destination);
+        window.location.replace(RoamitraApi.page('roamini.html') + '?' + q.toString());
+    }
 });

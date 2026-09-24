@@ -244,8 +244,12 @@ function renderDestination(place) {
         highlights.innerHTML = dest.highlights.map((h) => `<li>${h}</li>`).join('');
     }
     if (plan) {
-        const plannerPage = typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('planner.html') : 'planner.html';
-        plan.href = plannerPage + '?destination=' + encodeURIComponent(dest.planner);
+        plan.href = '#roamini';
+        plan.onclick = (e) => {
+            e.preventDefault();
+            const name = dest.planner || dest.title || '';
+            window.location.href = (typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('roamini.html') : 'roamini.html') + '?destination=' + encodeURIComponent(name);
+        };
     }
     return dest;
 }

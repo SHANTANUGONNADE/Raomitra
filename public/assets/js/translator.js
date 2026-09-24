@@ -7,7 +7,45 @@ const LANGS = [
     ['th', 'Thai'], ['vi', 'Vietnamese'], ['tr', 'Turkish'], ['nl', 'Dutch']
 ];
 
+function speechLang(code) {
+    const map = { en: 'en-US', hi: 'hi-IN', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', pt: 'pt-BR', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA', ru: 'ru-RU', ta: 'ta-IN', te: 'te-IN', kn: 'kn-IN', ml: 'ml-IN', bn: 'bn-IN', mr: 'mr-IN', gu: 'gu-IN', th: 'th-TH', vi: 'vi-VN', tr: 'tr-TR', nl: 'nl-NL' };
+    if (code === 'zh-CN' || code === 'zh') return 'zh-CN';
+    return map[code] || code || 'en-US';
+}
+
+function loadVoices() {
+    return new Promise((resolve) => {
+        if (!window.speechSynthesis) {
+            resolve([]);
+            return;
+        }
+        const existing = window.speechSynthesis.getVoices();
+        if (existing.length) {
+            resolve(existing);
+            return;
+        }
+        const finish = () => resolve(window.speechSynthesis.getVoices());
+        window.speechSynthesis.addEventListener('voiceschanged', finish, { once: true });
+        window.speechSynthesis.getVoices();
+        setTimeout(finish, 700);
+    });
+}
+
+async function translateFallback(text, source, target) {
+    const sl = source === 'auto' || source === 'autodetect' ? 'auto' : source;
+    const url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl='
+        + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(target)
+        + '&q=' + encodeURIComponent(String(text || '').slice(0, 450));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Translation service is unavailable.');
+    const data = await res.json();
+    const out = Array.isArray(data) ? data.filter((part) => typeof part === 'string').join('').trim() : '';
+    if (!out) throw new Error('Translation service is unavailable.');
+    return out;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    loadVoices();
     const source = document.getElementById('sourceLang');
     const target = document.getElementById('targetLang');
     LANGS.forEach(([code, label]) => {
@@ -61,6 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         speak(text, target.value);
     });
 
+    let stopVoice = null;
     micBtn.addEventListener('click', () => startVoice());
 
     async function runTranslate(mode) {
@@ -82,85 +121,100 @@ document.addEventListener('DOMContentLoaded', async () => {
                 target_lang: target.value,
                 mode
             });
+            const translated = data.translated_text || data.translated || data.text;
             result.hidden = false;
-            result.dataset.text = data.translated_text;
-            result.querySelector('.translated-text').textContent = data.translated_text;
+            result.dataset.text = translated;
+            result.querySelector('.translated-text').textContent = translated;
             status.hidden = true;
             if (mode === 'voice') {
-                speak(data.translated_text, target.value);
+                speak(translated, target.value);
             }
             source.dataset.locked = '1';
             await loadHistory();
         } catch (err) {
-            showError(err.message || 'Translation failed.');
+            try {
+                const translated = await translateFallback(text, source.value, target.value);
+                result.hidden = false;
+                result.dataset.text = translated;
+                result.querySelector('.translated-text').textContent = translated;
+                status.hidden = true;
+                if (mode === 'voice') speak(translated, target.value);
+            } catch (fallbackErr) {
+                showError(err.message || fallbackErr.message || 'Translation failed.');
+            }
         } finally {
             btn.disabled = false;
         }
     }
 
     function startVoice() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            showError('Voice input is not supported in this browser. Try Chrome, or type the phrase instead.');
+        const setSpeak = (listening) => {
+            micBtn.classList.toggle('listening', listening);
+            micBtn.setAttribute('aria-pressed', listening ? 'true' : 'false');
+            micBtn.innerHTML = listening
+                ? '<i class="bi bi-stop-fill"></i> <span>Stop</span>'
+                : '<i class="bi bi-mic"></i> <span>Speak</span>';
+        };
+        if (stopVoice) {
+            const stop = stopVoice;
+            stopVoice = null;
+            setSpeak(false);
+            stop();
             return;
         }
-        const rec = new SpeechRecognition();
-        rec.lang = source.value === 'zh-CN' ? 'zh-CN' : source.value;
-        rec.interimResults = false;
-        rec.maxAlternatives = 1;
-        micBtn.classList.add('listening');
-        micBtn.setAttribute('aria-pressed', 'true');
-        status.hidden = false;
-        status.className = 'form-alert';
-        status.textContent = 'Listening… allow microphone access if prompted.';
-        rec.onresult = (event) => {
-            input.value = event.results[0][0].transcript;
-            micBtn.classList.remove('listening');
-            runTranslate('voice');
-        };
-        rec.onerror = (event) => {
-            micBtn.classList.remove('listening');
-            const map = {
-                'not-allowed': 'Microphone permission was denied.',
-                'no-speech': 'No speech was detected. Try again.',
-                'audio-capture': 'No microphone was found.',
-                network: 'Network error during speech recognition.'
-            };
-            showError(map[event.error] || ('Voice error: ' + event.error));
-        };
-        rec.onend = () => {
-            micBtn.classList.remove('listening');
-            micBtn.setAttribute('aria-pressed', 'false');
-        };
-        try {
-            rec.start();
-        } catch (e) {
-            showError('Could not start the microphone.');
-            micBtn.classList.remove('listening');
+        if (!window.RoamitraVoice) {
+            showError('Voice is still loading. Tap Speak again.');
+            return;
         }
+        setSpeak(true);
+        stopVoice = window.RoamitraVoice.listen({
+            lang: source.value,
+            onStatus: (msg) => {
+                status.hidden = false;
+                status.className = 'form-alert';
+                status.textContent = msg;
+            },
+            onText: (text) => {
+                stopVoice = null;
+                setSpeak(false);
+                input.value = text;
+                runTranslate('voice');
+            },
+            onError: (msg) => {
+                stopVoice = null;
+                setSpeak(false);
+                showError(msg);
+            }
+        });
     }
 
-    function speak(text, lang) {
+    async function speak(text, lang) {
         if (!window.speechSynthesis) {
             showError('Audio playback is not supported in this browser.');
             return;
         }
+        const voices = await loadVoices();
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang === 'zh-CN' ? 'zh-CN' : lang;
-        const voices = window.speechSynthesis.getVoices();
-        const match = voices.find(v => v.lang.toLowerCase().startsWith(String(u.lang).toLowerCase().slice(0, 2)));
+        u.lang = speechLang(lang);
+        const prefix = u.lang.toLowerCase().slice(0, 2);
+        const match = voices.find(v => v.lang.toLowerCase() === u.lang.toLowerCase())
+            || voices.find(v => v.lang.toLowerCase().startsWith(prefix));
         if (match) u.voice = match;
+        u.rate = 0.95;
         status.hidden = false;
         status.className = 'form-alert';
         status.textContent = 'Playing translation…';
         u.onend = () => { status.hidden = true; };
         u.onerror = () => showError('Could not play the translated audio.');
-        try {
-            window.speechSynthesis.speak(u);
-        } catch (e) {
-            showError('Could not play the translated audio.');
-        }
+        window.speechSynthesis.resume();
+        setTimeout(() => {
+            try {
+                window.speechSynthesis.speak(u);
+            } catch (e) {
+                showError('Could not play the translated audio.');
+            }
+        }, 60);
     }
 
     function showError(msg) {

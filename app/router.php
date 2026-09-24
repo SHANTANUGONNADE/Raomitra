@@ -52,6 +52,7 @@ try {
         $method === 'GET' && $path === '/trips' => TripController::list(),
         $method === 'POST' && $path === '/trips' => TripController::create($input),
         $method === 'GET' && preg_match('#^/trips/(\d+)$#', $path, $m) === 1 => TripController::show((int) $m[1]),
+        $method === 'POST' && preg_match('#^/trips/(\d+)/update$#', $path, $m) === 1 => TripController::update((int) $m[1], $input),
         $method === 'POST' && preg_match('#^/trips/(\d+)/generate$#', $path, $m) === 1 => TripController::generate((int) $m[1]),
         $method === 'POST' && preg_match('#^/trips/(\d+)/save$#', $path, $m) === 1 => TripController::save((int) $m[1]),
         $method === 'POST' && preg_match('#^/trips/(\d+)/assistant$#', $path, $m) === 1 => TripController::assistant((int) $m[1], $input),

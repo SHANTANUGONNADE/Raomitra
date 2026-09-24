@@ -9,12 +9,48 @@
     <link rel="apple-touch-icon" href="assets/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=ui-comm-chat4" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep24n" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="community">
 
     <nav class="roamitra-navbar"></nav>
+
+    <section class="comm-phone">
+        <div class="container">
+            <h1>Community</h1>
+            <a class="comm-phone-activity" href="profile.html">
+                <span class="comm-phone-activity-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                <span>
+                    <strong>Your Activity</strong>
+                    <small>View all updates and history</small>
+                </span>
+                <b>18</b>
+            </a>
+        </div>
+    </section>
+    <div class="comm-phone-pin">
+        <div class="container">
+            <div class="comm-phone-grid">
+                <a href="#ask-question"><span class="tone-blue"><i class="bi bi-chat-dots"></i></span>Questions</a>
+                <a href="#commUnder" data-open="host"><span class="tone-green"><i class="bi bi-house-door"></i></span>Hosting</a>
+                <a href="#commUnder" data-open="rent"><span class="tone-purple"><i class="bi bi-bicycle"></i></span>Rentals</a>
+                <a href="#commUnder" data-open="meetup"><span class="tone-orange"><i class="bi bi-geo-alt"></i></span>Meetups</a>
+            </div>
+        </div>
+    </div>
+    <section class="comm-phone">
+        <div class="container">
+            <div class="comm-phone-stats">
+                <h2><i class="bi bi-graph-up-arrow"></i> Community Stats</h2>
+                <div>
+                    <article><strong>247</strong><span>Active Questions</span><em>+12%</em></article>
+                    <article><strong>892</strong><span>Verified Hosts</span><em>+8%</em></article>
+                    <article><strong>456</strong><span>Local Rentals</span><em>+31%</em></article>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="search-hero comm-hero pb-0">
         <div class="container">
@@ -28,7 +64,8 @@
         </div>
     </section>
 
-    <section class="section-padding-sm pt-3">
+    <div class="comm-hang-scope">
+    <section class="section-padding-sm pt-3 comm-feature-pin">
         <div class="container">
             <div class="row g-3 comm-feature-bento">
                 <div class="col-lg-3 col-md-6">
@@ -47,7 +84,7 @@
                         <h3>Ask to Host</h3>
                         <p>Become a local guide and earn while helping travelers discover your city.</p>
                         <ul class="feature-list"><li>Earn while helping travelers</li><li>Get a verified host badge</li><li>Connect with global community</li></ul>
-                        <div class="feature-footer"><a href="host.html" class="feature-link-text">Apply to host</a><a href="host.html" class="btn-feature-arrow orange"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="host">Apply to host</a><a href="#commUnder" class="btn-feature-arrow orange" data-open="host"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -57,7 +94,7 @@
                         <h3>Ask to Rent</h3>
                         <p>Rent bikes, cars, and scooters directly from verified local owners.</p>
                         <ul class="feature-list"><li>Best local prices</li><li>Verified vehicle owners</li><li>Flexible rental options</li></ul>
-                        <div class="feature-footer"><a href="#rent-section" class="feature-link-text">Browse rentals</a><a href="#rent-section" class="btn-feature-arrow blue"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="rent">Browse rentals</a><a href="#commUnder" class="btn-feature-arrow blue" data-open="rent"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -66,189 +103,226 @@
                         <h3>Meetups</h3>
                         <p>Join local events and group activities with fellow travelers.</p>
                         <ul class="feature-list"><li>Group adventures</li><li>Local experiences</li><li>Make new friends</li></ul>
-                        <div class="feature-footer"><a href="meetups.html" class="feature-link-text">Find meetups</a><a href="meetups.html" class="btn-feature-arrow purple"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="meetup">Find meetups</a><a href="#commUnder" class="btn-feature-arrow purple" data-open="meetup"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="section-padding-sm pt-0">
+    <section class="comm-under" id="commUnder" hidden>
         <div class="container">
-            <div class="section-header-inline">
-                <h2><i class="bi bi-globe-americas"></i> Featured Destinations</h2>
-                <a href="explore.html">See All <i class="bi bi-arrow-right"></i></a>
-            </div>
-            <div class="row g-3 mb-4 comm-dest-spot">
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="bali">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&h=400&fit=crop" alt="Bali, Indonesia" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
-                        </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Bali, Indonesia</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.8</span><span>16.7k travelers</span></div>
-                            <p class="dest-desc">Tropical paradise with stunning temples, rice terraces, and vibrant culture.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">Beach</span><span class="dest-tag">Culture</span><span class="dest-tag">Adventure</span>
-                            </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,200 <span>/ week</span></div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="destination.html?place=bali">Explore</a>
-                            </div>
-                        </div>
+            <div id="commHostPanel" hidden>
+                <div class="host-hero" id="commHostTop">
+                    <div class="host-hero-kicker"><i class="bi bi-house-door"></i> Become a Host</div>
+                    <h2>Welcome Travelers, Build Community</h2>
+                    <p>Meet amazing people, share experiences, and earn rewards by opening your home to fellow travelers.</p>
+                    <div class="host-perks">
+                        <span><i class="bi bi-people"></i> Meet Travelers</span>
+                        <span><i class="bi bi-heart"></i> Share Experiences</span>
+                        <span><i class="bi bi-award"></i> Earn Rewards</span>
                     </div>
+                    <button type="button" class="host-hero-btn" data-host-form>Become a Host</button>
                 </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="tokyo">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop" alt="Tokyo, Japan" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
+                <h3 class="host-block-title">All Hosts</h3>
+                <article class="host-person">
+                    <div class="host-person-top">
+                        <div class="host-avatar-wrap">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=60" alt="Emma Wilson" referrerpolicy="no-referrer">
+                            <span class="host-online"></span>
                         </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Tokyo, Japan</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.9</span><span>22.1k travelers</span></div>
-                            <p class="dest-desc">A dazzling blend of ultramodern and traditional, from neon-lit skyscrapers to historic temples.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">City</span><span class="dest-tag">Food</span><span class="dest-tag">Culture</span>
-                            </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,450 <span>/ week</span></div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="destination.html?place=tokyo">Explore</a>
-                            </div>
+                        <div>
+                            <h2>Emma Wilson <i class="bi bi-patch-check-fill"></i></h2>
+                            <p class="host-loc"><i class="bi bi-geo-alt"></i> San Francisco, United States</p>
+                            <p class="host-since">Hosting since 2024</p>
                         </div>
+                        <span class="host-score"><i class="bi bi-star-fill"></i> 5</span>
                     </div>
+                    <p class="host-bio">Digital nomad who loves meeting fellow travelers and sharing local tips!</p>
+                    <div class="host-stats">
+                        <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>95%</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 1 hour</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Private Room</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>28</strong></span></div>
+                    </div>
+                    <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Spanish</span></div>
+                    <div class="host-tags"><span class="host-chip">Surfing</span><span class="host-chip">Photography</span><span class="host-chip">Food</span><span class="host-chip">Hiking</span></div>
+                    <div class="host-person-foot">
+                        <div class="host-foot-meta">
+                            <span><i class="bi bi-people"></i> 3 mutual connections</span>
+                            <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                        </div>
+                        <button type="button" class="host-ask" data-host-form data-host-name="Emma Wilson">Ask to<br>Host</button>
+                    </div>
+                </article>
+                <article class="host-person">
+                    <div class="host-person-top">
+                        <div class="host-avatar-wrap">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=60" alt="Jake Thompson" referrerpolicy="no-referrer">
+                            <span class="host-online"></span>
+                        </div>
+                        <div>
+                            <h2>Jake Thompson <i class="bi bi-patch-check-fill"></i></h2>
+                            <p class="host-loc"><i class="bi bi-geo-alt"></i> Tokyo, Japan</p>
+                            <p class="host-since">Hosting since 2023</p>
+                        </div>
+                        <span class="host-score"><i class="bi bi-star-fill"></i> 4.9</span>
+                    </div>
+                    <p class="host-bio">Tech professional passionate about Japanese culture. Love hosting travelers!</p>
+                    <div class="host-stats">
+                        <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>98%</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 2 hours</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Entire Place</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>41</strong></span></div>
+                    </div>
+                    <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Japanese</span></div>
+                    <div class="host-tags"><span class="host-chip">Food</span><span class="host-chip">City</span><span class="host-chip">Temples</span></div>
+                    <div class="host-person-foot">
+                        <div class="host-foot-meta">
+                            <span><i class="bi bi-people"></i> 2 mutual connections</span>
+                            <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                        </div>
+                        <button type="button" class="host-ask" data-host-form data-host-name="Jake Thompson">Ask to<br>Host</button>
+                    </div>
+                </article>
+                <article class="host-person">
+                    <div class="host-person-top">
+                        <div class="host-avatar-wrap">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&h=200&q=60" alt="Priya Sharma" referrerpolicy="no-referrer">
+                            <span class="host-online"></span>
+                        </div>
+                        <div>
+                            <h2>Priya Sharma <i class="bi bi-patch-check-fill"></i></h2>
+                            <p class="host-loc"><i class="bi bi-geo-alt"></i> Bali, Indonesia</p>
+                            <p class="host-since">Hosting since 2022</p>
+                        </div>
+                        <span class="host-score"><i class="bi bi-star-fill"></i> 4.8</span>
+                    </div>
+                    <p class="host-bio">Rice-terrace walks, warungs, and sunrise tips. I help travelers skip the crowded spots.</p>
+                    <div class="host-stats">
+                        <div class="host-stat"><i class="bi bi-lightning-charge"></i><span>Response Rate<strong>96%</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-clock"></i><span>Responds<strong>Within 1 hour</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-house"></i><span>Hosting Type<strong>Private Room</strong></span></div>
+                        <div class="host-stat"><i class="bi bi-star"></i><span>Reviews<strong>63</strong></span></div>
+                    </div>
+                    <div class="host-langs"><i class="bi bi-translate"></i> Speaks: <span class="host-chip">English</span><span class="host-chip">Hindi</span></div>
+                    <div class="host-tags"><span class="host-chip">Temples</span><span class="host-chip">Food</span><span class="host-chip">Surf</span></div>
+                    <div class="host-person-foot">
+                        <div class="host-foot-meta">
+                            <span><i class="bi bi-people"></i> 5 mutual connections</span>
+                            <span class="host-available"><i class="bi bi-check-circle-fill"></i> Available now</span>
+                        </div>
+                        <button type="button" class="host-ask" data-host-form data-host-name="Priya Sharma">Ask to<br>Host</button>
+                    </div>
+                </article>
+                <div id="commAskSheet" class="comm-ask-sheet" hidden>
+                    <h3 id="commAskTitle">Ask to Host</h3>
+                    <p id="commAskLead">Tell them when you are visiting.</p>
+                    <textarea id="commAskNote" rows="3" maxlength="400" placeholder="Hi, I am visiting next week and would love local tips."></textarea>
+                    <button type="button" id="commAskSend" class="btn-roamitra btn-roamitra-primary">Send request</button>
+                    <p id="commAskStatus" hidden></p>
                 </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="destination-card" data-place="paris">
-                        <div class="dest-image">
-                            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop" alt="Paris, France" loading="lazy">
-                            <button class="dest-bookmark" aria-label="Save"><i class="bi bi-bookmark"></i></button>
-                        </div>
-                        <div class="dest-body">
-                            <div class="dest-title">Paris, France</div>
-                            <div class="dest-meta"><span><i class="bi bi-star-fill"></i> 4.7</span><span>18.5k travelers</span></div>
-                            <p class="dest-desc">The City of Light enchants with its art, cuisine, and iconic landmarks.</p>
-                            <div class="dest-tags">
-                                <span class="dest-tag">Romance</span><span class="dest-tag">Art</span><span class="dest-tag">Food</span>
+                <div id="commHostApply" class="comm-host-apply">
+                    <h3 class="host-block-title">Become a Host</h3>
+                    <p class="section-subtitle">Send a request to host travelers or list a vehicle. It stays on this page and goes to the admin dashboard.</p>
+                    <div id="commHostStatus" class="form-alert" hidden></div>
+                    <div id="commHostExisting" class="planner-card mb-3" hidden></div>
+                    <form id="commHostForm" class="planner-card planner-form">
+                        <fieldset class="mb-3">
+                            <legend class="form-label fw-semibold">What do you want to list?</legend>
+                            <div class="planner-options">
+                                <label class="choice-card"><input type="radio" name="listing_type" value="host" checked> Local host / stay</label>
+                                <label class="choice-card"><input type="radio" name="listing_type" value="vehicle"> Vehicle rental</label>
                             </div>
-                            <div class="dest-footer">
-                                <div class="dest-price">$1,350 <span>/ week</span></div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="destination.html?place=paris">Explore</a>
+                        </fieldset>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold" for="commCity">City</label>
+                                <input class="form-control" id="commCity" name="city" required placeholder="e.g. Bangalore">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold" for="commCountry">Country</label>
+                                <input class="form-control" id="commCountry" name="country" value="India" required>
                             </div>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="commPhone">Phone</label>
+                            <input class="form-control" id="commPhone" name="phone" required placeholder="+91 …">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="commExperience">Hosting / rental experience</label>
+                            <select class="form-select" id="commExperience" name="experience">
+                                <option value="new">Just getting started</option>
+                                <option value="1-2 years">1–2 years</option>
+                                <option value="3+ years">3+ years</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="commVehicleWrap" hidden>
+                            <label class="form-label fw-semibold" for="commVehicle">Vehicle details</label>
+                            <input class="form-control" id="commVehicle" name="vehicle_info" placeholder="e.g. Honda Activa 6G, 2022, with helmets">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="commBio">About you</label>
+                            <textarea class="form-control" id="commBio" name="bio" rows="4" required placeholder="Tell travelers who you are and how you help guests."></textarea>
+                        </div>
+                        <button type="submit" class="btn-roamitra btn-roamitra-navy" id="commHostSubmit">Submit application</button>
+                    </form>
                 </div>
             </div>
-
-            <div class="row g-4 mb-4 comm-split">
-                <div class="col-lg-6">
-                    <div class="section-header-inline">
-                        <h2><i class="bi bi-people"></i> People Nearby Traveling</h2>
-                        <a href="explore.html#people-nearby">See All</a>
-                    </div>
-                    <div class="bg-white border rounded-4 p-3">
-                        <div class="person-row">
-                            <div class="person-avatar">EW</div>
-                            <div class="person-info">
-                                <div class="person-name">Emma Wilson <span class="star-rating"><i class="bi bi-star-fill"></i> 4.9</span></div>
-                                <div class="person-location">Currently in Bali, Indonesia</div>
-                                <div class="person-tags"><span class="person-tag">Hiking</span><span class="person-tag">Photography</span><span class="person-tag">Food</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+            <div id="commRentPanel" hidden>
+                <section class="section-padding-sm pt-0" id="rent-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h2 class="section-title">Ask to Rent</h2>
+                            <p class="section-subtitle mb-0">Vehicles from verified local owners</p>
                         </div>
-                        <div class="person-row">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#3B82F6,#8B5CF6);">MK</div>
-                            <div class="person-info">
-                                <div class="person-name">Michael Kim <span class="star-rating"><i class="bi bi-star-fill"></i> 4.8</span></div>
-                                <div class="person-location">Currently in Tokyo, Japan</div>
-                                <div class="person-tags"><span class="person-tag">Culture</span><span class="person-tag">Tech</span></div>
+                        <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-open="host" data-listing="vehicle"><i class="bi bi-plus-lg"></i> List Your Vehicle</button>
+                    </div>
+                    <div class="filter-pills vehicle-filters mb-3">
+                        <button class="filter-pill active" data-filter="all" type="button">All</button>
+                        <button class="filter-pill" data-filter="bikes" type="button">Bikes</button>
+                        <button class="filter-pill" data-filter="cars" type="button">Cars</button>
+                        <button class="filter-pill" data-filter="scooters" type="button">Scooters</button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="vehicle-card" data-category="scooters">
+                                <div class="vehicle-image"><img src="assets/images/vehicles/activa6g.webp" alt="Honda Activa 6G"><span class="vehicle-category">Scooter</span></div>
+                                <div class="vehicle-body">
+                                    <h3 class="vehicle-title">Honda Activa 6G</h3>
+                                    <div class="vehicle-price">$8 <span>/ day</span></div>
+                                    <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Bangalore, India</div>
+                                    <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Honda%20Activa%206G&price=8&location=Bangalore%2C%20India&category=scooters&image=assets/images/vehicles/activa6g.webp">Book Now</a>
+                                </div>
                             </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
                         </div>
-                        <div class="person-row">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#F97316,#EF4444);">SL</div>
-                            <div class="person-info">
-                                <div class="person-name">Sofia Lopez <span class="star-rating"><i class="bi bi-star-fill"></i> 5.0</span></div>
-                                <div class="person-location">Currently in Barcelona, Spain</div>
-                                <div class="person-tags"><span class="person-tag">Art</span><span class="person-tag">Beach</span></div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="vehicle-card" data-category="bikes">
+                                <div class="vehicle-image"><img src="assets/images/vehicles/royal-enfield.jpg?v=3" alt="Royal Enfield"><span class="vehicle-category">Bike</span></div>
+                                <div class="vehicle-body">
+                                    <h3 class="vehicle-title">Royal Enfield Classic 350</h3>
+                                    <div class="vehicle-price">$15 <span>/ day</span></div>
+                                    <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Goa, India</div>
+                                    <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Royal%20Enfield%20Classic%20350&price=15&location=Goa%2C%20India&category=bikes&image=assets/images/vehicles/royal-enfield.jpg">Book Now</a>
+                                </div>
                             </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="vehicle-card" data-category="cars">
+                                <div class="vehicle-image"><img src="assets/images/vehicles/marutiswift.webp" alt="Maruti Swift"><span class="vehicle-category">Car</span></div>
+                                <div class="vehicle-body">
+                                    <h3 class="vehicle-title">Maruti Swift</h3>
+                                    <div class="vehicle-price">$35 <span>/ day</span></div>
+                                    <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Mumbai, India</div>
+                                    <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Maruti%20Swift&price=35&location=Mumbai%2C%20India&category=cars&image=assets/images/vehicles/marutiswift.webp">Book Now</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="section-header-inline">
-                        <h2><i class="bi bi-pin-map"></i> Nearby Places</h2>
-                        <a href="explore.html#nearby-places">See All</a>
-                    </div>
-                    <div class="bg-white border rounded-4 p-3">
-                        <a href="destination.html?place=yosemite" class="place-row">
-                            <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=120&h=120&fit=crop" alt="Yosemite" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Yosemite National Park</h4><p>180 miles · National Park</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
-                        </a>
-                        <a href="destination.html?place=tahoe" class="place-row">
-                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=120&h=120&fit=crop" alt="Lake Tahoe" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Lake Tahoe</h4><p>95 miles · Lake &amp; Mountains</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.8</div>
-                        </a>
-                        <a href="destination.html?place=bigsur" class="place-row">
-                            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&h=120&fit=crop" alt="Big Sur" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Big Sur Coastline</h4><p>120 miles · Scenic Drive</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.7</div>
-                        </a>
-                    </div>
-                </div>
+                </section>
             </div>
-
-            <div class="comm-feed-stage">
-            <div class="local-feed-header">
-                <h2>Local Feed</h2>
-                <p>Insider tips from verified locals</p>
-                <div class="location-chip"><i class="bi bi-geo-alt-fill"></i> Bangalore, India</div>
-            </div>
-            <div class="feed-filters mb-3">
-                <button class="filter-pill active">All</button>
-                <button class="filter-pill">Do's &amp; Don'ts</button>
-                <button class="filter-pill">Part-time Jobs</button>
-                <button class="filter-pill">Food</button>
-                <button class="filter-pill">Hidden Gems</button>
-            </div>
-            <div class="feed-post">
-                <div class="feed-post-header">
-                    <div class="feed-post-avatar">AP</div>
-                    <div class="feed-post-meta">
-                        <div class="feed-post-name">Ananya Patel <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
-                        <div class="feed-post-time">2h ago</div>
-                    </div>
-                    <span class="feed-category safety">Safety Alert</span>
-                </div>
-                <p class="feed-post-content">Avoid walking alone near Majestic bus stand after 10 PM. Use Uber/Ola instead. The area is generally safe during daytime but gets crowded and chaotic at night.</p>
-            </div>
-            <div class="feed-post">
-                <div class="feed-post-header">
-                    <div class="feed-post-avatar" style="background:var(--color-card-orange);color:var(--color-card-orange-icon);">RK</div>
-                    <div class="feed-post-meta">
-                        <div class="feed-post-name">Raj Kumar <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
-                        <div class="feed-post-time">5h ago</div>
-                    </div>
-                    <span class="feed-category food">Food Tip</span>
-                </div>
-                <p class="feed-post-content">Best masala dosa in Bangalore? Head to CTR on Margosa Road in Malleshwaram. Go before 9 AM to avoid the queue. Their butter masala dosa is legendary!</p>
-            </div>
-            <div class="feed-post">
-                <div class="feed-post-header">
-                    <div class="feed-post-avatar" style="background:var(--color-card-purple);color:var(--color-card-purple-icon);">PS</div>
-                    <div class="feed-post-meta">
-                        <div class="feed-post-name">Priya Sharma <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> Verified Local</span></div>
-                        <div class="feed-post-time">1d ago</div>
-                    </div>
-                    <span class="feed-category gems">Hidden Gem</span>
-                </div>
-                <p class="feed-post-content">Hidden gem alert! Nandi Hills sunrise trek is breathtaking and only 60km from the city. Start at 4 AM, reach the top by 5:30 AM. Carry a jacket — it's cold up there!</p>
-            </div>
+            <div id="commMeetupPanel" hidden>
+                <div data-meetup-root></div>
             </div>
         </div>
     </section>
@@ -304,56 +378,6 @@
             <div id="liveQuestions" class="mb-4"></div>
             </div>
 
-            <section class="section-padding-sm pt-0" id="rent-section">
-                <div class="section-header-row">
-                    <div>
-                        <h2 class="section-title">Ask to Rent</h2>
-                        <p class="section-subtitle mb-0">Vehicles from verified local owners</p>
-                    </div>
-                    <a href="host.html?type=vehicle" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm"><i class="bi bi-plus-lg"></i> List Your Vehicle</a>
-                </div>
-                <div class="filter-pills vehicle-filters mb-3">
-                    <button class="filter-pill active" data-filter="all">All</button>
-                    <button class="filter-pill" data-filter="bikes">Bikes</button>
-                    <button class="filter-pill" data-filter="cars">Cars</button>
-                    <button class="filter-pill" data-filter="scooters">Scooters</button>
-                </div>
-                <div class="row g-3">
-                    <div class="col-lg-4 col-md-6">
-                        <div class="vehicle-card" data-category="scooters">
-                            <div class="vehicle-image"><img src="assets/images/vehicles/activa6g.webp" alt="Honda Activa 6G"><span class="vehicle-category">Scooter</span></div>
-                            <div class="vehicle-body">
-                                <h3 class="vehicle-title">Honda Activa 6G</h3>
-                                <div class="vehicle-price">$8 <span>/ day</span></div>
-                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Bangalore, India</div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Honda%20Activa%206G&price=8&location=Bangalore%2C%20India&category=scooters&image=assets/images/vehicles/activa6g.webp">Book Now</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6">
-                        <div class="vehicle-card" data-category="bikes">
-                            <div class="vehicle-image"><img src="assets/images/vehicles/royal-enfield.jpg?v=3" alt="Royal Enfield"><span class="vehicle-category">Bike</span></div>
-                            <div class="vehicle-body">
-                                <h3 class="vehicle-title">Royal Enfield Classic 350</h3>
-                                <div class="vehicle-price">$15 <span>/ day</span></div>
-                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Goa, India</div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Royal%20Enfield%20Classic%20350&price=15&location=Goa%2C%20India&category=bikes&image=assets/images/vehicles/royal-enfield.jpg">Book Now</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6">
-                        <div class="vehicle-card" data-category="cars">
-                            <div class="vehicle-image"><img src="assets/images/vehicles/marutiswift.webp" alt="Maruti Swift"><span class="vehicle-category">Car</span></div>
-                            <div class="vehicle-body">
-                                <h3 class="vehicle-title">Maruti Swift</h3>
-                                <div class="vehicle-price">$35 <span>/ day</span></div>
-                                <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Mumbai, India</div>
-                                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Maruti%20Swift&price=35&location=Mumbai%2C%20India&category=cars&image=assets/images/vehicles/marutiswift.webp">Book Now</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <!-- Connect with Locals -->
             <div class="section-header-inline mb-3"><h2><i class="bi bi-person-hearts"></i> Connect with Locals</h2><a href="#localsGrid" class="js-see-all" data-expand="#localsGrid" aria-expanded="false"><span class="js-see-all-label">See All</span></a></div>
@@ -567,15 +591,17 @@
             </div>
         </div>
     </section>
+    </div>
 
     <div class="roamitra-trust-bar"><div class="container"><div class="row g-3"><div class="col-md-4"><div class="trust-item"><i class="bi bi-people-fill"></i><span>3,000+ travelers already joined the waitlist</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure &amp; private</span></div></div><div class="col-md-4"><div class="trust-item"><i class="bi bi-heart-fill"></i><span>Loved by early explorers</span></div></div></div></div></div>
-    <footer class="roamitra-footer"><div class="container"><div class="row g-4"><div class="col-lg-3"><a href="explore.html" class="navbar-brand d-flex mb-3"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">roamitra</span></a><div class="roamitra-footer-social"><a href="#"><i class="bi bi-instagram"></i></a><a href="#"><i class="bi bi-facebook"></i></a><a href="#"><i class="bi bi-twitter-x"></i></a></div></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamini</a></li><li><a href="#">Pricing</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li></ul></div><div class="col-lg-3 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div></div></footer>
+    <footer class="roamitra-footer"><div class="container"><div class="row g-4"><div class="col-lg-3"><a href="explore.html" class="navbar-brand d-flex mb-3"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">Roamitra</span></a><div class="roamitra-footer-social"><a href="#"><i class="bi bi-instagram"></i></a><a href="#"><i class="bi bi-facebook"></i></a><a href="#"><i class="bi bi-twitter-x"></i></a></div></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="#">Roamini</a></li><li><a href="#">Pricing</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="#">Ask Questions</a></li><li><a href="#">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li></ul></div><div class="col-lg-2 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li></ul></div><div class="col-lg-3 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div></div></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
-    <script src="assets/js/nav.js?v=ui3"></script>
-    <script src="assets/js/ai-assistant.js?v=romi4"></script>
-    <script src="assets/js/community-live.js"></script>
-    <script src="assets/js/main.js?v=seeall1"></script>
+    <script src="assets/js/nav.js?v=navmenu5"></script>
+    <script src="assets/js/ai-assistant.js?v=roamini2"></script>
+    <script src="assets/js/community-live.js?v=under3"></script>
+    <script src="assets/js/meetups.js?v=join4"></script>
+    <script src="assets/js/main.js?v=loc3"></script>
 </body>
 </html>

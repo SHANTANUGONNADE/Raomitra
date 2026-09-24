@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roamini AI — Roamitra</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="apple-touch-icon" href="assets/images/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep24p" rel="stylesheet">
+    <script src="assets/js/theme.js"></script>
+</head>
+<body data-page="roamini">
+    <nav class="roamitra-navbar"></nav>
+
+    <aside class="rai-side" id="raiSide" aria-label="Roamini menu">
+        <a class="rai-brand" href="explore.html">
+            <img src="assets/images/logo.png" alt="">
+            <span><strong>Roamitra</strong><small>Your AI Travel Companion</small></span>
+        </a>
+        <nav class="rai-nav">
+            <a href="explore.html"><i class="bi bi-house"></i> Home</a>
+            <button type="button" id="raiMenuItin"><i class="bi bi-calendar-event"></i> Itinerary</button>
+        </nav>
+    </aside>
+    <div class="rai-backdrop" id="raiBackdrop" hidden></div>
+
+    <div class="rai-app" id="raiApp">
+        <header class="rai-top">
+            <button type="button" class="rai-menu-btn" id="raiMenu" aria-label="Open Roamini menu" aria-expanded="false">
+                <i class="bi bi-list"></i>
+            </button>
+            <div>
+                <strong>Roamini AI</strong>
+                <span>AI-powered travel planning</span>
+            </div>
+        </header>
+
+        <section class="rai-plan" id="raiPlan">
+            <div class="rai-mark"><i class="bi bi-geo-alt-fill"></i></div>
+            <h1>Plan with Roamini AI</h1>
+            <p class="rai-lead">Answer a few questions and let AI create your perfect itinerary</p>
+            <form id="raiForm">
+                <label for="raiDest"><i class="bi bi-geo-alt"></i> Where are you going?</label>
+                <input id="raiDest" name="destination" required placeholder="Bali, Indonesia" autocomplete="off">
+
+                <label for="raiDays"><i class="bi bi-calendar3"></i> How many days?</label>
+                <input id="raiDays" name="days" type="number" min="1" max="14" value="3" required>
+
+                <div class="rai-split">
+                    <div>
+                        <label for="raiStart">Start date</label>
+                        <input id="raiStart" name="start_date" type="date" required>
+                    </div>
+                    <div>
+                        <label for="raiEnd">End date</label>
+                        <input id="raiEnd" name="end_date" type="date" required>
+                    </div>
+                </div>
+
+                <label for="raiBudget"><i class="bi bi-currency-dollar"></i> Your budget (USD)</label>
+                <input id="raiBudget" name="budget" type="number" min="0" step="1" placeholder="325">
+
+                <p class="rai-label">Travel Style <span>(Multi-select)</span></p>
+                <input id="raiStyleText" type="text" placeholder="Type your travel style and press Enter..." autocomplete="off">
+                <div class="rai-chips" id="raiCustomStyles"></div>
+                <div class="rai-styles" id="raiStyles">
+                    <button type="button" data-style="luxury" data-pref="shopping"><i class="bi bi-stars"></i><span>Luxury</span></button>
+                    <button type="button" data-style="local" data-pref="culture"><i class="bi bi-pin-map-fill"></i><span>Local</span></button>
+                    <button type="button" data-style="adventure" data-pref="adventure"><i class="bi bi-compass"></i><span>Adventure</span></button>
+                    <button type="button" data-style="food" data-pref="food"><i class="bi bi-cup-hot"></i><span>Food Explorer</span></button>
+                    <button type="button" data-style="solo" data-pref="beach"><i class="bi bi-person"></i><span>Solo Explorer</span></button>
+                    <button type="button" data-style="nature" data-pref="nature"><i class="bi bi-tree"></i><span>Nature Escape</span></button>
+                    <button type="button" data-style="slow" data-pref=""><i class="bi bi-stopwatch"></i><span>Slow Travel</span></button>
+                    <button type="button" data-style="custom" data-pref="art"><i class="bi bi-pencil"></i><span>Your Choice</span></button>
+                </div>
+
+                <p class="rai-label">Who are you traveling with?</p>
+                <div class="rai-choices">
+                    <label><input type="radio" name="traveling_with" value="solo" checked> Solo</label>
+                    <label><input type="radio" name="traveling_with" value="couple"> Couple</label>
+                    <label><input type="radio" name="traveling_with" value="family"> Family</label>
+                    <label><input type="radio" name="traveling_with" value="friends"> Friends</label>
+                    <label><input type="radio" name="traveling_with" value="group"> Group</label>
+                </div>
+                <label for="raiGroup" id="raiGroupLabel" hidden>Group size</label>
+                <select id="raiGroup" hidden>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                    <option value="10">10</option>
+                    <option value="12">12</option>
+                </select>
+
+                <p class="rai-label">Arrival time</p>
+                <div class="rai-choices">
+                    <label><input type="radio" name="arrival_time" value="morning" checked> Morning</label>
+                    <label><input type="radio" name="arrival_time" value="afternoon"> Afternoon</label>
+                    <label><input type="radio" name="arrival_time" value="evening"> Evening</label>
+                    <label><input type="radio" name="arrival_time" value="late_night"> Late night</label>
+                </div>
+
+                <p class="rai-label">Departure time</p>
+                <div class="rai-choices">
+                    <label><input type="radio" name="departure_time" value="morning"> Morning</label>
+                    <label><input type="radio" name="departure_time" value="afternoon" checked> Afternoon</label>
+                    <label><input type="radio" name="departure_time" value="evening"> Evening</label>
+                    <label><input type="radio" name="departure_time" value="late_night"> Late night</label>
+                </div>
+
+                <p class="rai-label">Interests <span>(from Plan Trip)</span></p>
+                <div class="rai-choices" id="raiInterests">
+                    <label><input type="checkbox" value="culture"> Culture</label>
+                    <label><input type="checkbox" value="food"> Food</label>
+                    <label><input type="checkbox" value="nature"> Nature</label>
+                    <label><input type="checkbox" value="adventure"> Adventure</label>
+                    <label><input type="checkbox" value="beach"> Beach</label>
+                    <label><input type="checkbox" value="art"> Art</label>
+                    <label><input type="checkbox" value="shopping"> Shopping</label>
+                    <label><input type="checkbox" value="nightlife"> Nightlife</label>
+                </div>
+
+                <p class="rai-label">Pace</p>
+                <div class="rai-choices">
+                    <label><input type="radio" name="pace" value="relaxed"> Relaxed</label>
+                    <label><input type="radio" name="pace" value="moderate" checked> Moderate</label>
+                    <label><input type="radio" name="pace" value="packed"> Packed</label>
+                </div>
+
+                <p class="rai-status" id="raiStatus" role="status"></p>
+                <button type="submit" class="rai-generate" id="raiGenerate">Generate My Itinerary</button>
+            </form>
+        </section>
+
+        <section class="rai-studio" id="raiStudio" hidden>
+            <div class="rai-studio-main">
+                <div class="rai-studio-head">
+                    <div>
+                        <h1>Itinerary Generation <i class="bi bi-stars"></i></h1>
+                        <p>Your personalized trip, crafted by Roamini AI</p>
+                    </div>
+                    <button type="button" class="rai-new" id="raiStudioNew"><i class="bi bi-plus-lg"></i> New Plan</button>
+                </div>
+                <div class="rai-meta" id="raiMeta"></div>
+                <h2 class="rai-itin-title"><i class="bi bi-journal-bookmark"></i> Your Itinerary</h2>
+                <div class="rai-days" id="raiDaysTabs"></div>
+                <div class="rai-timeline" id="raiTimeline"></div>
+                <button type="button" class="rai-full" id="raiFullBtn">View full day plan →</button>
+                <div class="rai-full-body" id="raiFullBody" hidden></div>
+            </div>
+            <aside class="rai-chat" aria-label="Roamini AI">
+                <header>
+                    <div>
+                        <strong>Roamini AI</strong>
+                        <span>Your travel helper</span>
+                    </div>
+                </header>
+                <div class="rai-bot">
+                    <img src="assets/images/roamini-robot.jpg" alt="Roamini">
+                </div>
+                <div class="rai-chat-log" id="raiChatLog"></div>
+                <form class="rai-chat-form" id="raiChatForm">
+                    <input id="raiChatInput" type="text" placeholder="Ask Roamini anything..." autocomplete="off" required>
+                    <button type="submit" aria-label="Send"><i class="bi bi-send-fill"></i></button>
+                </form>
+            </aside>
+            <div class="rai-suggest" id="raiSuggest">
+                <button type="button" data-ask="Add adventure activities">Add adventure activities</button>
+                <button type="button" data-ask="Suggest budget stays">Suggest budget stays</button>
+                <button type="button" data-ask="Make it less crowded">Make it less crowded</button>
+                <button type="button" data-ask="Add cafes to try">Add cafes to try</button>
+            </div>
+        </section>
+    </div>
+
+    <div class="roamitra-trust-bar">
+        <div class="container">
+            <div class="row g-3">
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-people-fill"></i><span>3,000+ travelers already joined the waitlist</span></div></div>
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure &amp; private</span></div></div>
+                <div class="col-md-4"><div class="trust-item"><i class="bi bi-heart-fill"></i><span>Loved by early explorers</span></div></div>
+            </div>
+        </div>
+    </div>
+    <footer class="roamitra-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <a href="explore.html" class="navbar-brand mb-3 d-flex"><img src="assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img"><span class="roamitra-logo-text">Roamitra</span></a>
+                    <div class="roamitra-footer-social">
+                        <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Product</h5><ul class="roamitra-footer-links"><li><a href="#">Features</a></li><li><a href="roamini.html">Roamini</a></li><li><a href="#">How it Works</a></li><li><a href="#">Pricing</a></li></ul></div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Community</h5><ul class="roamitra-footer-links"><li><a href="community.html">Ask Questions</a></li><li><a href="host.html">Local Hosts</a></li><li><a href="meetups.html">Meetups</a></li><li><a href="community.html">Travel Stories</a></li></ul></div>
+                <div class="col-lg-2 col-md-6 col-6"><h5 class="roamitra-footer-heading">Company</h5><ul class="roamitra-footer-links"><li><a href="#">About Us</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li><li><a href="#">Contact</a></li></ul></div>
+                <div class="col-lg-3 col-md-6 col-6"><h5 class="roamitra-footer-heading">Resources</h5><ul class="roamitra-footer-links"><li><a href="#">Blog</a></li><li><a href="#">Help Center</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Privacy Policy</a></li></ul></div>
+            </div>
+            <div class="roamitra-footer-bottom">&copy; 2024 Roamitra. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js?v=vercel3"></script>
+    <script src="assets/js/nav.js?v=navmenu5"></script>
+    <script src="assets/js/ai-assistant.js?v=roamini2"></script>
+    <script src="assets/js/roamini-page.js?v=page11"></script>
+</body>
+</html>

@@ -697,6 +697,160 @@ final class ItineraryEngine
             'category' => $category,
             'cost_estimate' => round($cost, 2),
             'notes' => $notes,
+            'image' => self::imageFor($category, $title),
+        ];
+    }
+
+    public static function imageFor(string $category, string $title): string
+    {
+        $key = mb_strtolower(trim($title));
+        $known = self::placeImages();
+        if (isset($known[$key])) {
+            return self::unsplash($known[$key]);
+        }
+        foreach ($known as $name => $photo) {
+            if ($name !== '' && str_contains($key, $name)) {
+                return self::unsplash($photo);
+            }
+        }
+
+        $sets = [
+            'food' => ['photo-1414235077428-338989a2e8c0', 'photo-1504674900247-0877df9cc836', 'photo-1476224203421-9ac39bcb3327', 'photo-1565299624946-b28f40a0ae38'],
+            'restaurant' => ['photo-1414235077428-338989a2e8c0', 'photo-1559339352-11d035aa65de', 'photo-1567620905732-2d1ec7ab7445', 'photo-1540189549336-e6e99c3679fe'],
+            'cafe' => ['photo-1495474472287-4d71bcdd2085', 'photo-1501339847302-ac426a4a7cbb', 'photo-1442512595331-e89e73853f31', 'photo-1498804103079-a6351b050096'],
+            'nature' => ['photo-1501785888041-af3ef285b470', 'photo-1432405972618-c60b0225b8f9', 'photo-1441974231531-c6227db76b6e', 'photo-1500530855697-b586d89ba3ee'],
+            'adventure' => ['photo-1464822759023-fed622ff2c3b', 'photo-1551632811-561732d1e306', 'photo-1500534314209-a25ddb2bd429', 'photo-1469474968028-56623f02e42e'],
+            'culture' => ['photo-1524492412937-b28074a5d7da', 'photo-1555881400-74d7acaacd8b', 'photo-1548013146-72479768bada', 'photo-1528164344705-47542687000d'],
+            'temple' => ['photo-1537996194471-e657df975ab4', 'photo-1573790387438-4da905039392', 'photo-1493976040374-85c8e12f0c0e', 'photo-1548013146-72479768bada'],
+            'landmark' => ['photo-1502602898657-3e91760cbb34', 'photo-1477587458883-47145ed94245', 'photo-1587474260584-136574528ed5', 'photo-1512453979798-5ea266f8880c'],
+            'city' => ['photo-1540959733332-eab4deabeeaf', 'photo-1513635269975-59663e0ac1ad', 'photo-1480714378408-67cf0d13bc1b', 'photo-1449824913935-59a10b8d2000'],
+            'museum' => ['photo-1577083552431-6e5fd01988ec', 'photo-1566127444979-b3d2b654e3d7', 'photo-1554907984-15263bfd63bd', 'photo-1572947650440-e8a97ef053b2'],
+            'market' => ['photo-1555400038-63f5ba517a47', 'photo-1555529669-e69e7aa0ba9a', 'photo-1488459716781-31db52582fe9', 'photo-1578916171728-46686eac8d58'],
+            'shopping' => ['photo-1555529669-e69e7aa0ba9a', 'photo-1441986300917-64674bd600d8', 'photo-1472851294608-062f824d29cc', 'photo-1483985988355-763728e1935b'],
+            'nightlife' => ['photo-1470229722913-7c0e2dbbafd3', 'photo-1514525253161-7a46d19cd819', 'photo-1492684223066-81342ee5ff30', 'photo-1566737236500-c8ac43014a67'],
+            'beach' => ['photo-1507525428034-b723cf961d3e', 'photo-1512343879784-a960bf40e7f2', 'photo-1500375592092-40eb2168fd21', 'photo-1473496169904-658ba7c44d8a'],
+            'accommodation' => ['photo-1566073771259-6a8506099945', 'photo-1522708323590-d24dbb6b0267', 'photo-1551882547-ff40c63fe5fa', 'photo-1611892440504-42a792e24d32'],
+            'art' => ['photo-1577083552431-6e5fd01988ec', 'photo-1579783902614-a3fb3927b6a5', 'photo-1460661419201-fd4cecdf8a8b', 'photo-1513364776144-60967b0f800f'],
+            'logistics' => ['photo-1436491865332-7a61a109cc05', 'photo-1544620341-11cb2cd7c626', 'photo-1464037864426-26c8a1e2d1c1', 'photo-1474487548417-781cb71495f3'],
+        ];
+        $list = $sets[$category] ?? [
+            'photo-1467269204594-9661b134dd2b',
+            'photo-1488646953014-85cb44e25828',
+            'photo-1476514525535-07fb3b4ae5f1',
+            'photo-1500530855697-b586d89ba3ee',
+        ];
+        $index = hexdec(substr(sha1($title . '|' . $category), 0, 4)) % count($list);
+        return self::unsplash($list[$index]);
+    }
+
+    private static function unsplash(string $photo): string
+    {
+        return 'https://images.unsplash.com/' . $photo . '?auto=format&fit=crop&w=480&q=60';
+    }
+
+    /** Place name => Unsplash photo id, so each stop shows that place. */
+    private static function placeImages(): array
+    {
+        return [
+            'uluwatu temple' => 'photo-1537996194471-e657df975ab4',
+            'tegallalang rice terraces' => 'photo-1518548419970-58e3b4079ab2',
+            'ubud sacred monkey forest' => 'photo-1540573133985-87b6da6d54a9',
+            'seminyak beach walk' => 'photo-1539367628448-4bc5c82d8e8a',
+            'ubud art market' => 'photo-1555400038-63f5ba517a47',
+            'tirta empul temple' => 'photo-1559628233-100c798642d4',
+            'nusa penida day trip' => 'photo-1570789210967-2cac24afeb00',
+            'canggu cafe hopping' => 'photo-1495474472287-4d71bcdd2085',
+            'jimbaran seafood dinner' => 'photo-1559339352-11d035aa65de',
+            'tanah lot sunset' => 'photo-1573790387438-4da905039392',
+            'warung babi guling ibu oka' => 'photo-1569050467447-ce54b3bbc37d',
+            'revolver espresso' => 'photo-1501339847302-ac426a4a7cbb',
+            'senso-ji temple' => 'photo-1493976040374-85c8e12f0c0e',
+            'shibuya crossing & hachiko' => 'photo-1542051841857-5f90071e7989',
+            'tsukiji outer market' => 'photo-1579871494447-9811cf80d66c',
+            'meiji jingu shrine' => 'photo-1528164344705-47542687000d',
+            'teamlab planets' => 'photo-1561214115-f2f134cc4912',
+            'akihabara electric town' => 'photo-1554797589-7241bb691973',
+            'shinjuku gyoen' => 'photo-1490806843957-4378d406b619',
+            'tokyo skytree' => 'photo-1540959733332-eab4deabeeaf',
+            'ichiran ramen shibuya' => 'photo-1569718212165-3a8278d5f624',
+            '% arabica omotesando' => 'photo-1442512595331-e89e73853f31',
+            'omoide yokocho' => 'photo-1553621042-f6e147245754',
+            'ghibli museum' => 'photo-1579783902614-a3fb3927b6a5',
+            'eiffel tower' => 'photo-1502602898657-3e91760cbb34',
+            'louvre museum' => 'photo-1566127444979-b3d2b654e3d7',
+            'notre-dame & île de la cité' => 'photo-1431274172761-fca41d930114',
+            'montmartre & sacré-cœur' => 'photo-1499856871958-5b9627545d1a',
+            'seine river walk' => 'photo-1502602898657-3e91760cbb34',
+            'musée d\'orsay' => 'photo-1577083552431-6e5fd01988ec',
+            'le marais food walk' => 'photo-1559339352-11d035aa65de',
+            'café de flore' => 'photo-1495474472287-4d71bcdd2085',
+            'bouillon chartier' => 'photo-1414235077428-338989a2e8c0',
+            'luxembourg gardens' => 'photo-1502602898657-3e91760cbb34',
+            'versailles day trip' => 'photo-1524396309943-e03f5249f002',
+            'latin quarter bistro dinner' => 'photo-1540189549336-e6e99c3679fe',
+            'lalbagh botanical garden' => 'photo-1441974231531-c6227db76b6e',
+            'bangalore palace' => 'photo-1596176530529-78163a4f7af2',
+            'ub city & cubbon park' => 'photo-1529253355930-ddbe423a2ac7',
+            'iskcon temple' => 'photo-1548013146-72479768bada',
+            'commercial street' => 'photo-1441986300917-64674bd600d8',
+            'ctr malleshwaram breakfast' => 'photo-1567620905732-2d1ec7ab7445',
+            'nandi hills sunrise' => 'photo-1469474968028-56623f02e42e',
+            'church street cafe crawl' => 'photo-1501339847302-ac426a4a7cbb',
+            'vidyarthi bhavan' => 'photo-1504674900247-0877df9cc836',
+            'wonderla (family day)' => 'photo-1513889961551-628c1e5e2ee8',
+            'toit brewpub dinner' => 'photo-1514933651103-005eec06c04b',
+            'third wave coffee' => 'photo-1495474472287-4d71bcdd2085',
+            'baga & calangute beach' => 'photo-1512343879784-a960bf40e7f2',
+            'old goa churches' => 'photo-1548013146-72479768bada',
+            'fort aguada' => 'photo-1582510003544-4d00b7f74220',
+            'anjuna flea market' => 'photo-1555400038-63f5ba517a47',
+            'dudhsagar waterfalls' => 'photo-1432405972618-c60b0225b8f9',
+            'fontainhas heritage walk' => 'photo-1467269204594-9661b134dd2b',
+            'beach shack seafood' => 'photo-1559339352-11d035aa65de',
+            'cafe coffee day / local cafe' => 'photo-1442512595331-e89e73853f31',
+            'palolem sunset' => 'photo-1507525428034-b723cf961d3e',
+            'spice plantation lunch' => 'photo-1476224203421-9ac39bcb3327',
+            'gateway of india' => 'photo-1570168007204-dfb528c6958f',
+            'marine drive sunset' => 'photo-1567157577867-05ccb1388e66',
+            'elephanta caves' => 'photo-1524492412937-b28074a5d7da',
+            'crawford market' => 'photo-1488459716781-31db52582fe9',
+            'bandra-worli sea link view' => 'photo-1595658658481-d53d3f999875',
+            'leopold cafe' => 'photo-1554118811-1e0d58224f24',
+            'trishna fort' => 'photo-1414235077428-338989a2e8c0',
+            'juhu beach' => 'photo-1507525428034-b723cf961d3e',
+            'chhatrapati shivaji terminus' => 'photo-1570168007204-dfb528c6958f',
+            'red fort' => 'photo-1587474260584-136574528ed5',
+            'jama masjid & chandni chowk' => 'photo-1548013146-72479768bada',
+            'qutub minar' => 'photo-1548013146-72479768bada',
+            'humayun\'s tomb' => 'photo-1548013146-72479768bada',
+            'india gate & rajpath' => 'photo-1587474260584-136574528ed5',
+            'lodhi garden walk' => 'photo-1441974231531-c6227db76b6e',
+            'karim\'s jama masjid' => 'photo-1569050467447-ce54b3bbc37d',
+            'khan market cafes' => 'photo-1501339847302-ac426a4a7cbb',
+            'lotus temple' => 'photo-1548013146-72479768bada',
+            'amber fort' => 'photo-1477587458883-47145ed94245',
+            'city palace' => 'photo-1599661046289-e31897846e41',
+            'hawa mahal' => 'photo-1477587458883-47145ed94245',
+            'jantar mantar' => 'photo-1599661046289-e31897846e41',
+            'bapu bazaar' => 'photo-1555529669-e69e7aa0ba9a',
+            'laxmi misthan bhandar' => 'photo-1567620905732-2d1ec7ab7445',
+            'nahargarh fort sunset' => 'photo-1599661046289-e31897846e41',
+            'tapri central cafe' => 'photo-1495474472287-4d71bcdd2085',
+            'british museum' => 'photo-1572947650440-e8a97ef053b2',
+            'tower of london' => 'photo-1513635269975-59663e0ac1ad',
+            'hyde park walk' => 'photo-1501785888041-af3ef285b470',
+            'borough market' => 'photo-1488459716781-31db52582fe9',
+            'west end theatre' => 'photo-1503095396549-807759245b35',
+            'camden market' => 'photo-1555529669-e69e7aa0ba9a',
+            'monmouth coffee' => 'photo-1442512595331-e89e73853f31',
+            'dishoom covent garden' => 'photo-1414235077428-338989a2e8c0',
+            'burj khalifa at the top' => 'photo-1512453979798-5ea266f8880c',
+            'dubai mall & fountain' => 'photo-1518684079-3c830dcef090',
+            'old dubai creek abra' => 'photo-1518684079-3c830dcef090',
+            'desert safari' => 'photo-1451337516015-6b6e9a44a8a3',
+            'jumeirah beach' => 'photo-1512453979798-5ea266f8880c',
+            'al seef cafes' => 'photo-1495474472287-4d71bcdd2085',
+            'global village (seasonal)' => 'photo-1492684223066-81342ee5ff30',
         ];
     }
 

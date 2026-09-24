@@ -80,7 +80,7 @@
     font-size: 1.2rem;
     font-weight: 800;
     letter-spacing: -0.05em;
-    text-transform: lowercase;
+    text-transform: none;
     background: linear-gradient(90deg, #1e3a8a, #2563eb, #38bdf8, #1d4ed8);
     background-size: 220% auto;
     -webkit-background-clip: text;
@@ -249,7 +249,6 @@
 
 .roamitra-navbar-toggler:hover {
     background: var(--color-card-blue);
-    transform: rotate(90deg);
 }
 
 .roamitra-mobile-nav {
@@ -311,28 +310,147 @@
         display: flex;
     }
 
+    .roamitra-navbar-toggler {
+        display: none;
+    }
+
     .roamitra-lang-select {
         display: inline-flex;
     }
 
-    .roamitra-navbar-toggler,
     .roamitra-navbar .collapse {
         display: none !important;
     }
 }
 
 @media (max-width: 991.98px) {
+    .roamitra-navbar {
+        position: sticky;
+        top: 0;
+        left: auto;
+        right: auto;
+        width: auto;
+        background: var(--color-bg);
+    }
+
     .roamitra-navbar .container {
         border-radius: 22px;
+        position: relative;
+        overflow: visible;
+    }
+
+    .navbar-row {
+        flex-wrap: nowrap;
+        align-items: center;
+        row-gap: 0.35rem;
+    }
+
+    .navbar-brand { order: 1; flex: 0 1 auto; min-width: 0; }
+    .navbar-end { order: 2; margin-left: auto; flex: 0 1 auto; min-width: 0; }
+    .roamitra-navbar-toggler { order: 3; margin-left: 0.35rem; flex: none; }
+    .roamitra-nav-links { order: 4; }
+
+    .roamitra-nav-actions {
+        flex-wrap: nowrap;
+        gap: 0.3rem;
+    }
+
+    .nav-admin {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 999px;
+        gap: 0;
+    }
+
+    .nav-admin span { display: none; }
+
+    .roamitra-navbar.is-open .roamitra-nav-links {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 0.45rem);
+        flex: none;
+        width: auto;
+        margin: 0;
+        padding: 0.35rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+        z-index: 40;
+    }
+
+    .roamitra-navbar.is-open .roamitra-nav-links .nav-link {
+        width: 100%;
+        white-space: normal;
+        padding: 0.75rem 0.85rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        color: var(--color-text);
+    }
+
+    .roamitra-navbar.is-open .roamitra-nav-links .nav-link.active {
+        background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+        color: var(--color-text);
+    }
+
+    .roamitra-navbar.is-open .navbar-end,
+    .roamitra-navbar.is-open .roamitra-nav-actions {
+        flex: 0 1 auto;
+        width: auto;
+        flex-wrap: nowrap;
+    }
+
+    .roamitra-navbar.is-open .roamitra-nav-actions .btn-roamitra {
+        display: inline-flex !important;
     }
 }
 
 @media (max-width: 575.98px) {
-    .roamitra-logo-text {
-        font-size: 1.05rem;
+    .roamitra-navbar .container {
+        padding: 0.28rem 0.45rem;
     }
 
-    .roamitra-nav-actions .btn-roamitra {
+    .navbar-row {
+        flex-wrap: nowrap;
+        gap: 0.3rem;
+        min-height: 40px;
+    }
+
+    .roamitra-navbar.is-open .navbar-row {
+        flex-wrap: nowrap;
+    }
+
+    .roamitra-logo-img {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+    }
+
+    .roamitra-logo-text {
+        font-size: 0.95rem;
+    }
+
+    .navbar-brand { gap: 0.35rem; }
+
+    .roamitra-nav-actions { gap: 0.25rem; }
+
+    .roamitra-navbar .theme-toggle,
+    .roamitra-navbar .nav-icon-btn,
+    .roamitra-navbar .nav-profile-btn,
+    .roamitra-navbar .nav-admin,
+    .roamitra-navbar .roamitra-navbar-toggler {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        padding: 0;
+    }
+
+    .roamitra-nav-actions .btn-roamitra:not(.nav-keep) {
         display: none;
     }
 }

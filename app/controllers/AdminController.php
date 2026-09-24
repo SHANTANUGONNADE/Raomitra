@@ -177,6 +177,12 @@ final class AdminController
         }
 
         $pdo->prepare('UPDATE users SET role = ? WHERE id = ?')->execute([$role, $userId]);
+        $savedStmt = $pdo->prepare('SELECT role FROM users WHERE id = ?');
+        $savedStmt->execute([$userId]);
+        $saved = strtolower(trim((string) $savedStmt->fetchColumn()));
+        if ($saved !== $role) {
+            Response::error('Could not save that role. The account is still ' . ($saved !== '' ? $saved : 'customer') . '.');
+        }
         if ((int) $staff['id'] === $userId) {
             Auth::login($userId, false);
         }

@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 ${withActions && a.status === 'pending' ? `
                 <div class="admin-actions">
-                    <button type="button" class="btn-roamitra btn-roamitra-primary btn-roamitra-sm js-review" data-id="${a.id}" data-status="approved">Approve</button>
-                    <button type="button" class="btn-roamitra btn-roamitra-outline btn-roamitra-sm js-review" data-id="${a.id}" data-status="rejected">Reject</button>
+                    <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm js-review" data-id="${a.id}" data-status="approved">Approve</button>
+                    <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm js-review" data-id="${a.id}" data-status="rejected">Reject</button>
                 </div>` : ''}
             </article>`;
     }
@@ -191,8 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         box.innerHTML = `
             <div class="admin-users-toolbar">
                 <div class="admin-subtabs">
-                    <button type="button" class="admin-subtab ${userFilter === 'all' ? 'active' : ''}" data-user-filter="all">All users (${total})</button>
-                    <button type="button" class="admin-subtab ${userFilter === 'new' ? 'active' : ''}" data-user-filter="new">New users (${fresh})</button>
+                    <button type="button" class="filter-pill admin-subtab ${userFilter === 'all' ? 'active' : ''}" data-user-filter="all">All users (${total})</button>
+                    <button type="button" class="filter-pill admin-subtab ${userFilter === 'new' ? 'active' : ''}" data-user-filter="new">New users (${fresh})</button>
                 </div>
                 <label class="admin-user-search">
                     <i class="bi bi-search"></i>
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${escapeHtml(u.full_name)}${isNewJoin(u.created_at, days) ? ' <span class="admin-badge approved">new</span>' : ''}<div class="small text-muted">${escapeHtml(u.location || '')}</div></td>
                 <td>${escapeHtml(u.email)}</td>
                 <td>
-                    <select class="form-select form-select-sm js-role" data-id="${u.id}">
+                    <select class="form-select form-select-sm js-role admin-role" data-id="${u.id}">
                         ${['customer','host','co_admin','admin'].map(r =>
                             `<option value="${r}" ${String(u.role).toLowerCase() === r ? 'selected' : ''}>${r}</option>`
                         ).join('')}

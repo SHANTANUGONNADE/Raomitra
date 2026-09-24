@@ -21,49 +21,26 @@
     line-height: 1.4;
 }
 
-.btn-roamitra-primary {
-    background-color: var(--color-primary-light);
-    color: var(--color-white);
+.btn-roamitra-primary,
+.btn-roamitra-navy,
+.btn-roamitra-outline,
+.btn-roamitra-ghost,
+.btn-roamitra-ai {
+    background-color: #111111;
+    color: #ffffff;
+    border: 1.5px solid #111111;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
 }
 
-.btn-roamitra-primary:hover {
-    background-color: var(--color-primary-hover);
-    color: var(--color-white);
-}
-
-.btn-roamitra-navy {
-    background-color: var(--color-navy);
-    color: var(--color-white);
-    border-radius: var(--radius-md);
-    padding: 0.625rem 1.25rem;
-}
-
-.btn-roamitra-navy:hover {
-    background-color: var(--color-navy-light);
-    color: var(--color-white);
-}
-
-.btn-roamitra-outline {
-    background-color: transparent;
-    color: var(--color-text-secondary);
-    border: 1.5px solid var(--color-border);
-}
-
-.btn-roamitra-outline:hover {
-    border-color: var(--color-navy);
-    color: var(--color-navy);
-    background-color: var(--color-bg-light);
-}
-
-.btn-roamitra-ghost {
-    background-color: transparent;
-    color: var(--color-text-muted);
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-}
-
-.btn-roamitra-ghost:hover {
-    color: var(--color-navy);
+.btn-roamitra-primary:hover,
+.btn-roamitra-navy:hover,
+.btn-roamitra-outline:hover,
+.btn-roamitra-ghost:hover,
+.btn-roamitra-ai:hover {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #2a2a2a;
 }
 
 .btn-roamitra-sm {
@@ -80,22 +57,22 @@
     width: 100%;
 }
 
-/* Search bar AI button — solid green pill (mockup) */
 .btn-roamitra-ai {
-    background-color: var(--color-primary-light);
-    color: var(--color-white);
-    border: none;
+    background-color: #111111;
+    color: #ffffff;
+    border: 1.5px solid #111111;
     border-radius: var(--radius-pill);
     padding: 0.5625rem 1.25rem;
     font-size: var(--font-size-sm);
-    font-weight: 600;
+    font-weight: 700;
     gap: 0.375rem;
     box-shadow: none;
 }
 
 .btn-roamitra-ai:hover {
-    background-color: var(--color-primary-hover);
-    color: var(--color-white);
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #2a2a2a;
 }
 
 .btn-roamitra-ai i {

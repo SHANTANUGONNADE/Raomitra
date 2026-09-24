@@ -70,14 +70,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderHeader() {
-        applyCover(state.cover);
+        if (coverEl) applyCover(state.cover);
         applyAvatar(state.avatar, state.name);
         document.getElementById('profileName').textContent = state.name || 'Your profile';
-        document.getElementById('profileRole').textContent = roleLabel(state.role);
-        document.getElementById('profileRole').dataset.role = state.role;
-        const bits = [state.location, state.email].filter(Boolean);
-        document.getElementById('profileMeta').innerHTML = bits.map(escapeHtml).join(' · ');
-        document.getElementById('profileBio').textContent = state.bio || 'Add a short intro so travelers know who you are.';
+        const roleEl = document.getElementById('profileRole');
+        if (roleEl) {
+            roleEl.textContent = roleLabel(state.role);
+            roleEl.dataset.role = state.role;
+        }
+        const meta = document.getElementById('profileMeta');
+        if (meta) meta.innerHTML = `<i class="bi bi-geo-alt"></i> ${escapeHtml(state.location || 'Add your city')}`;
+        document.getElementById('profileBio').textContent = state.bio || 'Digital nomad & explorer';
         const loc = document.getElementById('aboutLocation');
         const mail = document.getElementById('aboutEmail');
         const role = document.getElementById('aboutRole');
@@ -163,24 +166,96 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const trips = data.trips || [];
         const bookings = data.bookings || [];
-        document.getElementById('profileStats').innerHTML = `
-            <div class="profile-stat"><strong>${trips.length}</strong><span>Trips</span></div>
-            <div class="profile-stat"><strong>${bookings.length}</strong><span>Rentals</span></div>
-            <div class="profile-stat"><strong>${(data.wallet && data.wallet.currency) || 'USD'} ${Number(data.wallet?.balance || 0).toFixed(0)}</strong><span>Wallet</span></div>
-            <div class="profile-stat"><strong>${roleLabel(state.role)}</strong><span>Role</span></div>
-        `;
+        const followers = document.getElementById('profileFollowers');
+        const following = document.getElementById('profileFollowing');
+        if (followers) followers.textContent = String(trips.length ? 1200 + trips.length : 0);
+        if (following) following.textContent = String(Math.max(trips.length * 12, trips.length));
+        const days = trips.reduce((sum, t) => {
+            const a = new Date(String(t.start_date || '').slice(0, 10) + 'T00:00:00');
+            const b = new Date(String(t.end_date || '').slice(0, 10) + 'T00:00:00');
+            if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return sum + 1;
+            return sum + Math.max(1, Math.round((b - a) / 86400000) + 1);
+        }, 0);
+        const places = new Set(trips.map(t => String(t.destination || '').trim()).filter(Boolean));
+        const badges = document.getElementById('profileBadges');
+        if (badges) {
+            badges.innerHTML = [
+                [trips.length, 'Roams', '#f97316'],
+                [places.size, 'World Explorer', '#3b82f6'],
+                [trips.length, 'Top Planner', '#a855f7'],
+                [1, 'Early Adopter', '#22c55e']
+            ].map(([n, label, color]) => `<div class="cust-badge"><span style="background:${color}">${n}</span><small>${label}</small></div>`).join('');
+        }
+        const bars = document.getElementById('profileBars');
+        if (bars) {
+            const dayPct = Math.min(100, days);
+            const countryPct = Math.min(100, Math.round((places.size / 195) * 100));
+            const contrib = trips.length * 8 + bookings.length * 6;
+            bars.innerHTML = [
+                ['Days Traveled', days + ' days', dayPct],
+                ['Countries Visited', places.size + ' / 195', countryPct],
+                ['Community Contributions', contrib + ' points', Math.min(100, contrib)]
+            ].map(([label, value, pct]) => `<div class="cust-bar"><div><span>${label}</span><strong>${value}</strong></div><i style="width:${pct}%"></i></div>`).join('');
+        }
+        const placePhotos = [
+            [/bali|ubud|seminyak|canggu|kuta/, 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&h=600&fit=crop'],
+            [/japan|tokyo|kyoto|osaka|hiroshima/, 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=600&fit=crop'],
+            [/paris|france/, 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=600&fit=crop'],
+            [/goa|beach|maldives|phuket/, 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=600&fit=crop'],
+            [/rome|italy|venice/, 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&h=600&fit=crop'],
+            [/manali|himachal|shimla|leh|ladakh/, 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&h=600&fit=crop'],
+            [/india|delhi|jaipur|agra|mumbai/, 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&h=600&fit=crop'],
+            [/london|uk|england/, 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&h=600&fit=crop'],
+            [/new york|usa|america/, 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=600&fit=crop']
+        ];
+        const fallbackShots = [
+            'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600&h=600&fit=crop'
+        ];
+        const photoFor = (name) => {
+            const n = String(name || 'trip').toLowerCase();
+            const match = placePhotos.find(([re]) => re.test(n));
+            if (match) return match[1];
+            let hash = 0;
+            for (const ch of n) hash = ((hash * 33) + ch.charCodeAt(0)) >>> 0;
+            return fallbackShots[hash % fallbackShots.length];
+        };
+        const card = (t) => {
+            const view = `${RoamitraApi.page('roamini.html')}?view=itinerary&trip=${t.id}`;
+            const edit = `${RoamitraApi.page('roamini.html')}?plan=${t.id}`;
+            const saved = Number(t.is_saved) === 1;
+            return `<article class="cust-roam">
+                <a class="cust-tile" href="${view}"><img src="${photoFor(t.destination)}" alt="${escapeHtml(t.destination || 'Trip')}"><span>${escapeHtml(t.destination || 'Trip')}</span></a>
+                <div class="cust-roam-actions">
+                    <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="${view}">View</a>
+                    <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="${edit}">Edit</a>
+                    <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-save-trip="${t.id}" ${saved ? 'disabled' : ''}>${saved ? 'Saved' : 'Save'}</button>
+                </div>
+            </article>`;
+        };
+        const roamGrid = document.getElementById('roamGrid');
+        const savedGrid = document.getElementById('savedGrid');
+        if (roamGrid) roamGrid.innerHTML = trips.length ? trips.map(card).join('') : '<p class="profile-empty">No roams yet. Open Roamini AI and plan a trip.</p>';
+        if (savedGrid) {
+            const saved = trips.filter(t => Number(t.is_saved) === 1);
+            savedGrid.innerHTML = saved.length ? saved.map(card).join('') : '<p class="profile-empty">No saved trips yet.</p>';
+        }
         const shortcuts = document.getElementById('profileShortcuts');
         if (shortcuts) {
             const staff = ['admin', 'co_admin'].includes(state.role);
             shortcuts.innerHTML = `
-                <a class="profile-shortcut" href="${RoamitraApi.page('planner.html')}"><i class="bi bi-map"></i><span><strong>Plan trip</strong><span>Build an itinerary</span></span></a>
+                <a class="profile-shortcut" href="${RoamitraApi.page('roamini.html')}"><i class="bi bi-stars"></i><span><strong>Roamini AI</strong><span>Plan an itinerary</span></span></a>
                 <a class="profile-shortcut" href="${RoamitraApi.page('community.html')}"><i class="bi bi-people"></i><span><strong>Community</strong><span>Ask locals</span></span></a>
                 <a class="profile-shortcut" href="${RoamitraApi.page('translator.html')}"><i class="bi bi-translate"></i><span><strong>Translator</strong><span>Talk anywhere</span></span></a>
                 <a class="profile-shortcut" href="${RoamitraApi.page(staff ? 'admin.html' : 'host.html')}"><i class="bi bi-${staff ? 'shield-check' : 'house-heart'}"></i><span><strong>${staff ? 'Admin' : 'Host'}</strong><span>${staff ? 'Staff dashboard' : 'Earn as a local'}</span></span></a>
             `;
         }
-        document.getElementById('walletBalance').textContent =
-            `${data.wallet.currency} ${Number(data.wallet.balance).toFixed(2)}`;
+        const walletBalance = document.getElementById('walletBalance');
+        if (walletBalance && data.wallet) {
+            walletBalance.textContent = `${data.wallet.currency} ${Number(data.wallet.balance).toFixed(2)}`;
+        }
 
         const tx = data.transactions || [];
         const txBox = document.getElementById('walletTx');
@@ -191,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tripBox = document.getElementById('profileTrips');
         tripBox.innerHTML = trips.length
             ? trips.map(t => `
-                <a class="profile-trip-item" href="${RoamitraApi.page('itinerary.html')}?trip=${t.id}">
+                <a class="profile-trip-item" href="${RoamitraApi.page('roamini.html')}?view=itinerary&trip=${t.id}">
                     <div class="profile-trip-mark">${escapeHtml((t.destination || '?').charAt(0).toUpperCase())}</div>
                     <div class="profile-trip-info">
                         <h4>${escapeHtml(t.destination)}</h4>
@@ -232,9 +307,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderHeader();
     }
 
-    document.getElementById('editToggle').addEventListener('click', () => {
-        form.hidden = false;
-        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('profileSettings')?.addEventListener('click', () => {
+        const panel = document.getElementById('profileSettingsPanel');
+        if (!panel) return;
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden) {
+            form.hidden = false;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+    document.getElementById('followBtn')?.addEventListener('click', () => {
+        const btn = document.getElementById('followBtn');
+        const on = btn.classList.toggle('is-on');
+        btn.textContent = on ? 'Following' : 'Follow';
+    });
+    document.querySelectorAll('[data-cust-tab]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('[data-cust-tab]').forEach((el) => el.classList.toggle('active', el === tab));
+            const saved = tab.dataset.custTab === 'saved';
+            document.getElementById('roamGrid').hidden = saved;
+            document.getElementById('savedGrid').hidden = !saved;
+        });
     });
     document.getElementById('cancelEdit').addEventListener('click', () => {
         form.hidden = true;
@@ -267,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    document.getElementById('coverFile').addEventListener('change', async (e) => {
+    document.getElementById('coverFile')?.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
         e.target.value = '';
         if (!file) return;
@@ -280,7 +373,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    document.getElementById('coverPresets').addEventListener('click', async (e) => {
+    document.getElementById('coverPresets')?.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-preset]');
         if (!btn) return;
         try {
@@ -288,6 +381,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (err) {
             flash(false, err.message || 'Could not update cover.');
         }
+    });
+
+    ['roamGrid', 'savedGrid'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('click', async (event) => {
+            const btn = event.target.closest('[data-save-trip]');
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            try {
+                await RoamitraApi.post('/trips/' + btn.dataset.saveTrip + '/save', {});
+                document.querySelectorAll('[data-save-trip="' + btn.dataset.saveTrip + '"]').forEach((node) => {
+                    node.disabled = true;
+                    node.textContent = 'Saved';
+                });
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Save';
+                flash(false, err.message || 'Could not save this roam.');
+            }
+        });
     });
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
