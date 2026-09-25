@@ -86,8 +86,6 @@ const RoamitraNav = {
                     <a href="${base}explore.html" class="tab-item" data-nav="explore"><span class="tab-icon"><i class="bi bi-compass"></i></span><span class="tab-label">Explore</span></a>
                     <a href="${base}community.html" class="tab-item" data-nav="community"><span class="tab-icon"><i class="bi bi-people"></i></span><span class="tab-label">Community</span></a>
                     <a href="${base}roamini.html" class="tab-item" data-nav="roamini"><span class="tab-icon"><i class="bi bi-stars"></i></span><span class="tab-label">Roamini</span></a>
-                    <a href="${base}activity.html" class="tab-item" data-nav="activity"><span class="tab-icon"><i class="bi bi-bell"></i><b class="tab-badge" id="tabActivityBadge" hidden>0</b></span><span class="tab-label">Activity</span></a>
-                    <a href="${base}login.html" class="tab-item tab-you" data-nav="profile"><span class="tab-icon tab-you-avatar">U</span><span class="tab-label">You</span></a>
                 </div>
             </div>
         `;

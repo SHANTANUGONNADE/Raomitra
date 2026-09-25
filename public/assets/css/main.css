@@ -6,15 +6,15 @@
 
 @import 'variables.css';
 @import 'components/buttons.css?v=btnblack1';
-@import 'components/navbar.css?v=navmenu10';
+@import 'components/navbar.css?v=navmenu11';
 @import 'components/footer.css';
 @import 'components/cards.css';
 @import 'components/ai-assistant.css?v=mob2';
 @import 'components/roamini-page.css?v=page16';
 @import 'components/auth.css?v=slides3';
-@import 'components/explore.css?v=feed2';
+@import 'components/explore.css?v=feed3';
 @import 'components/host.css?v=hosts2';
-@import 'components/community.css?v=under6';
+@import 'components/community.css?v=under7';
 @import 'components/meetups.css?v=join5';
 @import 'components/profile.css?v=cust3';
 @import 'components/admin.css?v=adm3';
@@ -105,7 +105,7 @@ a {
 
 /* ---- Search Hero ---- */
 .search-hero {
-    padding: 0.75rem 0 0.85rem;
+    padding: 0.4rem 0 0.2rem;
     background-color: var(--color-bg);
 }
 

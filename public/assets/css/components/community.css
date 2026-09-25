@@ -925,7 +925,7 @@ body[data-page="community"] .vehicle-image {
     .comm-phone h1 {
         font-size: 1.7rem;
         font-weight: 800;
-        margin: 0.2rem 0 0.8rem;
+        margin: 0.2rem 0 0.35rem;
         color: var(--color-text);
     }
 
