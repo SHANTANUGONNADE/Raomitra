@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <span class="itin-cat">${escapeHtml(a.category || '')}</span>
                                 <p>${escapeHtml(a.notes || '')}</p>
                             </div>
-                            <div class="itin-cost">${a.cost_estimate ? '$' + a.cost_estimate : ''}</div>
+                            <div class="itin-cost">${a.cost_estimate ? '₹' + a.cost_estimate : ''}</div>
                         </li>
                     `).join('') || '<li class="itin-empty">No activities in this window.</li>'}
                 </ul>
@@ -77,14 +77,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="col-md-4">
                     <div class="itin-side-card">
                         <h4>Budget estimate</h4>
-                        <p class="itin-big">$${b.estimated_total ?? '—'} <small>${b.currency || 'USD'}</small></p>
-                        <p>Per person: $${b.per_person ?? '—'}</p>
-                        ${b.user_budget != null ? `<p>Your budget: $${b.user_budget}${b.within_budget ? ' · within budget' : ' · over budget'}</p>` : ''}
+                        <p class="itin-big">₹${b.estimated_total ?? '—'} <small>INR</small></p>
+                        <p>Per person: ₹${b.per_person ?? '—'}</p>
+                        ${b.user_budget != null ? `<p>Your budget: ₹${b.user_budget}${b.within_budget ? ' · within budget' : ' · over budget'}</p>` : ''}
                         <ul class="itin-breakdown">
-                            <li>Activities: $${b.breakdown?.activities ?? 0}</li>
-                            <li>Stay: $${b.breakdown?.accommodation ?? 0}</li>
-                            <li>Food: $${b.breakdown?.food ?? 0}</li>
-                            <li>Transport: $${b.breakdown?.local_transport ?? 0}</li>
+                            <li>Activities: ₹${b.breakdown?.activities ?? 0}</li>
+                            <li>Stay: ₹${b.breakdown?.accommodation ?? 0}</li>
+                            <li>Food: ₹${b.breakdown?.food ?? 0}</li>
+                            <li>Transport: ₹${b.breakdown?.local_transport ?? 0}</li>
                         </ul>
                     </div>
                 </div>

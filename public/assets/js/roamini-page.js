@@ -215,9 +215,9 @@
             : budget.user_budget;
         let label = '';
         if (raw != null && raw !== '' && !Number.isNaN(Number(raw))) {
-            label = '$' + Number(raw).toLocaleString() + ' budget';
+            label = '₹' + Number(raw).toLocaleString() + ' budget';
         } else if (budget.estimated_total != null) {
-            label = 'Est. $' + Number(budget.estimated_total).toLocaleString();
+            label = 'Est. ₹' + Number(budget.estimated_total).toLocaleString();
         }
         if (!label) return '';
         return `<span><i class="bi bi-wallet2"></i> ${escapeHtml(label)}</span>`;

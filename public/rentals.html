@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rentals — Roamitra</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="apple-touch-icon" href="assets/images/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep25e" rel="stylesheet">
+    <script src="assets/js/theme.js"></script>
+</head>
+<body data-page="rentals">
+    <nav class="roamitra-navbar"></nav>
+
+    <section class="section-padding">
+        <div class="container">
+            <div class="lm-head mobile-only-head">
+                <a class="lm-back" href="community.html" aria-label="Back to community"><i class="bi bi-chevron-left"></i></a>
+                <h2>Rentals</h2>
+            </div>
+            <div class="section-header-row">
+                <div>
+                    <h1 class="section-title">Ask to Rent</h1>
+                    <p class="section-subtitle mb-0">Vehicles from verified local owners</p>
+                </div>
+                <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="host.html?type=vehicle"><i class="bi bi-plus-lg"></i> List Your Vehicle</a>
+            </div>
+            <div class="filter-pills vehicle-filters mb-3">
+                <button class="filter-pill active" data-filter="all" type="button">All</button>
+                <button class="filter-pill" data-filter="bikes" type="button">Bikes</button>
+                <button class="filter-pill" data-filter="cars" type="button">Cars</button>
+                <button class="filter-pill" data-filter="scooters" type="button">Scooters</button>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-4 col-md-6">
+                    <div class="vehicle-card" data-category="scooters">
+                        <div class="vehicle-image"><img src="assets/images/vehicles/activa6g.webp" alt="Honda Activa 6G"><span class="vehicle-category">Scooter</span></div>
+                        <div class="vehicle-body">
+                            <h2 class="vehicle-title">Honda Activa 6G</h2>
+                            <div class="vehicle-price">₹8 <span>/ day</span></div>
+                            <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Bangalore, India</div>
+                            <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Honda%20Activa%206G&price=8&location=Bangalore%2C%20India&category=scooters&image=assets/images/vehicles/activa6g.webp">Book Now</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="vehicle-card" data-category="bikes">
+                        <div class="vehicle-image"><img src="assets/images/vehicles/royal-enfield.jpg?v=3" alt="Royal Enfield"><span class="vehicle-category">Bike</span></div>
+                        <div class="vehicle-body">
+                            <h2 class="vehicle-title">Royal Enfield Classic 350</h2>
+                            <div class="vehicle-price">₹15 <span>/ day</span></div>
+                            <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Goa, India</div>
+                            <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Royal%20Enfield%20Classic%20350&price=15&location=Goa%2C%20India&category=bikes&image=assets/images/vehicles/royal-enfield.jpg">Book Now</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="vehicle-card" data-category="cars">
+                        <div class="vehicle-image"><img src="assets/images/vehicles/marutiswift.webp" alt="Maruti Swift"><span class="vehicle-category">Car</span></div>
+                        <div class="vehicle-body">
+                            <h2 class="vehicle-title">Maruti Swift</h2>
+                            <div class="vehicle-price">₹35 <span>/ day</span></div>
+                            <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Mumbai, India</div>
+                            <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Maruti%20Swift&price=35&location=Mumbai%2C%20India&category=cars&image=assets/images/vehicles/marutiswift.webp">Book Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js?v=vercel3"></script>
+    <script src="assets/js/nav.js?v=navmenu9"></script>
+    <script src="assets/js/ai-assistant.js?v=inr2"></script>
+    <script src="assets/js/main.js?v=loc3"></script>
+</body>
+</html>

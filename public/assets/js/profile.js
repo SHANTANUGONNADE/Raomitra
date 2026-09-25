@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const walletBalance = document.getElementById('walletBalance');
         if (walletBalance && data.wallet) {
-            walletBalance.textContent = `${data.wallet.currency} ${Number(data.wallet.balance).toFixed(2)}`;
+            walletBalance.textContent = `₹${Number(data.wallet.balance).toFixed(2)}`;
         }
 
         const tx = data.transactions || [];
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="profile-card mt-4">
                 <div class="profile-card-head">
                     <h3>Vehicle bookings</h3>
-                    <a class="profile-card-link" href="${RoamitraApi.page('community.html')}#rent-section">Rent</a>
+                    <a class="profile-card-link" href="${RoamitraApi.page('rentals.html')}">Rent</a>
                 </div>
                 ${bookings.length ? bookings.map(b => `
                     <div class="profile-trip-item">

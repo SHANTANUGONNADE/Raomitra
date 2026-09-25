@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     initExploreTabs();
     initFeedFilters();
+    initLocalFeed();
     initDestinationOpen();
     initDestCylinder();
     initExploreSearch();
@@ -110,10 +111,141 @@ function initExploreTabs() {
 }
 
 function initFeedFilters() {
+    const empty = document.getElementById('feedFilterEmpty');
     document.querySelectorAll('.feed-filters .filter-pill').forEach(pill => {
         pill.addEventListener('click', () => {
             document.querySelectorAll('.feed-filters .filter-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
+            const filter = pill.dataset.filter || 'all';
+            let shown = 0;
+            document.querySelectorAll('#panel-local .feed-post[data-feed-category]').forEach((post) => {
+                const match = filter === 'all' || post.dataset.feedCategory === filter;
+                post.hidden = !match;
+                if (match) shown += 1;
+            });
+            if (empty) empty.hidden = shown !== 0;
+        });
+    });
+}
+
+function initLocalFeed() {
+    const posts = document.querySelectorAll('#panel-local .feed-post[data-feed-id]');
+    if (!posts.length) return;
+    const key = 'roamitra.localFeed';
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+    const persist = () => {
+        try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) { /* ignore */ }
+    };
+    const toast = (message) => {
+        let el = document.getElementById('feedToast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'feedToast';
+            el.className = 'feed-toast';
+            el.setAttribute('role', 'status');
+            document.body.appendChild(el);
+        }
+        el.textContent = message;
+        el.classList.add('show');
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+    };
+
+    posts.forEach((post) => {
+        const id = post.dataset.feedId;
+        const baseLikes = Number(post.dataset.likes || 0);
+        const baseComments = Number(post.dataset.comments || 0);
+        const entry = Object.assign({ liked: false, saved: false, comments: [], title: post.dataset.feedTitle || '' }, state[id] || {});
+        if (!Array.isArray(entry.comments)) entry.comments = [];
+        entry.title = post.dataset.feedTitle || entry.title || '';
+        state[id] = entry;
+
+        const likeBtn = post.querySelector('[data-feed-act="like"]');
+        const commentBtn = post.querySelector('[data-feed-act="comment"]');
+        const saveBtn = post.querySelector('[data-feed-act="save"]');
+        const shareBtn = post.querySelector('[data-feed-act="share"]');
+        const likeCount = post.querySelector('[data-feed-count="likes"]');
+        const commentCount = post.querySelector('[data-feed-count="comments"]');
+        const box = post.querySelector('.feed-comments');
+        const list = post.querySelector('.feed-comment-list');
+        const form = post.querySelector('.feed-comment-form');
+
+        const paint = () => {
+            if (likeCount) likeCount.textContent = String(baseLikes + (entry.liked ? 1 : 0));
+            if (commentCount) commentCount.textContent = String(baseComments + entry.comments.length);
+            likeBtn?.classList.toggle('is-on', !!entry.liked);
+            likeBtn?.setAttribute('aria-pressed', entry.liked ? 'true' : 'false');
+            const likeIcon = likeBtn?.querySelector('i');
+            if (likeIcon) likeIcon.className = entry.liked ? 'bi bi-hand-thumbs-up-fill' : 'bi bi-hand-thumbs-up';
+            saveBtn?.classList.toggle('is-on', !!entry.saved);
+            saveBtn?.setAttribute('aria-pressed', entry.saved ? 'true' : 'false');
+            const saveIcon = saveBtn?.querySelector('i');
+            if (saveIcon) saveIcon.className = entry.saved ? 'bi bi-bookmark-fill' : 'bi bi-bookmark';
+            if (list) {
+                list.querySelectorAll('[data-mine]').forEach((node) => node.remove());
+                entry.comments.forEach((comment) => {
+                    const li = document.createElement('li');
+                    li.dataset.mine = '1';
+                    const who = document.createElement('strong');
+                    who.textContent = 'You';
+                    const text = document.createElement('span');
+                    text.textContent = comment.text || '';
+                    li.append(who, text);
+                    list.appendChild(li);
+                });
+            }
+        };
+        paint();
+
+        likeBtn?.addEventListener('click', () => {
+            entry.liked = !entry.liked;
+            entry.likedAt = entry.liked ? Date.now() : 0;
+            persist();
+            paint();
+        });
+        saveBtn?.addEventListener('click', () => {
+            entry.saved = !entry.saved;
+            entry.savedAt = entry.saved ? Date.now() : 0;
+            persist();
+            paint();
+            toast(entry.saved ? 'Saved' : 'Removed from saved');
+        });
+        commentBtn?.addEventListener('click', () => {
+            if (!box) return;
+            box.hidden = !box.hidden;
+            commentBtn.setAttribute('aria-expanded', box.hidden ? 'false' : 'true');
+            if (!box.hidden) form?.querySelector('input')?.focus();
+        });
+        form?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const input = form.querySelector('input');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+            entry.comments.push({ text, at: Date.now() });
+            if (input) input.value = '';
+            if (box) box.hidden = false;
+            persist();
+            paint();
+            toast('Comment posted');
+        });
+        shareBtn?.addEventListener('click', async () => {
+            const text = (post.querySelector('.feed-post-content')?.textContent || '').trim();
+            const url = location.href.split('#')[0] + '#panel-local';
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Roamitra local tip', text, url });
+                    return;
+                }
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+            }
+            try {
+                await navigator.clipboard.writeText(text + '\n' + url);
+                toast('Link copied');
+            } catch (err) {
+                toast('Could not share this tip');
+            }
         });
     });
 }

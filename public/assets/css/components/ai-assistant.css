@@ -577,22 +577,27 @@ body.roamini-open {
     transform: none;
 }
 
+@media (max-width: 991.98px) {
+    .ai-assistant-fab { bottom: 7.4rem; }
+    .ai-lang-fab { bottom: calc(7.4rem + 64px + 12px); }
+}
+
 @media (max-width: 480px) {
     .ai-assistant-fab {
-        bottom: 1rem;
+        bottom: 7.2rem;
         right: 1rem;
     }
 
     .ai-lang-fab {
         right: 1rem;
-        bottom: calc(1rem + 64px + 12px);
+        bottom: calc(7.2rem + 64px + 12px);
     }
 
     .romi-lang-pop {
         right: 0.75rem;
         left: 0.75rem;
         width: auto;
-        bottom: calc(1rem + 64px + 12px + 64px + 12px);
+        bottom: calc(7.2rem + 64px + 12px + 64px + 12px);
     }
 
     .ai-assistant-dock {

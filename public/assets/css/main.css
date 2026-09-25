@@ -6,19 +6,19 @@
 
 @import 'variables.css';
 @import 'components/buttons.css?v=btnblack1';
-@import 'components/navbar.css?v=navmenu6';
+@import 'components/navbar.css?v=navmenu10';
 @import 'components/footer.css';
 @import 'components/cards.css';
-@import 'components/ai-assistant.css?v=roamini1';
+@import 'components/ai-assistant.css?v=mob2';
 @import 'components/roamini-page.css?v=page16';
 @import 'components/auth.css?v=slides3';
-@import 'components/explore.css?v=locedit1';
+@import 'components/explore.css?v=feed2';
 @import 'components/host.css?v=hosts2';
 @import 'components/community.css?v=under6';
-@import 'components/meetups.css?v=join4';
+@import 'components/meetups.css?v=join5';
 @import 'components/profile.css?v=cust3';
 @import 'components/admin.css?v=adm3';
-@import 'components/app.css?v=voice4';
+@import 'components/app.css?v=act3';
 @import 'components/motion.css';
 
 /* ---- Base Reset & Typography ---- */

@@ -131,6 +131,47 @@
     font-size: 0.875rem;
 }
 
+@media (max-width: 991.98px) {
+    .notify-panel {
+        position: fixed;
+        top: 4.8rem;
+        left: 0.75rem;
+        right: 0.75rem;
+        width: auto;
+        max-height: min(62vh, 440px);
+    }
+}
+
+.activity-page { padding: 1.25rem 0 2rem; }
+.activity-page h1 { font-weight: 800; margin-bottom: 0.25rem; }
+.activity-feed { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+.activity-row {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 0.9rem 1rem;
+    text-decoration: none;
+    color: inherit;
+}
+.activity-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--color-bg-muted);
+    flex: none;
+}
+.activity-row strong,
+.activity-row span,
+.activity-row time { display: block; }
+.activity-row span,
+.activity-row time { color: var(--color-text-muted); font-size: 0.82rem; }
+.activity-row time { margin-top: 0.2rem; font-size: 0.75rem; }
+
 .planner-page,
 .translator-page,
 .itinerary-page {

@@ -580,7 +580,7 @@ const RoamitraAI = {
                     <input id="romiDays" type="number" min="1" max="30" value="3" required>
                 </div>
                 <div class="roamini-field">
-                    <label for="romiBudget"><i class="bi bi-currency-dollar"></i> Your budget (USD)</label>
+                    <label for="romiBudget"><i class="bi bi-currency-rupee"></i> Your budget (₹)</label>
                     <input id="romiBudget" type="number" min="0" step="1" placeholder="325">
                 </div>
                 <div class="roamini-field">

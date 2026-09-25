@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 hostForm.hidden = true;
             } catch (err) {
                 if (err.status === 401) {
-                    window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('community.html#ask-host');
+                    window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('host.html');
                     return;
                 }
                 if (hostStatus) {
@@ -212,10 +212,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const openFromHash = () => {
         const hash = location.hash;
-        if (hash === '#ask-host') window.RoamitraCommunityOpen('host');
-        else if (hash === '#ask-rent' || hash === '#rent-section') window.RoamitraCommunityOpen('rent');
-        else if (hash === '#ask-meetup') window.RoamitraCommunityOpen('meetup');
+        if (hash === '#ask-host') {
+            window.location.replace(RoamitraApi.page('host.html'));
+            return;
+        }
+        if (hash === '#ask-rent' || hash === '#rent-section') {
+            window.location.replace(RoamitraApi.page('rentals.html'));
+            return;
+        }
+        if (hash === '#ask-meetup') {
+            window.location.replace(RoamitraApi.page('meetups.html'));
+        }
     };
+
+    const activityBadge = document.getElementById('activityCount');
+    if (activityBadge) {
+        try {
+            const [profile, notes] = await Promise.all([
+                RoamitraApi.get('/profile'),
+                RoamitraApi.get('/notifications')
+            ]);
+            let localCount = 0;
+            try {
+                const saved = JSON.parse(localStorage.getItem('roamitra.localFeed') || '{}');
+                Object.values(saved).forEach((entry) => {
+                    if (!entry) return;
+                    if (entry.saved) localCount += 1;
+                    if (entry.liked) localCount += 1;
+                    localCount += Array.isArray(entry.comments) ? entry.comments.length : 0;
+                });
+            } catch (e) { /* ignore */ }
+            const total = (profile.trips || []).length
+                + (profile.bookings || []).length
+                + (profile.host_application ? 1 : 0)
+                + (profile.transactions || []).length
+                + (notes.notifications || []).length
+                + localCount;
+            activityBadge.hidden = total === 0;
+            activityBadge.textContent = total > 99 ? '99+' : String(total);
+        } catch (e) {
+            activityBadge.hidden = true;
+        }
+    }
     openFromHash();
     window.addEventListener('hashchange', openFromHash);
 });

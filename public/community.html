@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="assets/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=ui-sep24n" rel="stylesheet">
+    <link href="assets/css/main.css?v=ui-sep25d" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="community">
@@ -19,13 +19,13 @@
     <section class="comm-phone">
         <div class="container">
             <h1>Community</h1>
-            <a class="comm-phone-activity" href="profile.html">
+            <a class="comm-phone-activity" href="activity.html">
                 <span class="comm-phone-activity-icon"><i class="bi bi-graph-up-arrow"></i></span>
                 <span>
                     <strong>Your Activity</strong>
                     <small>View all updates and history</small>
                 </span>
-                <b>18</b>
+                <b id="activityCount" hidden>0</b>
             </a>
         </div>
     </section>
@@ -33,9 +33,9 @@
         <div class="container">
             <div class="comm-phone-grid">
                 <a href="#ask-question"><span class="tone-blue"><i class="bi bi-chat-dots"></i></span>Questions</a>
-                <a href="#commUnder" data-open="host"><span class="tone-green"><i class="bi bi-house-door"></i></span>Hosting</a>
-                <a href="#commUnder" data-open="rent"><span class="tone-purple"><i class="bi bi-bicycle"></i></span>Rentals</a>
-                <a href="#commUnder" data-open="meetup"><span class="tone-orange"><i class="bi bi-geo-alt"></i></span>Meetups</a>
+                <a href="host.html"><span class="tone-green"><i class="bi bi-house-door"></i></span>Hosting</a>
+                <a href="rentals.html"><span class="tone-purple"><i class="bi bi-bicycle"></i></span>Rentals</a>
+                <a href="meetups.html"><span class="tone-orange"><i class="bi bi-geo-alt"></i></span>Meetups</a>
             </div>
         </div>
     </div>
@@ -84,7 +84,7 @@
                         <h3>Ask to Host</h3>
                         <p>Become a local guide and earn while helping travelers discover your city.</p>
                         <ul class="feature-list"><li>Earn while helping travelers</li><li>Get a verified host badge</li><li>Connect with global community</li></ul>
-                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="host">Apply to host</a><a href="#commUnder" class="btn-feature-arrow orange" data-open="host"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="host.html" class="feature-link-text">Apply to host</a><a href="host.html" class="btn-feature-arrow orange"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -94,7 +94,7 @@
                         <h3>Ask to Rent</h3>
                         <p>Rent bikes, cars, and scooters directly from verified local owners.</p>
                         <ul class="feature-list"><li>Best local prices</li><li>Verified vehicle owners</li><li>Flexible rental options</li></ul>
-                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="rent">Browse rentals</a><a href="#commUnder" class="btn-feature-arrow blue" data-open="rent"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="rentals.html" class="feature-link-text">Browse rentals</a><a href="rentals.html" class="btn-feature-arrow blue"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -103,7 +103,7 @@
                         <h3>Meetups</h3>
                         <p>Join local events and group activities with fellow travelers.</p>
                         <ul class="feature-list"><li>Group adventures</li><li>Local experiences</li><li>Make new friends</li></ul>
-                        <div class="feature-footer"><a href="#commUnder" class="feature-link-text" data-open="meetup">Find meetups</a><a href="#commUnder" class="btn-feature-arrow purple" data-open="meetup"><i class="bi bi-arrow-right"></i></a></div>
+                        <div class="feature-footer"><a href="meetups.html" class="feature-link-text">Find meetups</a><a href="meetups.html" class="btn-feature-arrow purple"><i class="bi bi-arrow-right"></i></a></div>
                     </div>
                 </div>
             </div>
@@ -276,7 +276,7 @@
                             <h2 class="section-title">Ask to Rent</h2>
                             <p class="section-subtitle mb-0">Vehicles from verified local owners</p>
                         </div>
-                        <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-open="host" data-listing="vehicle"><i class="bi bi-plus-lg"></i> List Your Vehicle</button>
+                        <a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="host.html?type=vehicle"><i class="bi bi-plus-lg"></i> List Your Vehicle</a>
                     </div>
                     <div class="filter-pills vehicle-filters mb-3">
                         <button class="filter-pill active" data-filter="all" type="button">All</button>
@@ -290,7 +290,7 @@
                                 <div class="vehicle-image"><img src="assets/images/vehicles/activa6g.webp" alt="Honda Activa 6G"><span class="vehicle-category">Scooter</span></div>
                                 <div class="vehicle-body">
                                     <h3 class="vehicle-title">Honda Activa 6G</h3>
-                                    <div class="vehicle-price">$8 <span>/ day</span></div>
+                                    <div class="vehicle-price">₹8 <span>/ day</span></div>
                                     <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Bangalore, India</div>
                                     <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Honda%20Activa%206G&price=8&location=Bangalore%2C%20India&category=scooters&image=assets/images/vehicles/activa6g.webp">Book Now</a>
                                 </div>
@@ -301,7 +301,7 @@
                                 <div class="vehicle-image"><img src="assets/images/vehicles/royal-enfield.jpg?v=3" alt="Royal Enfield"><span class="vehicle-category">Bike</span></div>
                                 <div class="vehicle-body">
                                     <h3 class="vehicle-title">Royal Enfield Classic 350</h3>
-                                    <div class="vehicle-price">$15 <span>/ day</span></div>
+                                    <div class="vehicle-price">₹15 <span>/ day</span></div>
                                     <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Goa, India</div>
                                     <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Royal%20Enfield%20Classic%20350&price=15&location=Goa%2C%20India&category=bikes&image=assets/images/vehicles/royal-enfield.jpg">Book Now</a>
                                 </div>
@@ -312,7 +312,7 @@
                                 <div class="vehicle-image"><img src="assets/images/vehicles/marutiswift.webp" alt="Maruti Swift"><span class="vehicle-category">Car</span></div>
                                 <div class="vehicle-body">
                                     <h3 class="vehicle-title">Maruti Swift</h3>
-                                    <div class="vehicle-price">$35 <span>/ day</span></div>
+                                    <div class="vehicle-price">₹35 <span>/ day</span></div>
                                     <div class="vehicle-location"><i class="bi bi-geo-alt"></i> Mumbai, India</div>
                                     <a class="btn-roamitra btn-roamitra-navy btn-roamitra-block" href="booking.html?name=Maruti%20Swift&price=35&location=Mumbai%2C%20India&category=cars&image=assets/images/vehicles/marutiswift.webp">Book Now</a>
                                 </div>
@@ -537,49 +537,49 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop" alt="Cozy room" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Bangalore, India</div><div class="stay-title">Cozy Room in Indiranagar</div><div class="stay-meta"><span class="stay-price">$28 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.9</span></div><div class="stay-type">Private Room</div></div>
+                        <div class="stay-body"><div class="stay-location">Bangalore, India</div><div class="stay-title">Cozy Room in Indiranagar</div><div class="stay-meta"><span class="stay-price">₹28 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.9</span></div><div class="stay-type">Private Room</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="Beach house" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Goa, India</div><div class="stay-title">Beachside Studio Apartment</div><div class="stay-meta"><span class="stay-price">$45 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Entire Place</div></div>
+                        <div class="stay-body"><div class="stay-location">Goa, India</div><div class="stay-title">Beachside Studio Apartment</div><div class="stay-meta"><span class="stay-price">₹45 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Entire Place</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" alt="Heritage home" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Jaipur, India</div><div class="stay-title">Heritage Haveli Experience</div><div class="stay-meta"><span class="stay-price">$55 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 5.0</span></div><div class="stay-type">Private Room</div></div>
+                        <div class="stay-body"><div class="stay-location">Jaipur, India</div><div class="stay-title">Heritage Haveli Experience</div><div class="stay-meta"><span class="stay-price">₹55 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 5.0</span></div><div class="stay-type">Private Room</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&h=400&fit=crop" alt="Modern apartment" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Mumbai, India</div><div class="stay-title">Modern Flat near Bandra</div><div class="stay-meta"><span class="stay-price">$38 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.7</span></div><div class="stay-type">Private Room</div></div>
+                        <div class="stay-body"><div class="stay-location">Mumbai, India</div><div class="stay-title">Modern Flat near Bandra</div><div class="stay-meta"><span class="stay-price">₹38 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.7</span></div><div class="stay-type">Private Room</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 see-all-extra">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600&h=400&fit=crop" alt="Bali villa" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Canggu, Bali</div><div class="stay-title">Garden Villa with Pool</div><div class="stay-meta"><span class="stay-price">$62 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Entire Place</div></div>
+                        <div class="stay-body"><div class="stay-location">Canggu, Bali</div><div class="stay-title">Garden Villa with Pool</div><div class="stay-meta"><span class="stay-price">₹62 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Entire Place</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 see-all-extra">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&h=400&fit=crop" alt="Tokyo room" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Shibuya, Tokyo</div><div class="stay-title">Capsule-chic City Room</div><div class="stay-meta"><span class="stay-price">$49 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.6</span></div><div class="stay-type">Private Room</div></div>
+                        <div class="stay-body"><div class="stay-location">Shibuya, Tokyo</div><div class="stay-title">Capsule-chic City Room</div><div class="stay-meta"><span class="stay-price">₹49 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.6</span></div><div class="stay-type">Private Room</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 see-all-extra">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=600&h=400&fit=crop" alt="Paris loft" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Le Marais, Paris</div><div class="stay-title">Sunny Loft near the Seine</div><div class="stay-meta"><span class="stay-price">$88 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.9</span></div><div class="stay-type">Entire Place</div></div>
+                        <div class="stay-body"><div class="stay-location">Le Marais, Paris</div><div class="stay-title">Sunny Loft near the Seine</div><div class="stay-meta"><span class="stay-price">₹88 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.9</span></div><div class="stay-type">Entire Place</div></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 see-all-extra">
                     <div class="stay-card">
                         <div class="stay-image"><img src="https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=600&h=400&fit=crop" alt="Rome apartment" loading="lazy"><button class="stay-wishlist"><i class="bi bi-heart"></i></button></div>
-                        <div class="stay-body"><div class="stay-location">Trastevere, Rome</div><div class="stay-title">Trastevere Courtyard Stay</div><div class="stay-meta"><span class="stay-price">$71 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Private Room</div></div>
+                        <div class="stay-body"><div class="stay-location">Trastevere, Rome</div><div class="stay-title">Trastevere Courtyard Stay</div><div class="stay-meta"><span class="stay-price">₹71 / night</span><span><i class="bi bi-star-fill" style="color:var(--color-star);"></i> 4.8</span></div><div class="stay-type">Private Room</div></div>
                     </div>
                 </div>
             </div>
@@ -598,9 +598,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/api.js?v=vercel3"></script>
-    <script src="assets/js/nav.js?v=navmenu6"></script>
-    <script src="assets/js/ai-assistant.js?v=roamini2"></script>
-    <script src="assets/js/community-live.js?v=under3"></script>
+    <script src="assets/js/nav.js?v=navmenu9"></script>
+    <script src="assets/js/ai-assistant.js?v=inr2"></script>
+    <script src="assets/js/community-live.js?v=pages3"></script>
     <script src="assets/js/meetups.js?v=join4"></script>
     <script src="assets/js/main.js?v=loc3"></script>
 </body>

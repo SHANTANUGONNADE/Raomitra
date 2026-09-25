@@ -1,7 +1,7 @@
 const DESTINATIONS = {
     bali: {
         title: 'Bali, Indonesia',
-        meta: '4.8 rating · 16.7k travelers · from $1,200 / week',
+        meta: '4.8 rating · 16.7k travelers · from ₹1,200 / week',
         image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=520&fit=crop',
         desc: 'Tropical paradise with stunning temples, rice terraces, and vibrant culture. Stay in Ubud for rice fields and yoga, or Canggu for surf and cafes.',
         facts: ['Beach', 'Culture', 'Adventure'],
@@ -9,12 +9,12 @@ const DESTINATIONS = {
         planner: 'Bali',
         rating: '4.8',
         travelers: '16.7k travelers',
-        price: '$1,200',
+        price: '₹1,200',
         keywords: 'bali indonesia ubud canggu temple beach tropical'
     },
     tokyo: {
         title: 'Tokyo, Japan',
-        meta: '4.9 rating · 22.1k travelers · from $1,450 / week',
+        meta: '4.9 rating · 22.1k travelers · from ₹1,450 / week',
         image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=520&fit=crop',
         desc: 'A dazzling blend of ultramodern and traditional, from neon-lit skyscrapers to historic temples. Use trains for most of the city, then rent a car for day trips.',
         facts: ['City', 'Food', 'Culture'],
@@ -22,12 +22,12 @@ const DESTINATIONS = {
         planner: 'Tokyo',
         rating: '4.9',
         travelers: '22.1k travelers',
-        price: '$1,450',
+        price: '₹1,450',
         keywords: 'tokyo japan shibuya sushi city'
     },
     paris: {
         title: 'Paris, France',
-        meta: '4.7 rating · 18.5k travelers · from $1,350 / week',
+        meta: '4.7 rating · 18.5k travelers · from ₹1,350 / week',
         image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=520&fit=crop',
         desc: 'The City of Light enchants with its art, cuisine, and iconic landmarks. Walk the Seine, then hop a train to Versailles or the Loire.',
         facts: ['Romance', 'Art', 'Food'],
@@ -35,12 +35,12 @@ const DESTINATIONS = {
         planner: 'Paris',
         rating: '4.7',
         travelers: '18.5k travelers',
-        price: '$1,350',
+        price: '₹1,350',
         keywords: 'paris france eiffel seine romance'
     },
     rome: {
         title: 'Rome, Italy',
-        meta: '4.8 rating · 19.2k travelers · from $1,280 / week',
+        meta: '4.8 rating · 19.2k travelers · from ₹1,280 / week',
         image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&h=520&fit=crop',
         desc: 'Ancient ruins, espresso bars, and evening passeggiata. Walk the centro, then train out to Tivoli or the coast.',
         facts: ['History', 'Food', 'City'],
@@ -48,12 +48,12 @@ const DESTINATIONS = {
         planner: 'Rome',
         rating: '4.8',
         travelers: '19.2k travelers',
-        price: '$1,280',
+        price: '₹1,280',
         keywords: 'rome italy colosseum vatican pasta'
     },
     barcelona: {
         title: 'Barcelona, Spain',
-        meta: '4.7 rating · 17.4k travelers · from $1,180 / week',
+        meta: '4.7 rating · 17.4k travelers · from ₹1,180 / week',
         image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=520&fit=crop',
         desc: 'Gaudí skyline, tapas streets, and Mediterranean beaches a metro ride apart.',
         facts: ['Beach', 'Architecture', 'Food'],
@@ -61,12 +61,12 @@ const DESTINATIONS = {
         planner: 'Barcelona',
         rating: '4.7',
         travelers: '17.4k travelers',
-        price: '$1,180',
+        price: '₹1,180',
         keywords: 'barcelona spain gaudi tapas beach'
     },
     santorini: {
         title: 'Santorini, Greece',
-        meta: '4.9 rating · 14.1k travelers · from $1,620 / week',
+        meta: '4.9 rating · 14.1k travelers · from ₹1,620 / week',
         image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=800&h=520&fit=crop',
         desc: 'Caldera views, whitewashed villages, and slow ferry days between islands.',
         facts: ['Island', 'Romance', 'Views'],
@@ -74,12 +74,12 @@ const DESTINATIONS = {
         planner: 'Santorini',
         rating: '4.9',
         travelers: '14.1k travelers',
-        price: '$1,620',
+        price: '₹1,620',
         keywords: 'santorini greece oia caldera island'
     },
     dubai: {
         title: 'Dubai, UAE',
-        meta: '4.6 rating · 21.3k travelers · from $1,540 / week',
+        meta: '4.6 rating · 21.3k travelers · from ₹1,540 / week',
         image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=520&fit=crop',
         desc: 'Desert, skyline, and souks. Mix malls with a dune evening and old Dubai creek.',
         facts: ['City', 'Desert', 'Luxury'],
@@ -87,12 +87,12 @@ const DESTINATIONS = {
         planner: 'Dubai',
         rating: '4.6',
         travelers: '21.3k travelers',
-        price: '$1,540',
+        price: '₹1,540',
         keywords: 'dubai uae burj desert marina'
     },
     iceland: {
         title: 'Reykjavík & Ring Road',
-        meta: '4.8 rating · 11.6k travelers · from $1,890 / week',
+        meta: '4.8 rating · 11.6k travelers · from ₹1,890 / week',
         image: 'https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=800&h=520&fit=crop',
         desc: 'Waterfalls, black beaches, and long summer light. Best with a rental car on the ring road.',
         facts: ['Nature', 'Adventure', 'Scenic'],
@@ -100,12 +100,12 @@ const DESTINATIONS = {
         planner: 'Iceland',
         rating: '4.8',
         travelers: '11.6k travelers',
-        price: '$1,890',
+        price: '₹1,890',
         keywords: 'iceland reykjavik ring road waterfall northern lights'
     },
     kyoto: {
         title: 'Kyoto, Japan',
-        meta: '4.9 rating · 15.8k travelers · from $1,390 / week',
+        meta: '4.9 rating · 15.8k travelers · from ₹1,390 / week',
         image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&h=520&fit=crop',
         desc: 'Temples, tea houses, and bamboo groves. Pair with Osaka for food nights.',
         facts: ['Culture', 'Temples', 'Food'],
@@ -113,12 +113,12 @@ const DESTINATIONS = {
         planner: 'Kyoto',
         rating: '4.9',
         travelers: '15.8k travelers',
-        price: '$1,390',
+        price: '₹1,390',
         keywords: 'kyoto japan temples bamboo gion'
     },
     nyc: {
         title: 'New York, USA',
-        meta: '4.7 rating · 28.4k travelers · from $1,720 / week',
+        meta: '4.7 rating · 28.4k travelers · from ₹1,720 / week',
         image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&h=520&fit=crop',
         desc: 'Neighborhoods, museums, and late-night food. Walk, subway, then day-trip upstate.',
         facts: ['City', 'Food', 'Art'],
@@ -126,12 +126,12 @@ const DESTINATIONS = {
         planner: 'New York',
         rating: '4.7',
         travelers: '28.4k travelers',
-        price: '$1,720',
+        price: '₹1,720',
         keywords: 'new york nyc usa manhattan brooklyn'
     },
     marrakech: {
         title: 'Marrakech, Morocco',
-        meta: '4.6 rating · 12.9k travelers · from $980 / week',
+        meta: '4.6 rating · 12.9k travelers · from ₹980 / week',
         image: 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&h=520&fit=crop',
         desc: 'Riads, souks, and Atlas day trips. Hire a driver for the mountains; wander the medina on foot.',
         facts: ['Culture', 'Markets', 'Desert'],
@@ -139,12 +139,12 @@ const DESTINATIONS = {
         planner: 'Marrakech',
         rating: '4.6',
         travelers: '12.9k travelers',
-        price: '$980',
+        price: '₹980',
         keywords: 'marrakech morocco medina souk atlas'
     },
     sydney: {
         title: 'Sydney, Australia',
-        meta: '4.8 rating · 16.2k travelers · from $1,510 / week',
+        meta: '4.8 rating · 16.2k travelers · from ₹1,510 / week',
         image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&h=520&fit=crop',
         desc: 'Harbour walks, beaches, and ferries. Bondi to Coogee is the classic coastal day.',
         facts: ['Beach', 'City', 'Outdoors'],
@@ -152,7 +152,7 @@ const DESTINATIONS = {
         planner: 'Sydney',
         rating: '4.8',
         travelers: '16.2k travelers',
-        price: '$1,510',
+        price: '₹1,510',
         keywords: 'sydney australia harbour opera bondi'
     },
     yosemite: {

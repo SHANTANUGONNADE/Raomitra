@@ -474,6 +474,60 @@
     gap: 0.75rem;
 }
 
+.feed-action.is-on { color: var(--color-primary); }
+
+.feed-comments {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.feed-comment-list {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.feed-comment-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.84rem;
+}
+
+.feed-comment-form { display: flex; gap: 0.45rem; }
+
+.feed-comment-form input {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.feed-filter-empty { color: var(--color-text-muted); margin: 0.5rem 0 0; }
+
+.feed-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 6.5rem;
+    transform: translateX(-50%);
+    background: #161616;
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.82rem;
+    z-index: 1200;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.feed-toast.show { opacity: 1; }
+
 /* Destination detail */
 .destination-hero {
     position: relative;

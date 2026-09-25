@@ -3,7 +3,7 @@
  */
 const RoamitraNav = {
     user: null,
-    protectedPages: ['translator', 'profile', 'itinerary', 'booking', 'roamini'],
+    protectedPages: ['translator', 'profile', 'itinerary', 'booking', 'roamini', 'activity'],
 
     applyBranding() {
         const logoSrc = RoamitraApi.basePath() + 'assets/images/logo.png';
@@ -80,6 +80,16 @@ const RoamitraNav = {
                     </div>
                 </div>
             </div>
+            <div class="roamitra-tabbar" role="navigation" aria-label="Primary">
+                <div class="tab-account"></div>
+                <div class="tab-main">
+                    <a href="${base}explore.html" class="tab-item" data-nav="explore"><span class="tab-icon"><i class="bi bi-compass"></i></span><span class="tab-label">Explore</span></a>
+                    <a href="${base}community.html" class="tab-item" data-nav="community"><span class="tab-icon"><i class="bi bi-people"></i></span><span class="tab-label">Community</span></a>
+                    <a href="${base}roamini.html" class="tab-item" data-nav="roamini"><span class="tab-icon"><i class="bi bi-stars"></i></span><span class="tab-label">Roamini</span></a>
+                    <a href="${base}activity.html" class="tab-item" data-nav="activity"><span class="tab-icon"><i class="bi bi-bell"></i><b class="tab-badge" id="tabActivityBadge" hidden>0</b></span><span class="tab-label">Activity</span></a>
+                    <a href="${base}login.html" class="tab-item tab-you" data-nav="profile"><span class="tab-icon tab-you-avatar">U</span><span class="tab-label">You</span></a>
+                </div>
+            </div>
         `;
         const toggler = nav.querySelector('.roamitra-navbar-toggler');
         if (toggler) {
@@ -123,7 +133,7 @@ const RoamitraNav = {
                 if (['admin', 'co_admin'].includes(this.user.role)) {
                     desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm nav-keep nav-admin" aria-label="Admin"><i class="bi bi-shield-lock"></i><span>Admin</span></a>`);
                 } else if (this.user.role === 'customer') {
-                    desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('community.html')}#ask-host" class="btn-roamitra btn-roamitra-ghost">Become a host</a>`);
+                    desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-ghost">Become a host</a>`);
                 }
                 desktop.appendChild(this.bellButton());
                 desktop.appendChild(this.profileButton());
@@ -132,35 +142,80 @@ const RoamitraNav = {
                 }
             } else {
                 desktop.insertAdjacentHTML('beforeend', `
-                    <a href="${RoamitraApi.page('community.html')}#ask-host" class="btn-roamitra btn-roamitra-ghost">Become a host</a>
+                    <a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-ghost">Become a host</a>
                     <a href="${RoamitraApi.page('login.html')}" class="btn-roamitra btn-roamitra-ghost">Log in</a>
                     <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary">Sign up</a>
                 `);
+            }
+        }
+        const tabAccount = document.querySelector('.tab-account');
+        if (tabAccount) {
+            if (this.user) {
+                const staff = ['admin', 'co_admin'].includes(this.user.role);
+                tabAccount.innerHTML = `
+                    ${staff ? `<a href="${RoamitraApi.page('admin.html')}" data-nav="admin"><i class="bi bi-shield-lock"></i><span>Admin</span></a>` : ''}
+                    ${this.user.role === 'customer' ? `<a href="${RoamitraApi.page('host.html')}"><i class="bi bi-house-door"></i><span>Host</span></a>` : ''}
+                    <button type="button" class="js-logout"><i class="bi bi-box-arrow-right"></i><span>Log out</span></button>
+                `;
+            } else {
+                tabAccount.innerHTML = `
+                    <a href="${RoamitraApi.page('host.html')}"><i class="bi bi-house-door"></i><span>Host</span></a>
+                    <a href="${RoamitraApi.page('login.html')}"><i class="bi bi-box-arrow-in-right"></i><span>Log in</span></a>
+                    <a href="${RoamitraApi.page('signup.html')}"><i class="bi bi-person-plus"></i><span>Sign up</span></a>
+                `;
             }
         }
         if (mobileRow) {
             if (this.user) {
                 mobileRow.innerHTML = `
                     <a href="${RoamitraApi.page('profile.html')}" class="btn-roamitra btn-roamitra-navy flex-fill">Profile</a>
-                    ${this.user.role === 'customer' ? `<a href="${RoamitraApi.page('community.html')}#ask-host" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>` : ''}
+                    ${this.user.role === 'customer' ? `<a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>` : ''}
                     ${['admin','co_admin'].includes(this.user.role) ? `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-navy flex-fill nav-keep">Admin</a>` : ''}
                     <button type="button" class="btn-roamitra btn-roamitra-navy flex-fill nav-keep js-logout">Log out</button>
                 `;
             } else {
                 mobileRow.innerHTML = `
-                    <a href="${RoamitraApi.page('community.html')}#ask-host" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>
+                    <a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Become a host</a>
                     <a href="${RoamitraApi.page('login.html')}" class="btn-roamitra btn-roamitra-outline flex-fill">Log in</a>
                     <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a>
                 `;
             }
             mobileRow.prepend(this.themeButton());
         }
+        this.syncYouTab();
         document.querySelectorAll('.js-logout').forEach(btn => {
             btn.addEventListener('click', async () => {
                 try { await RoamitraApi.post('/auth/logout', {}); } catch (e) { /* ignore */ }
                 window.location.href = RoamitraApi.page('explore.html');
             });
         });
+    },
+
+    syncYouTab() {
+        const you = document.querySelector('.tab-you');
+        if (!you) return;
+        const avatar = you.querySelector('.tab-you-avatar');
+        if (!this.user) {
+            you.href = RoamitraApi.page('login.html');
+            if (avatar) avatar.textContent = 'U';
+            return;
+        }
+        you.href = RoamitraApi.page('profile.html');
+        const initial = (this.user.full_name || 'U').trim().charAt(0).toUpperCase();
+        if (!avatar) return;
+        if (this.user.avatar_url) {
+            avatar.innerHTML = `<img src="${this.escape(RoamitraApi.mediaUrl(this.user.avatar_url))}" alt="">`;
+        } else {
+            avatar.textContent = initial;
+        }
+    },
+
+    paintActivityBadge(unread) {
+        const tabBadge = document.getElementById('tabActivityBadge');
+        if (!tabBadge) return;
+        const count = Number(unread) || 0;
+        tabBadge.hidden = count === 0;
+        tabBadge.textContent = count > 99 ? '99+' : String(count);
     },
 
     themeButton() {
@@ -271,8 +326,9 @@ const RoamitraNav = {
         if (!body) return;
         try {
             const data = await RoamitraApi.get('/notifications');
+            const unread = Number(data.unread) || 0;
+            this.paintActivityBadge(unread);
             if (dot) {
-                const unread = Number(data.unread) || 0;
                 dot.hidden = unread === 0;
                 dot.textContent = unread > 9 ? '9+' : String(unread);
             }

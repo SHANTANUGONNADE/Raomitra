@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const days = Math.round((b - a) / 86400000) + 1;
         const total = (rate * days).toFixed(2);
-        summary.textContent = `${days} day(s) × $${rate} = $${total}`;
+        summary.textContent = `${days} day(s) × ₹${rate} = ₹${total}`;
     };
     start.addEventListener('change', () => {
         end.min = start.value;

@@ -285,6 +285,131 @@
     margin-top: 1rem;
 }
 
+.nav-mobile-auth,
+.roamitra-tabbar {
+    display: none;
+}
+
+.tab-main {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.tab-account {
+    display: flex;
+    justify-content: space-around;
+    gap: 0.2rem;
+    margin: 0 0.35rem;
+    padding: 0.1rem 0.15rem 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tab-account a,
+.tab-account button {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.1;
+    padding: 0.38rem 0.55rem;
+    text-decoration: none;
+}
+
+.tab-account i {
+    font-size: 1.05rem;
+}
+
+.tab-account a.active {
+    color: #86efac;
+}
+
+.tab-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.tab-icon {
+    width: 48px;
+    height: 32px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    position: relative;
+}
+
+.tab-item.active .tab-icon {
+    background: #2c2c2c;
+}
+
+.tab-badge {
+    position: absolute;
+    top: -6px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #22c55e;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+}
+
+.tab-you-avatar {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #3f3f46;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+
+.tab-you-avatar img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.tab-you .tab-you-avatar::after {
+    content: "";
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    right: -1px;
+    bottom: -1px;
+    background: #22c55e;
+    border: 2px solid #161616;
+    border-radius: 50%;
+}
+
 @keyframes logoShine {
     0% { background-position: 0% center; }
     100% { background-position: 220% center; }
@@ -347,8 +472,31 @@
 
     .navbar-brand { order: 1; flex: 0 1 auto; min-width: 0; }
     .navbar-end { order: 2; margin-left: auto; flex: 0 1 auto; min-width: 0; }
-    .roamitra-navbar-toggler { order: 3; margin-left: 0.35rem; flex: none; }
-    .roamitra-nav-links { order: 4; }
+    .roamitra-navbar-toggler { display: none; }
+    .roamitra-nav-links { display: none !important; }
+    .roamitra-nav-actions > .btn-roamitra { display: none; }
+
+    .nav-mobile-auth { display: none !important; }
+
+    body:has(.roamitra-tabbar) { padding-bottom: 8.4rem; }
+
+    .roamitra-tabbar {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        z-index: 1040;
+        left: 50%;
+        bottom: max(0.55rem, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: min(560px, calc(100% - 1rem));
+        align-items: stretch;
+        gap: 0.15rem;
+        padding: 0.45rem 0.35rem 0.4rem;
+        background: #161616;
+        color: #fff;
+        border-radius: 28px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+    }
 
     .roamitra-nav-actions {
         flex-wrap: nowrap;
