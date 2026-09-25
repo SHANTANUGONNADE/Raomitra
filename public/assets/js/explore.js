@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initDestinationOpen();
     initDestCylinder();
     initExploreSearch();
+    if (location.hash === '#panel-local' || location.hash.startsWith('#feed-')) {
+        document.querySelector('.explore-tab[data-tab="local"]')?.click();
+    }
 });
 
 function destinationUrl(place) {
@@ -110,27 +113,158 @@ function initExploreTabs() {
     });
 }
 
-function initFeedFilters() {
+function applyFeedFilter() {
     const empty = document.getElementById('feedFilterEmpty');
+    const active = document.querySelector('.feed-filters .filter-pill.active');
+    const filter = active?.dataset.filter || 'all';
+    let shown = 0;
+    document.querySelectorAll('#panel-local .feed-post[data-feed-category]').forEach((post) => {
+        const match = filter === 'all' || post.dataset.feedCategory === filter;
+        post.hidden = !match;
+        if (match) shown += 1;
+    });
+    if (empty) empty.hidden = shown !== 0;
+}
+
+function initFeedFilters() {
     document.querySelectorAll('.feed-filters .filter-pill').forEach(pill => {
         pill.addEventListener('click', () => {
             document.querySelectorAll('.feed-filters .filter-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
-            const filter = pill.dataset.filter || 'all';
-            let shown = 0;
-            document.querySelectorAll('#panel-local .feed-post[data-feed-category]').forEach((post) => {
-                const match = filter === 'all' || post.dataset.feedCategory === filter;
-                post.hidden = !match;
-                if (match) shown += 1;
-            });
-            if (empty) empty.hidden = shown !== 0;
+            applyFeedFilter();
         });
     });
 }
 
+function localFeedCard(feed) {
+    const labels = {
+        safety: 'Safety Alert',
+        jobs: 'Part-time Job',
+        food: 'Food Tip',
+        gems: 'Hidden Gem'
+    };
+    const category = labels[feed.category] ? feed.category : 'gems';
+    const who = feed.full_name || 'You';
+    const parts = String(who).trim().split(/\s+/).slice(0, 2);
+    const initials = parts.map((part) => part.charAt(0).toUpperCase()).join('') || 'Y';
+    const place = feed.place ? ' · ' + escapeHtml(feed.place) : '';
+    const remove = feed.mine
+        ? '<button type="button" class="feed-action" data-feed-act="delete" aria-label="Delete"><i class="bi bi-trash"></i></button>'
+        : '';
+    return '<div class="feed-post" data-feed-id="user-' + Number(feed.id) + '" data-feed-db="' + Number(feed.id) + '" data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
+        + '<div class="feed-post-header">'
+        + '<div class="feed-post-avatar">' + escapeHtml(initials) + '</div>'
+        + '<div class="feed-post-meta">'
+        + '<div class="feed-post-name">' + escapeHtml(who) + '</div>'
+        + '<div class="feed-post-time">' + escapeHtml(localFeedTime(feed.created_at)) + place + '</div>'
+        + '</div>'
+        + '<span class="feed-category ' + escapeHtml(category) + '">' + escapeHtml(labels[category]) + '</span>'
+        + '</div>'
+        + '<p class="feed-post-title">' + escapeHtml(feed.title) + '</p>'
+        + '<p class="feed-post-content">' + escapeHtml(feed.body) + '</p>'
+        + '<div class="feed-post-actions"><div class="feed-actions-left">'
+        + '<button type="button" class="feed-action" data-feed-act="like" aria-pressed="false"><i class="bi bi-hand-thumbs-up"></i> <span data-feed-count="likes">0</span></button>'
+        + '<button type="button" class="feed-action" data-feed-act="comment" aria-expanded="false"><i class="bi bi-chat"></i> <span data-feed-count="comments">0</span></button>'
+        + '</div><div class="feed-actions-right">'
+        + '<button type="button" class="feed-action" data-feed-act="save" aria-pressed="false" aria-label="Save"><i class="bi bi-bookmark"></i></button>'
+        + '<button type="button" class="feed-action" data-feed-act="share" aria-label="Share"><i class="bi bi-share"></i></button>'
+        + remove
+        + '</div></div>'
+        + '<div class="feed-comments" hidden><ul class="feed-comment-list"></ul>'
+        + '<form class="feed-comment-form"><input name="comment" maxlength="280" placeholder="Write a comment…" required>'
+        + '<button type="submit" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Post</button></form></div></div>';
+}
+
+function localFeedTime(value) {
+    const then = Date.parse(String(value || '').replace(' ', 'T'));
+    if (!then) return 'Just now';
+    const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + 'm ago';
+    const hours = Math.round(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    return Math.round(hours / 24) + 'd ago';
+}
+
+function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
+    const list = document.getElementById('localFeedList');
+    const form = document.getElementById('localFeedForm');
+    const addBtn = document.getElementById('localFeedAdd');
+    const loginForFeed = () => {
+        location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('explore.html#panel-local');
+    };
+    const mount = (feed, prepend) => {
+        if (!list || !feed) return null;
+        const holder = document.createElement('div');
+        holder.innerHTML = localFeedCard(feed);
+        const post = holder.firstElementChild;
+        if (!post) return null;
+        if (prepend && list.firstChild) list.insertBefore(post, list.firstChild);
+        else list.appendChild(post);
+        bindPost(post);
+        persist();
+        applyFeedFilter();
+        return post;
+    };
+
+    addBtn?.addEventListener('click', async () => {
+        const user = await RoamitraApi.me();
+        if (!user) {
+            loginForFeed();
+            return;
+        }
+        if (!form) return;
+        form.hidden = false;
+        form.querySelector('[name="title"]')?.focus();
+    });
+    document.getElementById('localFeedCancel')?.addEventListener('click', () => {
+        if (form) form.hidden = true;
+    });
+    form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const user = await RoamitraApi.me();
+        if (!user) {
+            loginForFeed();
+            return;
+        }
+        const data = new FormData(form);
+        const title = String(data.get('title') || '').trim();
+        const body = String(data.get('body') || '').trim();
+        const category = String(data.get('category') || '').trim();
+        const place = document.querySelector('#panel-local .js-location-label')?.textContent?.trim() || '';
+        if (!title || !body) return;
+        const submit = form.querySelector('[type="submit"]');
+        if (submit) submit.disabled = true;
+        try {
+            const res = await RoamitraApi.post('/local/feeds', { title, body, category, place });
+            document.querySelectorAll('.feed-filters .filter-pill').forEach((pill) => {
+                pill.classList.toggle('active', (pill.dataset.filter || '') === 'all');
+            });
+            const post = mount(res.feed, true);
+            form.reset();
+            form.hidden = true;
+            toast('Tip posted');
+            post?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (err) {
+            if (err && err.status === 401) {
+                loginForFeed();
+                return;
+            }
+            toast((err && err.message) || 'Could not post this tip');
+        } finally {
+            if (submit) submit.disabled = false;
+        }
+    });
+
+    RoamitraApi.get('/local/feeds').then((res) => {
+        (res.feeds || []).forEach((feed) => mount(feed, false));
+        if (typeof openSavedTip === 'function') openSavedTip();
+    }).catch(() => {
+        if (typeof openSavedTip === 'function') openSavedTip();
+    });
+}
+
 function initLocalFeed() {
-    const posts = document.querySelectorAll('#panel-local .feed-post[data-feed-id]');
-    if (!posts.length) return;
     const key = 'roamitra.localFeed';
     let state = {};
     try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
@@ -152,13 +286,17 @@ function initLocalFeed() {
         toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
     };
 
-    posts.forEach((post) => {
+    const bindPost = (post) => {
+        if (post.dataset.feedBound === '1') return;
+        post.dataset.feedBound = '1';
         const id = post.dataset.feedId;
         const baseLikes = Number(post.dataset.likes || 0);
         const baseComments = Number(post.dataset.comments || 0);
         const entry = Object.assign({ liked: false, saved: false, comments: [], title: post.dataset.feedTitle || '' }, state[id] || {});
         if (!Array.isArray(entry.comments)) entry.comments = [];
         entry.title = post.dataset.feedTitle || entry.title || '';
+        entry.body = (post.querySelector('.feed-post-content')?.textContent || '').trim();
+        entry.category = post.dataset.feedCategory || entry.category || '';
         state[id] = entry;
 
         const likeBtn = post.querySelector('[data-feed-act="like"]');
@@ -231,7 +369,7 @@ function initLocalFeed() {
         });
         shareBtn?.addEventListener('click', async () => {
             const text = (post.querySelector('.feed-post-content')?.textContent || '').trim();
-            const url = location.href.split('#')[0] + '#panel-local';
+            const url = location.href.split('#')[0] + '#feed-' + encodeURIComponent(id);
             try {
                 if (navigator.share) {
                     await navigator.share({ title: 'Roamitra local tip', text, url });
@@ -247,7 +385,44 @@ function initLocalFeed() {
                 toast('Could not share this tip');
             }
         });
-    });
+        post.querySelector('[data-feed-act="delete"]')?.addEventListener('click', async () => {
+            const dbId = post.dataset.feedDb;
+            if (!dbId || !window.confirm('Delete this tip?')) return;
+            try {
+                await RoamitraApi.post('/local/feeds/' + dbId + '/delete', {});
+                delete state[id];
+                persist();
+                post.remove();
+                applyFeedFilter();
+                toast('Tip deleted');
+            } catch (err) {
+                toast((err && err.message) || 'Could not delete this tip');
+            }
+        });
+    };
+    document.querySelectorAll('#panel-local .feed-post[data-feed-id]').forEach(bindPost);
+    persist();
+
+    const openSavedTip = () => {
+        const hash = location.hash || '';
+        if (hash !== '#panel-local' && !hash.startsWith('#feed-')) return;
+        document.querySelectorAll('.explore-tab').forEach((tab) => {
+            tab.classList.toggle('active', tab.dataset.tab === 'local');
+        });
+        const forYou = document.getElementById('panel-for-you');
+        const local = document.getElementById('panel-local');
+        if (forYou) forYou.classList.remove('active');
+        if (local) {
+            local.hidden = false;
+            local.classList.add('active');
+        }
+        const feedId = hash.startsWith('#feed-') ? decodeURIComponent(hash.slice(6)) : '';
+        const post = feedId ? document.querySelector('[data-feed-id="' + CSS.escape(feedId) + '"]') : null;
+        (post || local)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    openSavedTip();
+    window.addEventListener('hashchange', openSavedTip);
+    initLocalFeedComposer(bindPost, persist, toast, openSavedTip);
 }
 
 function escapeHtml(text) {

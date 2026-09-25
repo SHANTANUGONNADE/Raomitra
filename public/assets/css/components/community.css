@@ -112,6 +112,30 @@
     margin-left: 1rem;
 }
 
+.request-note {
+    display: grid;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.7rem;
+    text-align: left;
+}
+
+.request-note textarea {
+    width: 100%;
+    min-height: 4.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+}
+
+.btn-roamitra.is-sent {
+    opacity: 0.9;
+    cursor: default;
+}
+
 .local-card {
     background: var(--color-white);
     border: 1px solid var(--color-border-light);

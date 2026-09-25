@@ -12,11 +12,11 @@
 @import 'components/ai-assistant.css?v=mob2';
 @import 'components/roamini-page.css?v=page16';
 @import 'components/auth.css?v=slides3';
-@import 'components/explore.css?v=feed3';
+@import 'components/explore.css?v=localfeed2';
 @import 'components/host.css?v=hosts2';
-@import 'components/community.css?v=under7';
+@import 'components/community.css?v=connect1';
 @import 'components/meetups.css?v=join5';
-@import 'components/profile.css?v=cust3';
+@import 'components/profile.css?v=savedfeed3';
 @import 'components/admin.css?v=adm3';
 @import 'components/app.css?v=act3';
 @import 'components/motion.css';

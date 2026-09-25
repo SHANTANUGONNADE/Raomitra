@@ -68,6 +68,12 @@ try {
         $method === 'POST' && $path === '/translate' => TranslateController::translate($input),
         $method === 'GET' && $path === '/translate/history' => TranslateController::history(),
 
+        $method === 'GET' && $path === '/local/feeds' => CommunityController::localFeeds(),
+        $method === 'POST' && $path === '/local/feeds' => CommunityController::createLocalFeed($input),
+        $method === 'POST' && preg_match('#^/local/feeds/(\d+)/delete$#', $path, $m) === 1 => CommunityController::deleteLocalFeed((int) $m[1]),
+
+        $method === 'GET' && $path === '/community/requests' => CommunityController::requests(),
+        $method === 'POST' && $path === '/community/requests' => CommunityController::createRequest($input),
         $method === 'GET' && $path === '/community/posts' => CommunityController::list(),
         $method === 'POST' && $path === '/community/posts' => CommunityController::create($input),
         $method === 'POST' && preg_match('#^/community/posts/(\d+)/replies$#', $path, $m) === 1 => CommunityController::reply((int) $m[1], $input),

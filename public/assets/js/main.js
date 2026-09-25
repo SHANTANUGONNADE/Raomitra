@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSeeAll();
     initPageSearch();
     initLocalLocations();
+    initConnectRequests();
 });
 
 function initLocalLocations() {
@@ -109,6 +110,145 @@ function initLocalLocations() {
         el.textContent = '';
         el.append(text, edit);
     });
+}
+
+function cardPerson(card) {
+    const nameEl = card.querySelector('.local-name, .host-name, .person-name');
+    const locEl = card.querySelector('.local-location-text, .local-location, .host-location, .person-location');
+    const rawName = nameEl ? (nameEl.childNodes[0] ? nameEl.childNodes[0].textContent : nameEl.textContent) : '';
+    return {
+        name: String(rawName || '').trim(),
+        location: String(locEl ? locEl.textContent : '').trim()
+    };
+}
+
+function requestToast(message) {
+    let el = document.getElementById('feedToast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'feedToast';
+        el.className = 'feed-toast';
+        el.setAttribute('role', 'status');
+        document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(requestToast.timer);
+    requestToast.timer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function markRequestSent(btn) {
+    btn.disabled = true;
+    btn.classList.add('is-sent');
+    btn.setAttribute('aria-disabled', 'true');
+    btn.textContent = btn.dataset.requestKind === 'connect' ? 'Requested' : 'Request sent';
+    const note = btn.parentElement && btn.parentElement.querySelector('.request-note');
+    if (note) note.hidden = true;
+}
+
+function ensureRequestNote(btn) {
+    const card = btn.closest('.host-card');
+    if (!card) return null;
+    let box = card.querySelector('.request-note');
+    if (box) return box;
+    box = document.createElement('div');
+    box.className = 'request-note';
+    box.hidden = true;
+    const field = document.createElement('textarea');
+    field.maxLength = 400;
+    field.rows = 3;
+    field.placeholder = 'Tell them when you are visiting.';
+    field.setAttribute('aria-label', 'Note for ' + (btn.dataset.personName || 'this host'));
+    const send = document.createElement('button');
+    send.type = 'button';
+    send.className = 'btn-roamitra btn-roamitra-navy btn-roamitra-sm';
+    send.textContent = 'Send request';
+    box.append(field, send);
+    btn.after(box);
+    return box;
+}
+
+async function submitPersonRequest(btn, note) {
+    if (!btn || btn.disabled || btn.classList.contains('is-sent')) return;
+    if (typeof RoamitraApi === 'undefined') return;
+    const original = btn.textContent;
+    btn.disabled = true;
+    try {
+        const data = await RoamitraApi.post('/community/requests', {
+            kind: btn.dataset.requestKind,
+            person_name: btn.dataset.personName,
+            person_location: btn.dataset.personLocation || '',
+            note: String(note || '').trim()
+        });
+        markRequestSent(btn);
+        const name = btn.dataset.personName;
+        if (data.already) {
+            requestToast('You already sent this to ' + name + '.');
+        } else if (btn.dataset.requestKind === 'connect') {
+            requestToast('Connection request sent to ' + name + '.');
+        } else {
+            requestToast('Request sent to ' + name + '.');
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.textContent = original;
+        if (err.status === 401) {
+            const file = (location.pathname.split('/').pop() || 'community.html').split('?')[0];
+            window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(file);
+            return;
+        }
+        requestToast(err.message || 'Could not send that request.');
+    }
+}
+
+function initConnectRequests() {
+    document.querySelectorAll('.local-card button, .host-card button, .person-row a').forEach((btn) => {
+        const label = btn.textContent.replace(/\s+/g, ' ').trim();
+        const kind = /^connect$/i.test(label) ? 'connect' : (/^send request$/i.test(label) ? 'host' : '');
+        if (!kind) return;
+        const card = btn.closest('.local-card, .host-card, .person-row');
+        if (!card) return;
+        const person = cardPerson(card);
+        if (!person.name) return;
+        btn.dataset.requestKind = kind;
+        btn.dataset.personName = person.name;
+        btn.dataset.personLocation = person.location;
+        if (btn.tagName === 'A') btn.setAttribute('role', 'button');
+    });
+
+    document.addEventListener('click', (event) => {
+        const noteSend = event.target.closest('.request-note button');
+        if (noteSend) {
+            event.preventDefault();
+            const box = noteSend.closest('.request-note');
+            const btn = box && box.previousElementSibling;
+            if (btn && btn.dataset.requestKind) {
+                submitPersonRequest(btn, box.querySelector('textarea')?.value || '');
+            }
+            return;
+        }
+        const btn = event.target.closest('[data-request-kind]');
+        if (!btn || btn.disabled || btn.classList.contains('is-sent')) return;
+        event.preventDefault();
+        if (btn.dataset.requestKind === 'host') {
+            const box = ensureRequestNote(btn);
+            if (!box) return;
+            box.hidden = false;
+            box.querySelector('textarea')?.focus();
+            return;
+        }
+        submitPersonRequest(btn, '');
+    });
+
+    if (typeof RoamitraApi === 'undefined') return;
+    RoamitraApi.get('/community/requests').then((data) => {
+        const sent = new Set((data.requests || []).map((row) => row.kind + '|' + row.person_name));
+        document.querySelectorAll('[data-request-kind]').forEach((btn) => {
+            if (sent.has(btn.dataset.requestKind + '|' + btn.dataset.personName)) {
+                markRequestSent(btn);
+            }
+        });
+    }).catch(() => { /* guest visitors have no saved requests */ });
 }
 
 function initHostLinks() {

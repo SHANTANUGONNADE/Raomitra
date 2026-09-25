@@ -28,6 +28,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         return d.innerHTML;
     }
 
+    function savedLocalTips() {
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem('roamitra.localFeed') || '{}'); } catch (e) { return []; }
+        return Object.entries(saved)
+            .filter(([, entry]) => entry && entry.saved)
+            .map(([id, entry]) => ({
+                id,
+                title: entry.title || 'Local tip',
+                body: entry.body || '',
+                category: entry.category || '',
+                at: Number(entry.savedAt) || 0
+            }))
+            .sort((a, b) => b.at - a.at);
+    }
+
+    function tipExcerpt(tip) {
+        const title = String(tip.title || '').trim();
+        let body = String(tip.body || '').trim();
+        if (!body || body === title) return '';
+        if (title && body.indexOf(title) === 0) {
+            body = body.slice(title.length).replace(/^[\s.—-]+/, '').trim();
+        }
+        return body;
+    }
+
+    function tipCard(tip) {
+        const href = RoamitraApi.page('explore.html') + '#feed-' + encodeURIComponent(tip.id);
+        const label = tip.category ? escapeHtml(tip.category) : 'Local tip';
+        const excerpt = tipExcerpt(tip);
+        return '<article class="cust-saved-tip">'
+            + '<a class="cust-tip" href="' + href + '">'
+            + '<span class="cust-tip-mark" aria-hidden="true"><i class="bi bi-bookmark-fill"></i></span>'
+            + '<span class="cust-tip-copy">'
+            + '<strong>' + escapeHtml(tip.title || tip.body || 'Local tip') + '</strong>'
+            + (excerpt ? '<p>' + escapeHtml(excerpt) + '</p>' : '')
+            + '<span class="cust-tip-cat">' + label + '</span>'
+            + '</span></a>'
+            + '<div class="cust-roam-actions">'
+            + '<a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="' + href + '">Open</a>'
+            + '<button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-unsave-tip="' + escapeHtml(tip.id) + '">Remove</button>'
+            + '</div></article>';
+    }
+
+    function unsaveLocalTip(id) {
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem('roamitra.localFeed') || '{}'); } catch (e) { saved = {}; }
+        if (!saved[id]) return;
+        saved[id].saved = false;
+        saved[id].savedAt = 0;
+        try { localStorage.setItem('roamitra.localFeed', JSON.stringify(saved)); } catch (e) { /* ignore */ }
+    }
+
     function roleLabel(role) {
         return ({
             admin: 'Admin',
@@ -238,9 +290,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const roamGrid = document.getElementById('roamGrid');
         const savedGrid = document.getElementById('savedGrid');
         if (roamGrid) roamGrid.innerHTML = trips.length ? trips.map(card).join('') : '<p class="profile-empty">No roams yet. Open Roamini AI and plan a trip.</p>';
+        const savedTips = document.getElementById('savedTips');
+        const savedEmpty = document.getElementById('savedEmpty');
         if (savedGrid) {
             const saved = trips.filter(t => Number(t.is_saved) === 1);
-            savedGrid.innerHTML = saved.length ? saved.map(card).join('') : '<p class="profile-empty">No saved trips yet.</p>';
+            const tips = savedLocalTips();
+            if (savedTips) savedTips.innerHTML = tips.map(tipCard).join('');
+            savedGrid.innerHTML = saved.map(card).join('');
+            if (savedEmpty) savedEmpty.hidden = tips.length + saved.length > 0;
         }
         const shortcuts = document.getElementById('profileShortcuts');
         if (shortcuts) {
@@ -326,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.querySelectorAll('[data-cust-tab]').forEach((el) => el.classList.toggle('active', el === tab));
             const saved = tab.dataset.custTab === 'saved';
             document.getElementById('roamGrid').hidden = saved;
-            document.getElementById('savedGrid').hidden = !saved;
+            document.getElementById('savedPanel').hidden = !saved;
         });
     });
     document.getElementById('cancelEdit').addEventListener('click', () => {
@@ -383,8 +440,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    ['roamGrid', 'savedGrid'].forEach((id) => {
+    ['roamGrid', 'savedPanel'].forEach((id) => {
         document.getElementById(id)?.addEventListener('click', async (event) => {
+            const tipBtn = event.target.closest('[data-unsave-tip]');
+            if (tipBtn) {
+                unsaveLocalTip(tipBtn.dataset.unsaveTip);
+                tipBtn.closest('.cust-saved-tip')?.remove();
+                const empty = document.getElementById('savedEmpty');
+                const left = document.querySelector('#savedTips .cust-saved-tip, #savedGrid .cust-roam');
+                if (empty) empty.hidden = !!left;
+                return;
+            }
             const btn = event.target.closest('[data-save-trip]');
             if (!btn || btn.disabled) return;
             btn.disabled = true;

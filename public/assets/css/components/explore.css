@@ -312,6 +312,64 @@
     margin-bottom: 0.65rem;
 }
 
+.local-feed-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.local-feed-heading .btn-roamitra { flex: 0 0 auto; margin-top: 0.15rem; }
+
+.feed-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    background: var(--color-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.feed-compose h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-navy);
+}
+
+.feed-compose label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+.feed-compose input,
+.feed-compose select,
+.feed-compose textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0.55rem 0.75rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.feed-compose textarea { resize: vertical; min-height: 4.5rem; }
+
+.feed-compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
 .local-feed-header h2 {
     font-size: 1.25rem;
     font-weight: 700;
@@ -432,6 +490,14 @@
 .feed-category.food { background: #FEF3C7; color: #D97706; }
 .feed-category.gems { background: #EDE9FE; color: #7C3AED; }
 .feed-category.jobs { background: #DBEAFE; color: #2563EB; }
+
+.feed-post-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-navy);
+}
 
 .feed-post-content {
     font-size: 0.875rem;

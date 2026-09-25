@@ -188,7 +188,8 @@ function nextPage() {
         if (url.origin !== window.location.origin) return fallback;
         const file = url.pathname.split('/').pop() || '';
         if (!file.endsWith('.html')) return fallback;
-        return RoamitraApi.page(file) + url.search;
+        const hash = /^#[A-Za-z0-9_-]+$/.test(url.hash) ? url.hash : '';
+        return RoamitraApi.page(file) + url.search + hash;
     } catch (e) {
         return fallback;
     }

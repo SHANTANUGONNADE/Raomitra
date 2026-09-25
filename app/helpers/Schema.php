@@ -180,6 +180,34 @@ final class Schema
         ");
 
         $pdo->exec("
+            CREATE TABLE IF NOT EXISTS community_requests (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                kind ENUM('connect','host') NOT NULL,
+                person_name VARCHAR(120) NOT NULL,
+                person_location VARCHAR(160) NULL,
+                note VARCHAR(400) NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'sent',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_community_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY uniq_community_request (user_id, kind, person_name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS local_feeds (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                category VARCHAR(20) NOT NULL,
+                title VARCHAR(180) NOT NULL,
+                body TEXT NOT NULL,
+                place VARCHAR(160) NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_local_feeds_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
             CREATE TABLE IF NOT EXISTS host_applications (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NOT NULL,
@@ -428,6 +456,32 @@ final class Schema
                 body TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS community_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                kind TEXT NOT NULL,
+                person_name TEXT NOT NULL,
+                person_location TEXT NULL,
+                note TEXT NULL,
+                status TEXT NOT NULL DEFAULT 'sent',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE (user_id, kind, person_name)
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS local_feeds (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                place TEXT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ");
