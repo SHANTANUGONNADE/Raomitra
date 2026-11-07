@@ -149,6 +149,27 @@ async function ensureSchema(p) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS connections (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            requester_id INT UNSIGNED NOT NULL,
+            recipient_id INT UNSIGNED NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_connection_pair (requester_id, recipient_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS direct_messages (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            sender_id INT UNSIGNED NOT NULL,
+            recipient_id INT UNSIGNED NOT NULL,
+            body TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_messages_conversation (sender_id, recipient_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
     const [admins] = await p.query(
         "SELECT id FROM users WHERE email IN ('admin@raomitra.com','admin@roamitra.com') LIMIT 1"
     );
@@ -203,6 +224,151 @@ async function listPosts() {
         LIMIT 30
     `);
     return rows;
+}
+
+async function communityStats() {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(`
+        SELECT
+            (SELECT COUNT(*) FROM community_posts) AS questions,
+            (SELECT COUNT(DISTINCT u.id) FROM users u
+             LEFT JOIN host_applications ha ON ha.user_id = u.id AND ha.status = 'approved'
+             WHERE u.role = 'host' OR ha.id IS NOT NULL) AS hosts,
+            (SELECT COUNT(*) FROM host_applications WHERE status = 'approved' AND listing_type = 'vehicle') AS rentals,
+            (SELECT COUNT(*) FROM users) AS members
+    `);
+    return rows[0] || null;
+}
+
+async function listPeople(location = '') {
+    const p = await getPool();
+    if (!p) return null;
+    const value = String(location || '').trim();
+    const params = [];
+    let sql = `
+        SELECT u.id, u.full_name, u.avatar_url, u.bio,
+               COALESCE(NULLIF(TRIM(u.location), ''), t.destination) AS location,
+               t.destination AS traveling_to
+        FROM users u
+        LEFT JOIN trips t ON t.user_id = u.id
+            AND t.start_date <= CURRENT_DATE AND t.end_date >= CURRENT_DATE
+        WHERE (NULLIF(TRIM(u.location), '') IS NOT NULL OR t.id IS NOT NULL)
+    `;
+    if (value) {
+        sql += ' AND (u.location LIKE ? OR t.destination LIKE ?)';
+        params.push('%' + value + '%');
+        params.push('%' + value + '%');
+    }
+    sql += ' ORDER BY u.updated_at DESC, u.created_at DESC LIMIT 30';
+    const [rows] = await p.query(sql, params);
+    return rows;
+}
+
+async function createConnection(requesterId, recipientId) {
+    const p = await getPool();
+    if (!p) return null;
+    await p.query(
+        'INSERT INTO connections (requester_id, recipient_id, status) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP',
+        [requesterId, recipientId, 'pending']
+    );
+    const [rows] = await p.query(
+        'SELECT id, requester_id, recipient_id, status FROM connections WHERE requester_id = ? AND recipient_id = ? LIMIT 1',
+        [requesterId, recipientId]
+    );
+    return rows[0] || null;
+}
+
+async function listConnections(userId) {
+    const p = await getPool();
+    if (!p) return null;
+    const [rows] = await p.query(`
+        SELECT c.id, c.requester_id, c.recipient_id, c.status, c.created_at,
+               u.id AS person_id, u.full_name, u.avatar_url, u.location
+        FROM connections c
+        JOIN users u ON u.id = CASE WHEN c.requester_id = ? THEN c.recipient_id ELSE c.requester_id END
+        WHERE c.requester_id = ? OR c.recipient_id = ?
+        ORDER BY c.updated_at DESC
+    `, [userId, userId, userId]);
+    return rows;
+}
+
+async function updateConnection(id, userId, status) {
+    const p = await getPool();
+    if (!p) return false;
+    const [result] = await p.query(
+        'UPDATE connections SET status = ? WHERE id = ? AND recipient_id = ? AND status = ?',
+        [status, id, userId, 'pending']
+    );
+    return result.affectedRows > 0;
+}
+
+async function listMessages(userId, otherUserId) {
+    const p = await getPool();
+    if (!p) return null;
+    const [allowed] = await p.query(
+        `SELECT id FROM connections WHERE status = 'accepted'
+         AND ((requester_id = ? AND recipient_id = ?) OR (requester_id = ? AND recipient_id = ?)) LIMIT 1`,
+        [userId, otherUserId, otherUserId, userId]
+    );
+    if (!allowed.length) return null;
+    const [rows] = await p.query(
+        `SELECT id, sender_id, recipient_id, body, created_at FROM direct_messages
+         WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+         ORDER BY created_at ASC LIMIT 100`,
+        [userId, otherUserId, otherUserId, userId]
+    );
+    return rows;
+}
+
+async function sendMessage(senderId, recipientId, body) {
+    const p = await getPool();
+    if (!p) return null;
+    if (await listMessages(senderId, recipientId) === null) return null;
+    const [result] = await p.query(
+        'INSERT INTO direct_messages (sender_id, recipient_id, body) VALUES (?, ?, ?)',
+        [senderId, recipientId, body]
+    );
+    return result.insertId;
+}
+
+async function createNotification(userId, type, title, body, link) {
+    const p = await getPool();
+    if (!p) return false;
+    await p.query(
+        'INSERT INTO notifications (user_id, type, title, body, link) VALUES (?, ?, ?, ?, ?)',
+        [userId, type, title, body || '', link || null]
+    );
+    return true;
+}
+
+async function listNotifications(userId) {
+    const p = await getPool();
+    if (!p) return null;
+    const [rows] = await p.query(
+        `SELECT id, type, title, body, link, is_read, created_at
+         FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 40`,
+        [userId]
+    );
+    return rows;
+}
+
+async function markNotificationRead(userId, id) {
+    const p = await getPool();
+    if (!p) return false;
+    const [result] = await p.query(
+        'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
+        [id, userId]
+    );
+    return result.affectedRows > 0;
+}
+
+async function markNotificationsRead(userId) {
+    const p = await getPool();
+    if (!p) return false;
+    await p.query('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0', [userId]);
+    return true;
 }
 
 async function createPost(userId, title, body) {
@@ -306,6 +472,43 @@ async function ensureOpsTables(p) {
             KEY idx_bookings_user (user_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS meetups (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            title VARCHAR(180) NOT NULL,
+            place VARCHAR(180) NOT NULL,
+            meetup_date VARCHAR(40) NOT NULL,
+            meetup_time VARCHAR(40) NOT NULL,
+            capacity INT UNSIGNED NOT NULL DEFAULT 20,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_meetups_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+}
+
+async function listMeetups() {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(`
+        SELECT m.id, m.title, m.place, m.meetup_date AS date, m.meetup_time AS time,
+               m.capacity, 1 AS going, u.full_name AS host
+        FROM meetups m JOIN users u ON u.id = m.user_id
+        ORDER BY m.id DESC
+    `);
+    return rows.map((row) => Object.assign(row, { tags: ['Social'], joined: false }));
+}
+
+async function createMeetup(userId, fields) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [result] = await p.query(
+        'INSERT INTO meetups (user_id, title, place, meetup_date, meetup_time, capacity) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, fields.title, fields.place, fields.date, fields.time, fields.capacity]
+    );
+    return result.insertId;
 }
 
 const BOOKING_SELECT = `
@@ -428,6 +631,25 @@ async function listHostApplications() {
     return rows;
 }
 
+async function listHosts() {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(`
+        SELECT u.id, u.full_name, u.avatar_url, u.location, u.bio,
+               a.city, a.country, a.listing_type, a.created_at
+        FROM users u
+        LEFT JOIN host_applications a ON a.id = (
+            SELECT a2.id FROM host_applications a2
+            WHERE a2.user_id = u.id AND a2.status = 'approved'
+            ORDER BY a2.created_at DESC LIMIT 1
+        )
+        WHERE u.role = 'host' OR a.id IS NOT NULL
+        ORDER BY u.full_name ASC
+    `);
+    return rows;
+}
+
 async function reviewHostApplication(id, status, note, reviewerId) {
     const p = await getPool();
     if (!p) return null;
@@ -465,10 +687,24 @@ module.exports = {
     findUserById,
     createUser,
     listPosts,
+    communityStats,
+    listPeople,
+    createConnection,
+    listConnections,
+    updateConnection,
+    listMessages,
+    sendMessage,
+    createNotification,
+    listNotifications,
+    markNotificationRead,
+    markNotificationsRead,
     createPost,
     addReply,
     updateUserRole,
     listUsers,
+    listHosts,
+    listMeetups,
+    createMeetup,
     updateUserProfile,
     createBooking,
     listBookingsForUser,

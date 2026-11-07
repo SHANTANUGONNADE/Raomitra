@@ -102,6 +102,22 @@ final class HostController
         Response::ok(['application' => self::latestFor($userId), 'user' => Auth::user()]);
     }
 
+    public static function listHosts(): void
+    {
+        $stmt = Database::pdo()->query(
+            "SELECT u.id, u.full_name, u.avatar_url, u.location, u.bio,
+                    a.city, a.country, a.listing_type, a.created_at
+             FROM users u
+             LEFT JOIN host_applications a ON a.id = (
+                 SELECT a2.id FROM host_applications a2
+                 WHERE a2.user_id = u.id AND a2.status = 'approved'
+                 ORDER BY a2.created_at DESC LIMIT 1
+             )
+             WHERE u.role = 'host' OR a.id IS NOT NULL ORDER BY u.full_name ASC"
+        );
+        Response::ok(['hosts' => $stmt->fetchAll()]);
+    }
+
     private static function latestFor(int $userId): ?array
     {
         $stmt = Database::pdo()->prepare(

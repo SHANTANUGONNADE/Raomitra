@@ -16,6 +16,45 @@ final class CommunityController
         Response::ok(['posts' => $stmt->fetchAll()]);
     }
 
+    public static function stats(): void
+    {
+        $pdo = Database::pdo();
+        $questions = (int) $pdo->query('SELECT COUNT(*) FROM community_posts')->fetchColumn();
+        $hosts = (int) $pdo->query(
+            "SELECT COUNT(DISTINCT u.id) FROM users u
+             LEFT JOIN host_applications a ON a.user_id = u.id AND a.status = 'approved'
+             WHERE u.role = 'host' OR a.id IS NOT NULL"
+        )->fetchColumn();
+        $rentals = (int) $pdo->query(
+            "SELECT COUNT(*) FROM host_applications WHERE status = 'approved' AND listing_type = 'vehicle'"
+        )->fetchColumn();
+        $members = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+        Response::ok(['stats' => compact('questions', 'hosts', 'rentals', 'members')]);
+    }
+
+    public static function people(string $location = ''): void
+    {
+        $location = trim($location);
+        $currentUserId = Auth::userId() ?? 0;
+        $sql = 'SELECT u.id, u.full_name, u.avatar_url, u.bio,
+                       COALESCE(NULLIF(TRIM(u.location), ""), t.destination) AS location,
+                       t.destination AS traveling_to
+                FROM users u
+                LEFT JOIN trips t ON t.user_id = u.id
+                    AND t.start_date <= CURRENT_DATE AND t.end_date >= CURRENT_DATE
+                WHERE u.id <> ? AND (NULLIF(TRIM(u.location), "") IS NOT NULL OR t.id IS NOT NULL)';
+        $params = [$currentUserId];
+        if ($location !== '') {
+            $sql .= ' AND (u.location LIKE ? OR t.destination LIKE ?)';
+            $params[] = '%' . $location . '%';
+            $params[] = '%' . $location . '%';
+        }
+        $sql .= ' ORDER BY u.updated_at DESC, u.created_at DESC LIMIT 30';
+        $stmt = Database::pdo()->prepare($sql);
+        $stmt->execute($params);
+        Response::ok(['people' => $stmt->fetchAll()]);
+    }
+
     public static function create(array $input): void
     {
         $userId = Auth::requireUser();
@@ -60,6 +99,7 @@ final class CommunityController
         $name = trim((string) ($input['person_name'] ?? ''));
         $location = trim((string) ($input['person_location'] ?? ''));
         $note = trim((string) ($input['note'] ?? ''));
+        $personId = max(0, (int) ($input['person_id'] ?? 0));
         if ($name === '' || strlen($name) > 120) {
             Response::error('Add the person you want to reach.');
         }
@@ -74,6 +114,31 @@ final class CommunityController
         }
 
         $pdo = Database::pdo();
+        if ($kind === 'connect' && $personId > 0 && $personId !== $userId) {
+            $target = $pdo->prepare('SELECT id, full_name FROM users WHERE id = ? LIMIT 1');
+            $target->execute([$personId]);
+            $targetUser = $target->fetch();
+            if (!$targetUser) {
+                Response::error('Traveler not found.', 404);
+            }
+            $existingConnection = $pdo->prepare(
+                'SELECT id FROM connections WHERE requester_id = ? AND recipient_id = ? LIMIT 1'
+            );
+            $existingConnection->execute([$userId, $personId]);
+            if (!$existingConnection->fetch()) {
+                $pdo->prepare(
+                    'INSERT INTO connections (requester_id, recipient_id, status) VALUES (?, ?, ?)'
+                )->execute([$userId, $personId, 'pending']);
+            }
+            NotificationService::create(
+                $personId,
+                'connection',
+                'New connection request',
+                (Auth::user()['full_name'] ?? 'A traveler') . ' wants to connect with you.',
+                'profile.html'
+            );
+            Response::ok(['request_id' => 0, 'already' => false, 'recipient_id' => $personId], 201);
+        }
         $existing = $pdo->prepare(
             'SELECT id FROM community_requests WHERE user_id = ? AND kind = ? AND person_name = ? LIMIT 1'
         );
@@ -119,6 +184,110 @@ final class CommunityController
             );
         }
         Response::ok(['ok' => true]);
+    }
+
+    public static function connections(): void
+    {
+        $userId = Auth::requireUser();
+        $stmt = Database::pdo()->prepare(
+            'SELECT c.id, c.requester_id, c.recipient_id, c.status, c.created_at,
+                    u.id AS person_id, u.full_name, u.avatar_url, u.location
+             FROM connections c
+             JOIN users u ON u.id = CASE WHEN c.requester_id = ? THEN c.recipient_id ELSE c.requester_id END
+             WHERE c.requester_id = ? OR c.recipient_id = ?
+             ORDER BY c.updated_at DESC'
+        );
+        $stmt->execute([$userId, $userId, $userId]);
+        $rows = $stmt->fetchAll();
+        $followers = 0;
+        $following = 0;
+        foreach ($rows as $row) {
+            if ($row['status'] !== 'accepted') {
+                continue;
+            }
+            if ((int) $row['recipient_id'] === $userId) {
+                $followers++;
+            } else {
+                $following++;
+            }
+        }
+        Response::ok(['connections' => $rows, 'followers' => $followers, 'following' => $following]);
+    }
+
+    public static function respondConnection(array $input): void
+    {
+        $userId = Auth::requireUser();
+        $id = (int) ($input['connection_id'] ?? 0);
+        $status = (string) ($input['status'] ?? '');
+        if (!in_array($status, ['accepted', 'rejected'], true)) {
+            Response::error('Choose an accepted or rejected status.');
+        }
+        $stmt = Database::pdo()->prepare(
+            'UPDATE connections SET status = ? WHERE id = ? AND recipient_id = ? AND status = "pending"'
+        );
+        $stmt->execute([$status, $id, $userId]);
+        if ($stmt->rowCount() < 1) {
+            Response::error('Connection request not found.', 404);
+        }
+        Response::ok(['status' => $status]);
+    }
+
+    public static function messages(int $otherUserId): void
+    {
+        $userId = Auth::requireUser();
+        if ($otherUserId < 1) {
+            Response::error('Choose a traveler.');
+        }
+        $allowed = Database::pdo()->prepare(
+            'SELECT id FROM connections
+             WHERE status = "accepted"
+             AND ((requester_id = ? AND recipient_id = ?) OR (requester_id = ? AND recipient_id = ?))
+             LIMIT 1'
+        );
+        $allowed->execute([$userId, $otherUserId, $otherUserId, $userId]);
+        if (!$allowed->fetch()) {
+            Response::error('Accept the connection before chatting.', 403);
+        }
+        $stmt = Database::pdo()->prepare(
+            'SELECT id, sender_id, recipient_id, body, created_at
+             FROM direct_messages
+             WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+             ORDER BY created_at ASC LIMIT 100'
+        );
+        $stmt->execute([$userId, $otherUserId, $otherUserId, $userId]);
+        Response::ok(['messages' => $stmt->fetchAll()]);
+    }
+
+    public static function sendMessage(array $input): void
+    {
+        $userId = Auth::requireUser();
+        $otherUserId = (int) ($input['user_id'] ?? 0);
+        $body = trim((string) ($input['body'] ?? ''));
+        if ($otherUserId < 1 || $body === '' || strlen($body) > 2000) {
+            Response::error('Enter a message for a connected traveler.');
+        }
+        $allowed = Database::pdo()->prepare(
+            'SELECT id FROM connections
+             WHERE status = "accepted"
+             AND ((requester_id = ? AND recipient_id = ?) OR (requester_id = ? AND recipient_id = ?))
+             LIMIT 1'
+        );
+        $allowed->execute([$userId, $otherUserId, $otherUserId, $userId]);
+        if (!$allowed->fetch()) {
+            Response::error('Accept the connection before chatting.', 403);
+        }
+        Database::pdo()->prepare(
+            'INSERT INTO direct_messages (sender_id, recipient_id, body) VALUES (?, ?, ?)'
+        )->execute([$userId, $otherUserId, $body]);
+        $sender = Auth::user();
+        NotificationService::create(
+            $otherUserId,
+            'message',
+            'New message',
+            ($sender['full_name'] ?? 'A traveler') . ' sent you a message.',
+            'profile.html'
+        );
+        Response::ok(['sent' => true]);
     }
 
     public static function localFeeds(): void

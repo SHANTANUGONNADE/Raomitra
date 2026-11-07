@@ -84,8 +84,11 @@ function emptyDb() {
         translator_prefs: [],
         community_posts: [],
         community_replies: [],
+        connections: [],
+        direct_messages: [],
         host_applications: [],
         vehicle_bookings: [],
+        meetups: [],
     };
 }
 
@@ -1002,6 +1005,17 @@ async function handle(req, res) {
         if (method === 'GET' && p === '/notifications') {
             const user = await needUser();
             const today = new Date().toISOString().slice(0, 10);
+            if (mysqlStore.isConfigured()) {
+                const notes = await mysqlStore.listNotifications(user.id) || [];
+                return send(res, 200, {
+                    ok: true,
+                    notifications: notes,
+                    unread: notes.filter((n) => !n.is_read).length,
+                    upcoming_trips: [],
+                    saved_trips: [],
+                    recent_itineraries: [],
+                });
+            }
             const notes = db.notifications.filter((n) => n.user_id === user.id).sort((a, b) => b.id - a.id).slice(0, 40);
             return send(res, 200, {
                 ok: true,
@@ -1016,6 +1030,10 @@ async function handle(req, res) {
         const noteRead = p.match(/^\/notifications\/(\d+)\/read$/);
         if (method === 'POST' && noteRead) {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                await mysqlStore.markNotificationRead(user.id, Number(noteRead[1]));
+                return send(res, 200, { ok: true });
+            }
             const note = db.notifications.find((n) => n.id === Number(noteRead[1]) && n.user_id === user.id);
             if (note) note.is_read = 1;
             saveDb(db);
@@ -1024,6 +1042,10 @@ async function handle(req, res) {
 
         if (method === 'POST' && p === '/notifications/read-all') {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                await mysqlStore.markNotificationsRead(user.id);
+                return send(res, 200, { ok: true, unread: 0 });
+            }
             db.notifications.forEach((n) => {
                 if (n.user_id === user.id) n.is_read = 1;
             });
@@ -1104,6 +1126,148 @@ async function handle(req, res) {
             return send(res, 200, { ok: true, posts });
         }
 
+        if (method === 'GET' && p === '/community/stats') {
+            if (mysqlStore.isConfigured()) {
+                const stats = await mysqlStore.communityStats();
+                return send(res, 200, { ok: true, stats: {
+                    questions: Number(stats && stats.questions || 0),
+                    hosts: Number(stats && stats.hosts || 0),
+                    rentals: Number(stats && stats.rentals || 0),
+                    members: Number(stats && stats.members || 0),
+                }});
+            }
+            return send(res, 200, { ok: true, stats: {
+                questions: db.community_posts.length,
+                hosts: db.users.filter((user) => user.role === 'host' || db.host_applications.some((app) => app.user_id === user.id && app.status === 'approved')).length,
+                rentals: db.host_applications.filter((app) => app.status === 'approved' && app.listing_type === 'vehicle').length,
+                members: db.users.length,
+            }});
+        }
+
+        if (method === 'GET' && p === '/community/people') {
+            const location = String(requestUrl(req).searchParams.get('location') || '').trim();
+            const current = await currentUser(req, db);
+            if (mysqlStore.isConfigured()) {
+                const people = await mysqlStore.listPeople(location);
+                return send(res, 200, {
+                    ok: true,
+                    people: (people || []).filter((person) => !current || Number(person.id) !== Number(current.id)),
+                });
+            }
+            const search = location.toLowerCase();
+            const today = new Date().toISOString().slice(0, 10);
+            const people = db.users
+                .map((person) => {
+                    const trip = db.trips
+                        .filter((item) => item.user_id === person.id && item.start_date <= today && item.end_date >= today)
+                        .sort((a, b) => String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || '')))[0];
+                    return Object.assign({}, person, {
+                        location: person.location || (trip && trip.destination) || '',
+                        traveling_to: trip ? trip.destination : '',
+                    });
+                })
+                .filter((person) => person.location && (!search
+                    || String(person.location).toLowerCase().includes(search)
+                    || String(person.traveling_to).toLowerCase().includes(search)))
+                .filter((person) => !current || Number(person.id) !== Number(current.id))
+                .sort((a, b) => String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || '')))
+                .slice(0, 30)
+                .map((person) => ({
+                    id: person.id,
+                    full_name: person.full_name,
+                    avatar_url: person.avatar_url || null,
+                    bio: person.bio || '',
+                    location: person.location,
+                    traveling_to: person.traveling_to || '',
+                }));
+            return send(res, 200, { ok: true, people });
+        }
+
+        if (method === 'GET' && p === '/connections') {
+            const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                const connections = await mysqlStore.listConnections(user.id) || [];
+                return send(res, 200, {
+                    ok: true,
+                    connections,
+                    followers: connections.filter((c) => c.status === 'accepted' && c.recipient_id === user.id).length,
+                    following: connections.filter((c) => c.status === 'accepted' && c.requester_id === user.id).length,
+                });
+            }
+            const rows = db.connections.filter((c) => c.requester_id === user.id || c.recipient_id === user.id).map((c) => {
+                const person = db.users.find((u) => u.id === (c.requester_id === user.id ? c.recipient_id : c.requester_id));
+                return Object.assign({}, c, {
+                    person_id: person ? person.id : 0,
+                    full_name: person ? person.full_name : 'Traveler',
+                    avatar_url: person ? person.avatar_url || null : null,
+                    location: person ? person.location || '' : '',
+                });
+            });
+            return send(res, 200, {
+                ok: true,
+                connections: rows,
+                followers: rows.filter((c) => c.status === 'accepted' && c.recipient_id === user.id).length,
+                following: rows.filter((c) => c.status === 'accepted' && c.requester_id === user.id).length,
+            });
+        }
+
+        if (method === 'POST' && p === '/connections/respond') {
+            const user = await needUser();
+            const id = Number(input.connection_id || 0);
+            const status = String(input.status || '');
+            if (!['accepted', 'rejected'].includes(status)) return fail(res, 'Choose an accepted or rejected status.');
+            if (mysqlStore.isConfigured()) {
+                const updated = await mysqlStore.updateConnection(id, user.id, status);
+                if (!updated) return fail(res, 'Connection request not found.', 404);
+                return send(res, 200, { ok: true, status });
+            }
+            const connection = db.connections.find((c) => c.id === id && c.recipient_id === user.id && c.status === 'pending');
+            if (!connection) return fail(res, 'Connection request not found.', 404);
+            connection.status = status;
+            connection.updated_at = nowIso();
+            saveDb(db);
+            return send(res, 200, { ok: true, status });
+        }
+
+        if (method === 'GET' && p === '/messages') {
+            const user = await needUser();
+            const otherId = Number(requestUrl(req).searchParams.get('user_id') || 0);
+            if (mysqlStore.isConfigured()) {
+                const messages = await mysqlStore.listMessages(user.id, otherId);
+                if (messages === null) return fail(res, 'Accept the connection before chatting.', 403);
+                return send(res, 200, { ok: true, messages });
+            }
+            const connected = db.connections.some((c) => c.status === 'accepted'
+                && ((c.requester_id === user.id && c.recipient_id === otherId) || (c.requester_id === otherId && c.recipient_id === user.id)));
+            if (!connected) return fail(res, 'Accept the connection before chatting.', 403);
+            const messages = db.direct_messages.filter((m) =>
+                (m.sender_id === user.id && m.recipient_id === otherId)
+                || (m.sender_id === otherId && m.recipient_id === user.id)
+            );
+            return send(res, 200, { ok: true, messages });
+        }
+
+        if (method === 'POST' && p === '/messages') {
+            const user = await needUser();
+            const otherId = Number(input.user_id || 0);
+            const body = String(input.body || '').trim();
+            if (mysqlStore.isConfigured()) {
+                if (!body || body.length > 2000) return fail(res, 'Enter a message for a connected traveler.');
+                const messageId = await mysqlStore.sendMessage(user.id, otherId, body);
+                if (!messageId) return fail(res, 'Accept the connection before chatting.', 403);
+                await mysqlStore.createNotification(otherId, 'message', 'New message', user.full_name + ' sent you a message.', 'profile.html');
+                return send(res, 201, { ok: true, message_id: messageId });
+            }
+            const connected = db.connections.some((c) => c.status === 'accepted'
+                && ((c.requester_id === user.id && c.recipient_id === otherId) || (c.requester_id === otherId && c.recipient_id === user.id)));
+            if (!connected) return fail(res, 'Accept the connection before chatting.', 403);
+            if (!body || body.length > 2000) return fail(res, 'Enter a message for a connected traveler.');
+            const message = addRow(db, 'direct_messages', { sender_id: user.id, recipient_id: otherId, body, created_at: nowIso() });
+            notify(db, otherId, 'message', 'New message', user.full_name + ' sent you a message.', 'profile.html');
+            saveDb(db);
+            return send(res, 201, { ok: true, message });
+        }
+
         if (method === 'POST' && p === '/community/posts') {
             const user = await needUser();
             const title = String(input.title || '').trim();
@@ -1113,10 +1277,41 @@ async function handle(req, res) {
                 const postId = await mysqlStore.createPost(user.id, title, body);
                 return send(res, 201, { ok: true, post_id: postId });
             }
+
             const post = addRow(db, 'community_posts', { user_id: user.id, title, body, created_at: nowIso() });
             notify(db, user.id, 'community', 'Question posted', 'You posted: ' + title, 'community.html');
             saveDb(db);
             return send(res, 201, { ok: true, post_id: post.id });
+        }
+
+        if (method === 'POST' && p === '/community/requests') {
+            const user = await needUser();
+            const kind = String(input.kind || '');
+            const personId = Number(input.person_id || 0);
+            if (kind !== 'connect' || !personId || personId === user.id) return fail(res, 'Choose a valid traveler.');
+            if (mysqlStore.isConfigured()) {
+                const target = await mysqlStore.findUserById(personId);
+                if (!target) return fail(res, 'Traveler not found.', 404);
+                const connection = await mysqlStore.createConnection(user.id, personId);
+                await mysqlStore.createNotification(personId, 'connection', 'New connection request', user.full_name + ' wants to connect with you.', 'profile.html');
+                return send(res, 201, { ok: true, request_id: connection ? connection.id : 0, already: false });
+            }
+            const target = db.users.find((candidate) => candidate.id === personId);
+            if (!target) return fail(res, 'Traveler not found.', 404);
+            let connection = db.connections.find((c) => c.requester_id === user.id && c.recipient_id === personId);
+            if (!connection) {
+                connection = addRow(db, 'connections', {
+                    requester_id: user.id,
+                    recipient_id: personId,
+                    status: 'pending',
+                    created_at: nowIso(),
+                    updated_at: nowIso(),
+                });
+                notify(db, personId, 'connection', 'New connection request', user.full_name + ' wants to connect with you.', 'profile.html');
+                saveDb(db);
+                return send(res, 201, { ok: true, request_id: connection.id, already: false });
+            }
+            return send(res, 200, { ok: true, request_id: connection.id, already: true, status: connection.status });
         }
 
         const replyMatch = p.match(/^\/community\/posts\/(\d+)\/replies$/);
@@ -1240,6 +1435,52 @@ async function handle(req, res) {
                 application = await mysqlStore.latestHostForUser(user.id);
             }
             return send(res, 200, { ok: true, application, user: publicUser(user) });
+        }
+
+        if (method === 'GET' && p === '/hosts') {
+            const hosts = mysqlStore.isConfigured()
+                ? (await mysqlStore.listHosts() || [])
+                : db.users.filter((item) => ['host', 'admin', 'co_admin'].includes(item.role)).map((item) => {
+                    const application = db.host_applications
+                        .filter((entry) => entry.user_id === item.id && entry.status === 'approved')
+                        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+                    return Object.assign({}, item, {
+                        city: application ? application.city : item.location || '',
+                        country: application ? application.country : 'India',
+                        listing_type: application ? application.listing_type : 'host',
+                        bio: application ? application.bio : item.bio || '',
+                    });
+                });
+            return send(res, 200, { ok: true, hosts });
+        }
+
+        if (method === 'GET' && p === '/meetups') {
+            if (mysqlStore.isConfigured()) {
+                return send(res, 200, { ok: true, meetups: await mysqlStore.listMeetups() || [] });
+            }
+            return send(res, 200, { ok: true, meetups: (db.meetups || []).slice().reverse() });
+        }
+
+        if (method === 'POST' && p === '/meetups') {
+            const user = await needUser();
+            const title = String(input.title || '').trim();
+            const place = String(input.place || '').trim();
+            const date = String(input.date || '').trim();
+            const time = String(input.time || '').trim();
+            const capacity = Math.max(2, Math.min(200, Number(input.capacity) || 20));
+            if (!title || !place || !date || !time) return fail(res, 'Complete all meetup details.');
+            let meetup;
+            if (mysqlStore.isConfigured()) {
+                const id = await mysqlStore.createMeetup(user.id, { title, place, date, time, capacity });
+                meetup = { id, title, place, date, time, capacity, going: 1, host: user.full_name, tags: ['Social'], joined: true };
+            } else {
+                meetup = addRow(db, 'meetups', {
+                    title, place, date, time, capacity, going: 1, host: user.full_name,
+                    host_id: user.id, tags: ['Social'], joined: true, created_at: nowIso()
+                });
+                saveDb(db);
+            }
+            return send(res, 201, { ok: true, meetup });
         }
 
         if (method === 'GET' && p === '/admin/overview') {

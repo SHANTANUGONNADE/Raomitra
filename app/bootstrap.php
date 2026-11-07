@@ -38,7 +38,7 @@ $controllers = [
     'AuthController', 'ProfileController', 'TripController',
     'NotificationController', 'WalletController', 'TranslateController',
     'RoaminiController',
-    'CommunityController', 'BookingController', 'HostController', 'AdminController',
+    'CommunityController', 'BookingController', 'HostController', 'MeetupController', 'AdminController',
 ];
 foreach ($helpers as $class) {
     require_once $root . '/app/helpers/' . $class . '.php';

@@ -74,7 +74,13 @@ try {
 
         $method === 'GET' && $path === '/community/requests' => CommunityController::requests(),
         $method === 'POST' && $path === '/community/requests' => CommunityController::createRequest($input),
+        $method === 'GET' && $path === '/connections' => CommunityController::connections(),
+        $method === 'POST' && $path === '/connections/respond' => CommunityController::respondConnection($input),
+        $method === 'GET' && $path === '/messages' => CommunityController::messages((int) ($_GET['user_id'] ?? 0)),
+        $method === 'POST' && $path === '/messages' => CommunityController::sendMessage($input),
+        $method === 'GET' && $path === '/community/people' => CommunityController::people((string) ($_GET['location'] ?? '')),
         $method === 'GET' && $path === '/community/posts' => CommunityController::list(),
+        $method === 'GET' && $path === '/community/stats' => CommunityController::stats(),
         $method === 'POST' && $path === '/community/posts' => CommunityController::create($input),
         $method === 'POST' && preg_match('#^/community/posts/(\d+)/replies$#', $path, $m) === 1 => CommunityController::reply((int) $m[1], $input),
 
@@ -83,6 +89,9 @@ try {
 
         $method === 'POST' && $path === '/host/apply' => HostController::apply($input),
         $method === 'GET' && $path === '/host/me' => HostController::mine(),
+        $method === 'GET' && $path === '/hosts' => HostController::listHosts(),
+        $method === 'GET' && $path === '/meetups' => MeetupController::list(),
+        $method === 'POST' && $path === '/meetups' => MeetupController::create($input),
 
         $method === 'GET' && $path === '/admin/overview' => AdminController::overview(),
         $method === 'GET' && $path === '/admin/users' => AdminController::listUsers(),

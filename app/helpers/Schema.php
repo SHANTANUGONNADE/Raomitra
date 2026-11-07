@@ -195,6 +195,33 @@ final class Schema
         ");
 
         $pdo->exec("
+            CREATE TABLE IF NOT EXISTS connections (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                requester_id INT UNSIGNED NOT NULL,
+                recipient_id INT UNSIGNED NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_connection_pair (requester_id, recipient_id),
+                CONSTRAINT fk_connections_requester FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+                CONSTRAINT fk_connections_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS direct_messages (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                sender_id INT UNSIGNED NOT NULL,
+                recipient_id INT UNSIGNED NOT NULL,
+                body TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                CONSTRAINT fk_messages_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+                KEY idx_messages_conversation (sender_id, recipient_id, created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
             CREATE TABLE IF NOT EXISTS local_feeds (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NOT NULL,
@@ -319,6 +346,26 @@ final class Schema
                 id TEXT PRIMARY KEY,
                 data BLOB NOT NULL,
                 expires_at INTEGER NOT NULL
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                requester_id INTEGER NOT NULL,
+                recipient_id INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'accepted',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (requester_id, recipient_id)
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS direct_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id INTEGER NOT NULL,
+                recipient_id INTEGER NOT NULL,
+                body TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         ");
         $pdo->exec('CREATE INDEX IF NOT EXISTS idx_app_sessions_expires ON app_sessions (expires_at)');
