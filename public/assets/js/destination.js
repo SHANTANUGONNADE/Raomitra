@@ -143,7 +143,7 @@ const INDIA_CITY_DATA = {
   "sursadan": {
     "title": "Sur Sadan",
     "meta": "Agra, India · 4.8 rating · from ₹900 / week",
-    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Sadan_Joseph.jpg/960px-Sadan_Joseph.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "image": "",
     "desc": "Sur Sadan is in Agra, India. It is one of 23 mapped places in this city on Roamitra.",
     "facts": [
       "Agra",
@@ -16537,7 +16537,7 @@ const INDIA_CITY_DATA = {
   "indiatower": {
     "title": "India Tower",
     "meta": "Mumbai, India · 4.5 rating · from ₹1250 / week",
-    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Mumbai_03-2016_30_Gateway_of_India.jpg/960px-Mumbai_03-2016_30_Gateway_of_India.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "image": "",
     "desc": "India Tower is in Mumbai, India. It is one of 57 mapped places in this city on Roamitra.",
     "facts": [
       "Mumbai",
@@ -17113,7 +17113,7 @@ const INDIA_CITY_DATA = {
   "gatewayofindia": {
     "title": "Gateway of India",
     "meta": "Mumbai, India · 4.9 rating · from ₹1300 / week",
-    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Thane_Creek_and_Elephanta_Island_03-2016_-_img36_ferry_near_Gateway_of_India.jpg/960px-Thane_Creek_and_Elephanta_Island_03-2016_-_img36_ferry_near_Gateway_of_India.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Mumbai_03-2016_30_Gateway_of_India.jpg/960px-Mumbai_03-2016_30_Gateway_of_India.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
     "desc": "Gateway of India is in Mumbai, India. It is one of 57 mapped places in this city on Roamitra.",
     "facts": [
       "Mumbai",
@@ -29250,10 +29250,10 @@ const DESTINATIONS = {
     });
 })();
 
-const FEATURED_DESTINATION_KEYS = [
-    'bali', 'tokyo', 'paris', 'rome', 'barcelona', 'santorini', 'dubai',
-    'iceland', 'kyoto', 'nyc', 'marrakech', 'sydney', 'yosemite', 'tahoe', 'bigsur'
-].concat((window.RoamitraIndiaFeatured || []).filter((key) => DESTINATIONS[key]));
+// The Explore catalog is intentionally India-only. Keep the larger source
+// catalog available for legacy links, but never expose non-India places.
+const FEATURED_DESTINATION_KEYS = (window.RoamitraIndiaFeatured || [])
+    .filter((key) => DESTINATIONS[key]);
 
 const DESTINATION_ALIASES = {
     delhi: 'newdelhi',
@@ -29278,7 +29278,7 @@ function destinationSearchBlob(key, dest) {
 
 function findDestinations(query) {
     const q = String(query || '').trim().toLowerCase();
-    const keys = Object.keys(DESTINATIONS);
+    const keys = FEATURED_DESTINATION_KEYS.slice();
     if (!q) return keys;
     return keys.filter((key) => destinationSearchBlob(key, DESTINATIONS[key]).includes(q));
 }
@@ -29287,9 +29287,9 @@ function resolveDestinationKey(query) {
     const q = String(query || '').trim().toLowerCase();
     if (!q) return null;
     const compact = q.replace(/[^a-z0-9]+/g, '');
-    if (DESTINATIONS[q]) return q;
-    if (DESTINATIONS[compact]) return compact;
-    if (DESTINATION_ALIASES[q] && DESTINATIONS[DESTINATION_ALIASES[q]]) return DESTINATION_ALIASES[q];
+    if (FEATURED_DESTINATION_KEYS.includes(q)) return q;
+    if (FEATURED_DESTINATION_KEYS.includes(compact)) return compact;
+    if (DESTINATION_ALIASES[q] && FEATURED_DESTINATION_KEYS.includes(DESTINATION_ALIASES[q])) return DESTINATION_ALIASES[q];
     const matches = findDestinations(q);
     if (matches.length === 1) return matches[0];
     const titled = matches.find((key) => DESTINATIONS[key].title.toLowerCase().startsWith(q) || key === q);
@@ -29297,7 +29297,8 @@ function resolveDestinationKey(query) {
 }
 
 function renderDestination(place) {
-    const dest = DESTINATIONS[place] || DESTINATIONS.bali;
+    const safePlace = FEATURED_DESTINATION_KEYS.includes(place) ? place : FEATURED_DESTINATION_KEYS[0];
+    const dest = DESTINATIONS[safePlace];
     const title = document.getElementById('destTitle');
     const meta = document.getElementById('destMeta');
     const desc = document.getElementById('destDesc');
@@ -29309,7 +29310,11 @@ function renderDestination(place) {
 
     document.title = dest.title + ' — Roamitra';
     title.textContent = dest.title;
-    if (meta) meta.textContent = dest.meta;
+    if (meta) {
+        const location = dest.planner || 'India';
+        const rating = dest.rating ? dest.rating + ' rating' : '';
+        meta.textContent = [location, 'India', rating].filter(Boolean).join(' · ');
+    }
     if (desc) desc.textContent = dest.desc;
     const base = typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '';
     img.src = dest.image.indexOf('http') === 0 ? dest.image : base + dest.image;
@@ -29369,6 +29374,6 @@ window.RoamitraDestinations = {
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.body.dataset.destinationPage) return;
-    const key = (new URLSearchParams(location.search).get('place') || 'bali').toLowerCase();
+    const key = (new URLSearchParams(location.search).get('place') || FEATURED_DESTINATION_KEYS[0]).toLowerCase();
     renderDestination(key);
 });

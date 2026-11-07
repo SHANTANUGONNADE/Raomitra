@@ -3,6 +3,8 @@
  */
 const RoamitraNav = {
     user: null,
+    chatTimer: null,
+    previousMessageUnread: null,
     protectedPages: ['translator', 'profile', 'itinerary', 'booking', 'roamini', 'activity'],
 
     applyBranding() {
@@ -36,7 +38,7 @@ const RoamitraNav = {
         this.setActive();
         if (this.user) {
             await this.refreshNotifications();
-            setInterval(() => this.refreshNotifications(), 60000);
+            setInterval(() => this.refreshNotifications(), 5000);
         }
         if (typeof RoamitraAI !== 'undefined') {
             RoamitraAI.mount();
@@ -133,6 +135,7 @@ const RoamitraNav = {
                 } else if (this.user.role === 'customer') {
                     desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('host.html')}" class="btn-roamitra btn-roamitra-ghost">Become a host</a>`);
                 }
+                desktop.appendChild(this.chatButton());
                 desktop.appendChild(this.bellButton());
                 desktop.appendChild(this.profileButton());
                 if (document.body.dataset.page === 'profile') {
@@ -278,6 +281,115 @@ const RoamitraNav = {
         return wrap;
     },
 
+    chatButton() {
+        const wrap = document.createElement('div');
+        wrap.className = 'nav-chat-wrap';
+        wrap.innerHTML = `
+            <button type="button" class="nav-icon-btn" id="chatNavButton" aria-label="Messages" aria-expanded="false">
+                <i class="bi bi-chat-dots"></i>
+                <span class="nav-unread-dot" id="chatNavDot" hidden></span>
+            </button>
+            <div class="nav-chat-panel" id="chatNavPanel" hidden>
+                <div class="nav-chat-header"><strong>Messages</strong></div>
+                <div class="nav-chat-body" id="chatNavBody"><p class="notify-empty">Loading…</p></div>
+            </div>`;
+        const button = wrap.querySelector('#chatNavButton');
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const panel = wrap.querySelector('#chatNavPanel');
+            panel.hidden = !panel.hidden;
+            button.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+            if (!panel.hidden) {
+                this.refreshChats();
+                this.markMessageNotificationsRead();
+            }
+        });
+        wrap.querySelector('#chatNavPanel').addEventListener('click', (event) => event.stopPropagation());
+        document.addEventListener('click', () => { wrap.querySelector('#chatNavPanel').hidden = true; });
+        return wrap;
+    },
+
+    async refreshChats() {
+        const body = document.getElementById('chatNavBody');
+        if (!body) return;
+        try {
+            const data = await RoamitraApi.get('/connections');
+            const connections = (data.connections || []).filter((item) => item.status === 'accepted');
+            if (!connections.length) {
+                body.innerHTML = '<p class="notify-empty">No accepted connections yet.</p>';
+                return;
+            }
+            body.innerHTML = connections.map((item) =>
+                `<button type="button" class="nav-chat-person" data-chat-person="${Number(item.person_id)}" data-chat-name="${this.escape(item.full_name || 'Traveler')}">
+                    <span class="nav-chat-avatar">${this.escape((item.full_name || 'T').trim().charAt(0).toUpperCase())}</span>
+                    <span><strong>${this.escape(item.full_name || 'Traveler')}</strong><small>${this.escape(item.location || 'Connected traveler')}</small></span>
+                </button>`
+            ).join('');
+            body.querySelectorAll('[data-chat-person]').forEach((item) => {
+                item.addEventListener('click', () => this.openNavbarChat(Number(item.dataset.chatPerson), item.dataset.chatName));
+            });
+        } catch (error) {
+            body.innerHTML = `<p class="notify-empty">${this.escape(error.message)}</p>`;
+        }
+    },
+
+    async openNavbarChat(personId, name) {
+        const body = document.getElementById('chatNavBody');
+        if (!body) return;
+        if (this.chatTimer) clearInterval(this.chatTimer);
+        await this.markMessageNotificationsRead();
+        body.innerHTML = `
+            <div class="nav-chat-conversation">
+                <button type="button" class="nav-chat-back" id="chatNavBack"><i class="bi bi-arrow-left"></i> Messages</button>
+                <strong class="nav-chat-conversation-title">Chat with ${this.escape(name)}</strong>
+                <div class="nav-chat-messages" id="navChatMessages"></div>
+                <form id="navChatForm" class="nav-chat-compose">
+                    <input name="body" maxlength="2000" placeholder="Write a message..." required>
+                    <button type="submit" aria-label="Send"><i class="bi bi-send"></i></button>
+                </form>
+            </div>`;
+        const load = async () => {
+            const messages = document.getElementById('navChatMessages');
+            if (!messages) return;
+            const data = await RoamitraApi.get('/messages?user_id=' + personId);
+            messages.innerHTML = (data.messages || []).map((message) =>
+                `<div class="nav-chat-bubble ${Number(message.sender_id) === personId ? 'incoming' : 'outgoing'}">${this.escape(message.body)}<time>${this.relativeTime(message.created_at)}</time></div>`
+            ).join('') || '<p class="notify-empty">Start the conversation.</p>';
+            messages.scrollTop = messages.scrollHeight;
+        };
+        await load();
+        document.getElementById('chatNavBack')?.addEventListener('click', () => {
+            if (this.chatTimer) clearInterval(this.chatTimer);
+            this.chatTimer = null;
+            this.refreshChats();
+        });
+        document.getElementById('navChatForm')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const input = form.elements.body;
+            if (!input.value.trim()) return;
+            await RoamitraApi.post('/messages', { user_id: personId, body: input.value.trim() });
+            input.value = '';
+            await load();
+        });
+        this.chatTimer = setInterval(() => load().catch(() => {}), 5000);
+    },
+
+    async markMessageNotificationsRead() {
+        try {
+            const data = await RoamitraApi.get('/notifications');
+            const pending = (data.notifications || []).filter((item) =>
+                item.type === 'message' && !(item.is_read == 1 || item.is_read === true)
+            );
+            await Promise.all(pending.map((item) => RoamitraApi.post('/notifications/' + item.id + '/read', {})));
+            this.previousMessageUnread = 0;
+            this.paintMessageBadge(0);
+            await this.refreshNotifications();
+        } catch (error) {
+            // The chat remains usable if notification state cannot be updated.
+        }
+    },
+
     profileButton() {
         const a = document.createElement('a');
         a.href = RoamitraApi.page('profile.html');
@@ -299,7 +411,9 @@ const RoamitraNav = {
             community: 'Community',
             community_update: 'Community update',
             booking: 'Booking',
-            host: 'Host'
+            host: 'Host',
+            connection: 'Connection',
+            message: 'Message'
         })[type] || type;
     },
 
@@ -325,6 +439,17 @@ const RoamitraNav = {
         try {
             const data = await RoamitraApi.get('/notifications');
             const unread = Number(data.unread) || 0;
+            const messageUnread = (data.notifications || []).filter((item) =>
+                item.type === 'message' && !(item.is_read == 1 || item.is_read === true)
+            ).length;
+            this.paintMessageBadge(messageUnread);
+            if (this.previousMessageUnread !== null && messageUnread > this.previousMessageUnread) {
+                const latest = (data.notifications || []).find((item) =>
+                    item.type === 'message' && !(item.is_read == 1 || item.is_read === true)
+                );
+                this.showMessageToast(latest ? latest.body : 'You have a new message.');
+            }
+            this.previousMessageUnread = messageUnread;
             this.paintActivityBadge(unread);
             if (dot) {
                 dot.hidden = unread === 0;
@@ -389,6 +514,32 @@ const RoamitraNav = {
         } catch (e) {
             body.innerHTML = '<p class="notify-empty">Could not load notifications.</p>';
         }
+    },
+
+    paintMessageBadge(unread) {
+        const dot = document.getElementById('chatNavDot');
+        if (!dot) return;
+        dot.hidden = unread === 0;
+        dot.textContent = unread > 99 ? '99+' : String(unread);
+    },
+
+    showMessageToast(message) {
+        let toast = document.getElementById('messageToast');
+        if (!toast) {
+            toast = document.createElement('button');
+            toast.type = 'button';
+            toast.id = 'messageToast';
+            toast.className = 'message-toast';
+            document.body.appendChild(toast);
+            toast.addEventListener('click', () => {
+                document.getElementById('chatNavButton')?.click();
+                toast.hidden = true;
+            });
+        }
+        toast.innerHTML = `<i class="bi bi-chat-dots"></i><span>${this.escape(message)}</span>`;
+        toast.hidden = false;
+        clearTimeout(this.messageToastTimer);
+        this.messageToastTimer = setTimeout(() => { toast.hidden = true; }, 6000);
     },
 
     escape(text) {

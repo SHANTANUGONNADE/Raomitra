@@ -3,13 +3,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('communityForm');
     if (!list || !form) return;
 
+    document.querySelectorAll('.comm-ask-stage > .feed-post').forEach((post) => post.remove());
+
     async function refresh() {
         try {
             const data = await RoamitraApi.get('/community/posts');
             const posts = data.posts || [];
+            const questionStat = document.querySelector('.comm-stats-strip .stat-green .stat-value');
+            if (questionStat) questionStat.textContent = String(posts.length);
             if (!posts.length) {
                 list.innerHTML = '<p class="text-muted">No community questions yet. Be the first to ask.</p>';
                 return;
+            }
+
+            async function refreshStats() {
+                try {
+                    const data = await RoamitraApi.get('/community/stats');
+                    const stats = data.stats || {};
+                    document.querySelectorAll('[data-community-stat]').forEach((element) => {
+                        const value = Number(stats[element.dataset.communityStat] || 0);
+                        element.textContent = value.toLocaleString();
+                    });
+                } catch (error) {
+                    document.querySelectorAll('[data-community-stat]').forEach((element) => {
+                        element.textContent = '—';
+                    });
+                }
             }
             list.innerHTML = posts.map(p => `
                 <article class="feed-post live-post" data-id="${p.id}">
@@ -70,6 +89,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     refresh();
+    refreshStats();
+
+    async function refreshHosts() {
+        const locals = document.getElementById('localsGrid');
+        const hosts = document.getElementById('hostsGrid');
+        const hostPanel = document.getElementById('commHostPanel');
+        if (!locals && !hosts) return;
+        try {
+            const [peopleData, hostData] = await Promise.all([
+                RoamitraApi.get('/community/people'),
+                RoamitraApi.get('/hosts')
+            ]);
+            const people = peopleData.people || [];
+            const hostsList = hostData.hosts || [];
+            const renderLocal = (person) => {
+                const name = person.full_name || 'Verified host';
+                const location = person.location || 'India';
+                const avatar = person.avatar_url ? RoamitraApi.mediaUrl(person.avatar_url) : '';
+                return `<div class="col-lg-3 col-md-6"><div class="local-card" data-person-id="${Number(person.id)}">
+                    ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" class="local-avatar" loading="lazy">` : `<div class="local-avatar host-avatar-fallback">${escapeHtml(name.charAt(0))}</div>`}
+                    <div class="local-name">${escapeHtml(name)}</div>
+                    <div class="local-location">${escapeHtml(location || 'India')}</div>
+                    <p class="host-bio">${escapeHtml(person.traveling_to ? 'Travelling to ' + person.traveling_to : person.bio || 'Registered Roamitra traveler.')}</p>
+                    <button class="btn-roamitra btn-roamitra-navy btn-roamitra-block btn-roamitra-sm" data-person-id="${Number(person.id)}" data-person-name="${escapeHtml(name)}">Connect</button>
+                </div></div>`;
+            };
+            const renderHost = (person) => {
+                const name = person.full_name || 'Verified host';
+                const location = [person.city || person.location, person.country].filter(Boolean).join(', ');
+                const avatar = person.avatar_url ? RoamitraApi.mediaUrl(person.avatar_url) : '';
+                return `<div class="col-lg-4 col-md-6"><article class="host-person" data-person-id="${Number(person.id)}">
+                    <div class="host-person-top"><div class="host-avatar-wrap">${avatar ? `<img src="${escapeHtml(avatar)}" alt="">` : `<span class="host-avatar-fallback">${escapeHtml(name.charAt(0))}</span>`}<span class="host-online"></span></div>
+                    <div><h2>${escapeHtml(name)} <i class="bi bi-patch-check-fill"></i></h2><p class="host-loc"><i class="bi bi-geo-alt"></i> ${escapeHtml(location || 'India')}</p><p class="host-since">Verified host</p></div></div>
+                    <p class="host-bio">${escapeHtml(person.bio || 'Approved Roamitra host.')}</p>
+                    <button type="button" class="host-ask" data-host-form data-person-id="${Number(person.id)}" data-host-name="${escapeHtml(name)}">Ask to<br>Host</button>
+                </article></div>`;
+            };
+            if (locals) locals.innerHTML = people.map(renderLocal).join('') || '<p class="text-muted">No registered travelers found yet.</p>';
+            if (hosts) hosts.innerHTML = hostsList.map(renderHost).join('') || '<p class="text-muted">No approved hosts registered yet.</p>';
+            if (hostPanel) {
+                hostPanel.querySelectorAll('.host-person').forEach((card) => card.remove());
+                hostPanel.querySelectorAll('.live-host-list').forEach((list) => list.remove());
+                const heading = hostPanel.querySelector('.host-block-title');
+                const live = document.createElement('div');
+                live.className = 'row g-3 mb-4 live-host-list';
+                live.innerHTML = hostsList.map(renderHost).join('') || '<p class="text-muted">No approved hosts registered yet.</p>';
+                if (heading) heading.after(live);
+            }
+            if (typeof initConnectRequests === 'function') initConnectRequests();
+        } catch (error) {
+            [locals, hosts].filter(Boolean).forEach((target) => { target.innerHTML = '<p class="text-muted">Could not load verified hosts.</p>'; });
+        }
+    }
+
+    refreshHosts();
+    setInterval(refresh, 30000);
+    setInterval(refreshStats, 30000);
+    setInterval(refreshHosts, 30000);
 
     const pin = document.querySelector('.comm-feature-pin');
     if (pin && window.matchMedia('(min-width: 992px)').matches) {
@@ -128,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (note) note.value = '';
                 if (status) status.hidden = true;
                 sheet.dataset.hostName = name;
+                sheet.dataset.personId = formBtn.dataset.personId || '';
                 sheet.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 note?.focus();
             } else {
@@ -141,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.RoamitraCommunityOpen(opener.dataset.open, opener.dataset.listing || '');
     });
 
-    document.getElementById('commAskSend')?.addEventListener('click', () => {
+    document.getElementById('commAskSend')?.addEventListener('click', async () => {
         const sheet = document.getElementById('commAskSheet');
         const status = document.getElementById('commAskStatus');
         const note = document.getElementById('commAskNote');
@@ -155,18 +233,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             note?.focus();
             return;
         }
-        const key = 'roamitra.hostAsks';
-        const saved = JSON.parse(localStorage.getItem(key) || '[]');
-        saved.unshift({ host: name, note: text, at: Date.now() });
-        localStorage.setItem(key, JSON.stringify(saved.slice(0, 20)));
-        if (status) {
-            status.hidden = false;
-            status.textContent = 'Request sent to ' + name + '.';
-        }
-        const btn = sheet?.previousElementSibling?.querySelector('.host-ask');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'Requested';
+        try {
+            await RoamitraApi.post('/community/requests', {
+                kind: 'host',
+                person_id: sheet?.dataset.personId || '',
+                person_name: name,
+                note: text
+            });
+            if (status) {
+                status.hidden = false;
+                status.textContent = 'Request sent to ' + name + '.';
+            }
+            const btn = sheet?.previousElementSibling?.querySelector('.host-ask');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Requested';
+            }
+        } catch (error) {
+            if (error.status === 401) {
+                window.location.href = RoamitraApi.page('login.html');
+            } else if (status) {
+                status.hidden = false;
+                status.textContent = error.message || 'Could not send this request.';
+            }
         }
     });
 

@@ -107,10 +107,14 @@ a {
 .search-hero {
     padding: 0.4rem 0 0.2rem;
     background-color: var(--color-bg);
+    overflow: visible;
+    position: relative;
+    z-index: 20;
 }
 
 .search-bar-wrapper {
     position: relative;
+    z-index: 21;
     max-width: var(--search-max);
     margin: 0 auto;
 }
@@ -157,6 +161,87 @@ a {
 
 .search-bar .search-ai-btn {
     display: none;
+}
+
+.destination-suggestions {
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    height: auto;
+    max-height: min(276px, calc(100vh - 9rem));
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    scrollbar-width: thin;
+}
+
+.destination-suggestion {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    padding: 0.75rem 0.8rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.destination-suggestion:hover,
+.destination-suggestion:focus-visible {
+    background: var(--color-card-blue);
+    outline: none;
+    transform: translateX(2px);
+}
+
+.destination-suggestion-icon {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-card-green);
+    color: var(--color-primary);
+}
+
+.destination-suggestion strong,
+.destination-suggestion small {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.destination-suggestion strong {
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.destination-suggestion small {
+    margin-top: 0.1rem;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    .destination-suggestions {
+        left: 0.25rem;
+        right: 0.25rem;
+        max-height: min(248px, calc(100vh - 8rem));
+        border-radius: 0.9rem;
+    }
 }
 
 /* ---- Filter Pills ---- */

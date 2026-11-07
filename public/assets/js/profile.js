@@ -220,8 +220,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bookings = data.bookings || [];
         const followers = document.getElementById('profileFollowers');
         const following = document.getElementById('profileFollowing');
-        if (followers) followers.textContent = String(trips.length ? 1200 + trips.length : 0);
-        if (following) following.textContent = String(Math.max(trips.length * 12, trips.length));
+        if (followers) followers.textContent = '0';
+        if (following) following.textContent = '0';
+        try {
+            const social = await RoamitraApi.get('/connections');
+            if (followers) followers.textContent = String(Number(social.followers) || 0);
+            if (following) following.textContent = String(Number(social.following) || 0);
+            const requests = document.getElementById('connectionRequests');
+            const pending = (social.connections || []).filter((connection) =>
+                connection.status === 'pending' && Number(connection.recipient_id) === Number(user.id)
+            );
+            if (requests && pending.length) {
+                requests.hidden = false;
+                requests.innerHTML = '<h3>Connection requests</h3>' + pending.map((connection) =>
+                    '<div class="connection-request"><span>' + escapeHtml(connection.full_name || 'Traveler') + ' wants to connect.</span>'
+                    + '<button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-accept-connection="' + Number(connection.id) + '">Accept</button></div>'
+                ).join('');
+                requests.querySelectorAll('[data-accept-connection]').forEach((button) => {
+                    button.addEventListener('click', async () => {
+                        button.disabled = true;
+                        try {
+                            await RoamitraApi.post('/connections/respond', {
+                                connection_id: Number(button.dataset.acceptConnection),
+                                status: 'accepted'
+                            });
+                            window.location.reload();
+                        } catch (error) {
+                            button.disabled = false;
+                            flash(false, error.message);
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            /* Guests and older API deployments have no social summary yet. */
+        }
         const days = trips.reduce((sum, t) => {
             const a = new Date(String(t.start_date || '').slice(0, 10) + 'T00:00:00');
             const b = new Date(String(t.end_date || '').slice(0, 10) + 'T00:00:00');

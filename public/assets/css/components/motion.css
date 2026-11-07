@@ -72,7 +72,7 @@ body::after {
 }
 
 .search-hero {
-    overflow: hidden;
+    overflow: visible;
 }
 
 .search-bar {

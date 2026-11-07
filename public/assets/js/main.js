@@ -32,6 +32,7 @@ function initLocalLocations() {
     async function savePlace(value, previous) {
         if (!value || value === previous || value.length > 120) return;
         try { localStorage.setItem(placeKey, value); } catch (e) { /* ignore */ }
+        window.dispatchEvent(new CustomEvent('roamitra-location-updated'));
         document.querySelectorAll('.js-location-label').forEach((el) => { el.textContent = value; });
         try {
             if (typeof RoamitraApi === 'undefined') return;
@@ -176,11 +177,19 @@ async function submitPersonRequest(btn, note) {
     try {
         const data = await RoamitraApi.post('/community/requests', {
             kind: btn.dataset.requestKind,
+            person_id: btn.dataset.personId || '',
             person_name: btn.dataset.personName,
             person_location: btn.dataset.personLocation || '',
             note: String(note || '').trim()
         });
-        markRequestSent(btn);
+        if (btn.dataset.requestKind === 'connect' && btn.dataset.personId) {
+            btn.disabled = false;
+            btn.classList.remove('is-sent');
+            btn.dataset.chat = 'true';
+            btn.textContent = 'Chat';
+        } else {
+            markRequestSent(btn);
+        }
         const name = btn.dataset.personName;
         if (data.already) {
             requestToast('You already sent this to ' + name + '.');

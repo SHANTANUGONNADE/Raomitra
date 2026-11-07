@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="assets/images/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="assets/css/main.css?v=photos3" rel="stylesheet">
+    <link href="assets/css/main.css?v=photos4" rel="stylesheet">
     <script src="assets/js/theme.js"></script>
 </head>
 <body data-page="explore">
@@ -21,7 +21,7 @@
             <div class="search-bar-wrapper">
                 <div class="search-bar">
                     <i class="bi bi-search search-icon"></i>
-                    <input type="search" id="exploreSearch" placeholder="Search Bali, Tokyo, Paris, Iceland..." aria-label="Search destinations" autocomplete="off">
+                    <input type="search" id="exploreSearch" placeholder="Search Indian destinations or cities..." aria-label="Search Indian destinations" autocomplete="off">
                 </div>
             </div>
             <div class="explore-tabs-wrap mt-2">
@@ -52,7 +52,7 @@
                 <div class="dest-film" id="destFilm"></div>
                 <div class="dest-bento" id="destCylinder" hidden></div>
                 <div class="dest-coverflow-meta">
-                    <span id="destSlideLabel">1 of 1209</span>
+                    <span id="destSlideLabel">0 of 0</span>
                 </div>
             </div>
 
@@ -63,60 +63,7 @@
                         <a href="#people-nearby" class="js-see-all" data-expand="#explorePeopleList" aria-expanded="false"><span class="js-see-all-label">See All</span></a>
                     </div>
                     <div class="bg-white border rounded-4 p-3" id="explorePeopleList">
-                        <div class="person-row">
-                            <div class="person-avatar">EW</div>
-                            <div class="person-info">
-                                <div class="person-name">Emma Wilson <span class="star-rating"><i class="bi bi-star-fill"></i> 4.9</span></div>
-                                <div class="person-location">Currently in Bali, Indonesia</div>
-                                <div class="person-tags"><span class="person-tag">Hiking</span><span class="person-tag">Photography</span><span class="person-tag">Food</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
-                        <div class="person-row">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#3B82F6,#8B5CF6);">MK</div>
-                            <div class="person-info">
-                                <div class="person-name">Michael Kim <span class="star-rating"><i class="bi bi-star-fill"></i> 4.8</span></div>
-                                <div class="person-location">Currently in Tokyo, Japan</div>
-                                <div class="person-tags"><span class="person-tag">Culture</span><span class="person-tag">Tech</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
-                        <div class="person-row">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#F97316,#EF4444);">SL</div>
-                            <div class="person-info">
-                                <div class="person-name">Sofia Lopez <span class="star-rating"><i class="bi bi-star-fill"></i> 5.0</span></div>
-                                <div class="person-location">Currently in Barcelona, Spain</div>
-                                <div class="person-tags"><span class="person-tag">Art</span><span class="person-tag">Beach</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
-                        <div class="person-row see-all-extra">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#059669,#14B8A6);">JP</div>
-                            <div class="person-info">
-                                <div class="person-name">Jules Park <span class="star-rating"><i class="bi bi-star-fill"></i> 4.7</span></div>
-                                <div class="person-location">Currently in Kyoto, Japan</div>
-                                <div class="person-tags"><span class="person-tag">Temples</span><span class="person-tag">Food</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
-                        <div class="person-row see-all-extra">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#7C3AED,#EC4899);">AM</div>
-                            <div class="person-info">
-                                <div class="person-name">Amina Rahman <span class="star-rating"><i class="bi bi-star-fill"></i> 4.9</span></div>
-                                <div class="person-location">Currently in Marrakech, Morocco</div>
-                                <div class="person-tags"><span class="person-tag">Markets</span><span class="person-tag">Photography</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
-                        <div class="person-row see-all-extra">
-                            <div class="person-avatar" style="background:linear-gradient(135deg,#0EA5E9,#1D4ED8);">NL</div>
-                            <div class="person-info">
-                                <div class="person-name">Noah Lee <span class="star-rating"><i class="bi bi-star-fill"></i> 4.6</span></div>
-                                <div class="person-location">Currently in Sydney, Australia</div>
-                                <div class="person-tags"><span class="person-tag">Beaches</span><span class="person-tag">Hiking</span></div>
-                            </div>
-                            <a href="profile.html" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Connect</a>
-                        </div>
+                        <p class="text-muted mb-0" id="explorePeopleStatus">Loading travelers with a shared location...</p>
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -125,36 +72,7 @@
                         <a href="#nearby-places" class="js-see-all" data-expand="#explorePlacesList" aria-expanded="false"><span class="js-see-all-label">See All</span></a>
                     </div>
                     <div class="bg-white border rounded-4 p-3" id="explorePlacesList">
-                        <a href="destination.html?place=yosemite" class="place-row js-open-destination" data-place="yosemite">
-                            <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=120&h=120&fit=crop" alt="Yosemite" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Yosemite National Park</h4><p>180 miles · National Park</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
-                        </a>
-                        <a href="destination.html?place=tahoe" class="place-row js-open-destination" data-place="tahoe">
-                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=120&h=120&fit=crop" alt="Lake Tahoe" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Lake Tahoe</h4><p>95 miles · Lake &amp; Mountains</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.8</div>
-                        </a>
-                        <a href="destination.html?place=bigsur" class="place-row js-open-destination" data-place="bigsur">
-                            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&h=120&fit=crop" alt="Big Sur" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Big Sur Coastline</h4><p>120 miles · Scenic Drive</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.7</div>
-                        </a>
-                        <a href="destination.html?place=santorini" class="place-row js-open-destination see-all-extra" data-place="santorini">
-                            <img src="https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=120&h=120&fit=crop" alt="Santorini" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Santorini, Greece</h4><p>Island · Caldera views</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
-                        </a>
-                        <a href="destination.html?place=iceland" class="place-row js-open-destination see-all-extra" data-place="iceland">
-                            <img src="https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=120&h=120&fit=crop" alt="Iceland" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Reykjavík &amp; Ring Road</h4><p>Nature · Waterfalls</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.8</div>
-                        </a>
-                        <a href="destination.html?place=kyoto" class="place-row js-open-destination see-all-extra" data-place="kyoto">
-                            <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=120&h=120&fit=crop" alt="Kyoto" class="place-thumb" loading="lazy">
-                            <div class="place-info"><h4>Kyoto, Japan</h4><p>Temples · Culture</p></div>
-                            <div class="place-rating"><i class="bi bi-star-fill"></i> 4.9</div>
-                        </a>
+                        <p class="text-muted mb-0" id="explorePlacesStatus">Loading destinations...</p>
                     </div>
                 </div>
             </div>
@@ -184,6 +102,23 @@
         </div>
     </section>
 
+    <div class="chat-modal" id="peopleChat" hidden>
+        <div class="chat-modal-card" role="dialog" aria-modal="true" aria-labelledby="peopleChatTitle">
+            <div class="chat-modal-head">
+                <div>
+                    <h2 id="peopleChatTitle">Chat</h2>
+                    <span class="chat-modal-status">Connected on Roamitra</span>
+                </div>
+                <button type="button" class="btn-close" id="peopleChatClose" aria-label="Close"></button>
+            </div>
+            <div class="chat-messages" id="peopleChatMessages"></div>
+            <form class="chat-compose" id="peopleChatForm">
+                <input name="body" maxlength="2000" placeholder="Write a message..." autocomplete="off" required>
+                <button type="submit" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Send</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Local Panel -->
     <section class="section-padding-sm explore-panel" id="panel-local">
         <div class="container">
@@ -195,7 +130,7 @@
                     </div>
                     <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" id="localFeedAdd">Add a tip</button>
                 </div>
-                <button type="button" class="location-chip js-edit-location" aria-label="Edit location"><i class="bi bi-geo-alt-fill"></i> <span class="js-location-label">Bangalore, India</span> <i class="bi bi-pencil"></i></button>
+                <button type="button" class="location-chip js-edit-location" aria-label="Edit location"><i class="bi bi-geo-alt-fill"></i> <span class="js-location-label">Set your location</span> <i class="bi bi-pencil"></i></button>
             </div>
             <form class="feed-compose" id="localFeedForm" hidden>
                 <h3>Share a local tip</h3>
@@ -360,9 +295,9 @@
     <script src="assets/js/api.js?v=vercel3"></script>
     <script src="assets/js/nav.js?v=navmenu10"></script>
     <script src="assets/js/ai-assistant.js?v=inr2"></script>
-    <script src="assets/js/india-cities.js?v=photos3"></script>
-    <script src="assets/js/destination.js?v=photos3"></script>
-    <script src="assets/js/explore.js?v=photos3"></script>
+    <script src="assets/js/india-cities.js?v=photos4"></script>
+    <script src="assets/js/destination.js?v=photos4"></script>
+    <script src="assets/js/explore.js?v=photos4"></script>
     <script src="assets/js/main.js?v=connect1"></script>
 </body>
 </html>

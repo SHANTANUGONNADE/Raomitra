@@ -9,10 +9,155 @@ document.addEventListener('DOMContentLoaded', () => {
     initDestinationOpen();
     initDestCylinder();
     initExploreSearch();
+    initNearbyPeople();
+    initNearbyPlaces();
     if (location.hash === '#panel-local' || location.hash.startsWith('#feed-')) {
         document.querySelector('.explore-tab[data-tab="local"]')?.click();
     }
 });
+
+function initNearbyPeople() {
+    const list = document.getElementById('explorePeopleList');
+    const status = document.getElementById('explorePeopleStatus');
+    if (!list || typeof RoamitraApi === 'undefined') return;
+    const load = () => {
+        let currentLocation = '';
+        try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
+        const query = currentLocation ? '?location=' + encodeURIComponent(currentLocation) : '';
+        return RoamitraApi.get('/community/people' + query).then((data) => {
+            const people = Array.isArray(data.people) ? data.people : [];
+            if (!people.length) {
+                list.innerHTML = '<p class="text-muted mb-0">No registered travelers have shared this location yet.</p>';
+                return;
+            }
+            list.innerHTML = people.map((person) => {
+                const name = String(person.full_name || 'Traveler');
+                const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || '?';
+                const locationText = String(person.location || '');
+                const travelText = person.traveling_to && person.traveling_to !== locationText
+                    ? 'Traveling to ' + person.traveling_to
+                    : locationText;
+                const avatar = person.avatar_url
+                    ? '<img src="' + escapeHtml(RoamitraApi.mediaUrl(person.avatar_url)) + '" alt="" class="person-avatar-image">'
+                    : escapeHtml(initials);
+                return '<div class="person-row">'
+                    + '<div class="person-avatar">' + avatar + '</div>'
+                    + '<div class="person-info"><div class="person-name">' + escapeHtml(name) + '</div>'
+                    + '<div class="person-location">' + escapeHtml(travelText) + '</div>'
+                    + (person.bio ? '<div class="person-bio">' + escapeHtml(person.bio) + '</div>' : '')
+                    + '</div>'
+                    + '<button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" data-person-id="' + Number(person.id) + '" data-request-kind="connect" data-request-location="' + escapeHtml(locationText) + '" data-person-name="' + escapeHtml(name) + '" data-person-location="' + escapeHtml(locationText) + '">Connect</button>'
+                    + '</div>';
+            }).join('');
+            initConnectRequests();
+            initPeopleChat();
+            RoamitraApi.get('/connections').then((social) => {
+                const connected = new Set((social.connections || [])
+                    .filter((connection) => connection.status === 'accepted')
+                    .map((connection) => String(connection.person_id)));
+                list.querySelectorAll('[data-person-id]').forEach((button) => {
+                    if (connected.has(String(button.dataset.personId))) {
+                        button.disabled = false;
+                        button.dataset.chat = 'true';
+                        button.textContent = 'Chat';
+                    }
+                });
+            }).catch(() => { /* guests do not have connection state */ });
+        }).catch(() => {
+            if (status) status.textContent = 'Could not load registered travelers right now.';
+        });
+    };
+    load();
+    window.addEventListener('roamitra-location-updated', load);
+    window.setInterval(load, 30000);
+}
+
+function initNearbyPlaces() {
+    const list = document.getElementById('explorePlacesList');
+    if (!list) return;
+    const api = window.RoamitraDestinations;
+    const keys = api && Array.isArray(api.FEATURED_DESTINATION_KEYS)
+        ? api.FEATURED_DESTINATION_KEYS.slice(0, 8)
+        : [];
+    if (!keys.length) {
+        list.innerHTML = '<p class="text-muted mb-0">No destinations available.</p>';
+        return;
+    }
+    list.innerHTML = keys.map((key) => {
+        const destination = api.DESTINATIONS[key];
+        const title = destination.title || key;
+        const meta = String(destination.meta || '').split(' · ')[0];
+        return '<a href="' + destinationUrl(key) + '" class="place-row js-open-destination" data-place="' + escapeHtml(key) + '">'
+            + '<img src="' + escapeHtml(destination.image || '') + '" alt="' + escapeHtml(title) + '" class="place-thumb" loading="lazy">'
+            + '<div class="place-info"><h4>' + escapeHtml(title) + '</h4><p>' + escapeHtml(meta) + '</p></div>'
+            + '</a>';
+    }).join('');
+}
+
+function initPeopleChat() {
+    const modal = document.getElementById('peopleChat');
+    const title = document.getElementById('peopleChatTitle');
+    const messages = document.getElementById('peopleChatMessages');
+    const form = document.getElementById('peopleChatForm');
+    if (!modal || !messages || !form || modal.dataset.ready) return;
+    modal.dataset.ready = 'true';
+    let personId = 0;
+    let chatPoll = 0;
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-chat="true"]');
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        personId = Number(button.dataset.personId || 0);
+        title.textContent = 'Chat with ' + (button.dataset.personName || 'traveler');
+        modal.hidden = false;
+        loadChat();
+        window.clearInterval(chatPoll);
+        chatPoll = window.setInterval(() => {
+            if (!modal.hidden) loadChat();
+        }, 5000);
+    });
+    document.getElementById('peopleChatClose')?.addEventListener('click', () => {
+        modal.hidden = true;
+        window.clearInterval(chatPoll);
+    });
+    async function loadChat() {
+        if (!personId) return;
+        try {
+            const data = await RoamitraApi.get('/messages?user_id=' + personId);
+            messages.innerHTML = (data.messages || []).map((message) => {
+                const incoming = Number(message.sender_id) === personId;
+                return '<div class="chat-line ' + (incoming ? 'chat-line-incoming' : 'chat-line-outgoing') + '">'
+                    + '<div class="chat-message ' + (incoming ? 'chat-incoming' : 'chat-outgoing') + '">'
+                    + '<span class="chat-message-body">' + escapeHtml(message.body) + '</span>'
+                    + '<time>' + escapeHtml(formatChatTime(message.created_at)) + '</time>'
+                    + '</div></div>';
+            }).join('') || '<p class="chat-empty">No messages yet. Start the conversation.</p>';
+            messages.scrollTop = messages.scrollHeight;
+        } catch (error) {
+            messages.innerHTML = '<p class="text-danger">' + escapeHtml(error.message) + '</p>';
+        }
+    }
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const input = form.elements.body;
+        const body = input.value.trim();
+        if (!body || !personId) return;
+        try {
+            await RoamitraApi.post('/messages', { user_id: personId, body });
+            input.value = '';
+            await loadChat();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+}
+
+function formatChatTime(value) {
+    const date = new Date(String(value || '').replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
 function destinationUrl(place) {
     const page = typeof RoamitraApi !== 'undefined' ? RoamitraApi.page('destination.html') : 'destination.html';
@@ -256,12 +401,21 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
         }
     });
 
-    RoamitraApi.get('/local/feeds').then((res) => {
-        (res.feeds || []).forEach((feed) => mount(feed, false));
-        if (typeof openSavedTip === 'function') openSavedTip();
-    }).catch(() => {
-        if (typeof openSavedTip === 'function') openSavedTip();
-    });
+    const refresh = async (openHash) => {
+        if (!list) return;
+        try {
+            const res = await RoamitraApi.get('/local/feeds');
+            list.replaceChildren();
+            (res.feeds || []).forEach((feed) => mount(feed, false));
+            if (openHash && typeof openSavedTip === 'function') openSavedTip();
+        } catch (error) {
+            if (openHash && typeof openSavedTip === 'function') openSavedTip();
+        }
+    };
+    refresh(true);
+    setInterval(() => {
+        if (!document.hidden) refresh(false);
+    }, 15000);
 }
 
 function initLocalFeed() {
@@ -479,7 +633,6 @@ function destBentoHtml(key, d, featured) {
             '<div class="dest-tile-copy">' +
                 '<span class="dest-tile-rating"><i class="bi bi-star-fill"></i> ' + escapeHtml(d.rating || '') + '</span>' +
                 '<h3>' + escapeHtml(d.title) + '</h3>' +
-                '<p>' + escapeHtml(d.price || '') + ' / week</p>' +
             '</div>' +
         '</article>'
     );
@@ -507,9 +660,10 @@ function destImageIsUnwanted(dest, imageUrl, pageTitle, description) {
     if (!imageUrl) return true;
     if ((/taj mahal|taj_mahal/.test(blob) || /photo-1564507592333/.test(blob)) && !/taj/i.test(title)) return true;
     if (/india_gate|map of|locator|\.svg|flag of|coat of arms/i.test(blob) && !/taj|india gate/i.test(title)) return true;
-    if (/portrait|photograph of|photo of|headshot|self-?portrait|oil on canvas|painting of|mugshot|passport|bust of|close-?up|cropped|prime[_ ]minister|narendra|fifa|footballer|actress/i.test(blob)) return true;
+    if (/portrait|photograph of|photo of|headshot|self-?portrait|oil on canvas|painting of|mugshot|passport|bust of|close-?up|cropped|prime[_ ]minister|narendra|fifa|footballer|actress|sadan[_ ]joseph/i.test(blob)) return true;
     if (/actor|actress|politician|cricketer|footballer|singer|poet|writer|activist|philosopher|yogi|guru|artist|model|chess/i.test(blob) && !destIsMemorial(title)) return true;
     if (/metro station|metro line|metro train|subway|rapid transit|namma metro|delhi metro|rolling stock/i.test(blob) && !destAllowsTransit(title)) return true;
+    if (/gateway of india/i.test(title) && /ferry|boat|ship|elephanta|creek/i.test(blob)) return true;
     return false;
 }
 
@@ -522,7 +676,8 @@ function destPhotoMatches(dest, pageTitle, imageUrl, description) {
     const stop = { india: 1, indian: 1, temple: 1, mandir: 1, the: 1, and: 1, of: 1 };
     const words = destPhotoTokens(dest.title).filter((w) => w.length > 3 && !stop[w]);
     if (!words.length) return destPhotoTokens(dest.planner).some((w) => page.includes(w));
-    return words.some((w) => page.includes(w));
+    const matched = words.filter((w) => page.includes(w)).length;
+    return words.length === 1 ? matched === 1 : matched >= Math.min(2, words.length);
 }
 
 function destNeedsPhotoFix(dest) {
@@ -530,6 +685,11 @@ function destNeedsPhotoFix(dest) {
     const title = (dest && dest.title) || '';
     if (!src) return true;
     if (destImageIsUnwanted(dest, src, '', '')) return true;
+    const catalog = window.RoamitraDestinations && window.RoamitraDestinations.DESTINATIONS;
+    if (catalog) {
+        const duplicateCount = Object.values(catalog).filter((item) => item && item.image === src).length;
+        if (duplicateCount > 1) return true;
+    }
     if (/unsplash\.com|photo-1564507592333|photo-1524492412937|taj_mahal|India_Gate/i.test(src) && !/taj/i.test(title)) return true;
     if (destIsMemorial(title) && !/statue|memorial|smarak|monument|sculpt|tomb/i.test(src)) return true;
     if (/library|ashram|university|college/i.test(title) && !/library|ashram|university|college|building|campus|exterior/i.test(src)) return true;
@@ -558,7 +718,7 @@ function queueDestWikiPhoto(key, dest, apply) {
             apply(destPhotoCache.get(key));
             return;
         }
-        const query = [dest.title || key, dest.planner || '', 'India', destIsMemorial(dest.title) ? 'monument exterior' : 'landmark'].filter(Boolean).join(' ');
+        const query = ['"' + (dest.title || key) + '"', dest.planner || '', 'India', destIsMemorial(dest.title) ? 'monument exterior' : 'landmark'].filter(Boolean).join(' ');
         const wiki = 'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' +
             encodeURIComponent(query) +
             '&gsrlimit=10&prop=pageimages|coordinates|description&piprop=thumbnail&pithumbsize=800&format=json&origin=*';
@@ -719,7 +879,7 @@ function applyCoverflow() {
                 '<span class="dest-spot-kicker">Now featuring</span>' +
                 '<h3>' + escapeHtml(d.title) + '</h3>' +
                 '<p>' + escapeHtml(d.desc) + '</p>' +
-                '<div class="dest-spot-meta"><span><i class="bi bi-star-fill"></i> ' + escapeHtml(d.rating || '') + '</span><span>' + escapeHtml(d.travelers || '') + '</span><span>' + escapeHtml(d.price || '') + ' / week</span></div>' +
+                '<div class="dest-spot-meta"><span><i class="bi bi-star-fill"></i> ' + escapeHtml(d.rating || '') + '</span><span>' + escapeHtml(d.travelers || '') + '</span></div>' +
                 '<div class="dest-spot-tags">' + destTags(d) + '</div>' +
                 '<button type="button" class="js-open-destination btn-roamitra btn-roamitra-navy" data-place="' + escapeHtml(key) + '">Explore</button>' +
             '</div>';
@@ -734,7 +894,7 @@ function applyCoverflow() {
             return (
                 '<button type="button" class="dest-mini" data-select-place="' + escapeHtml(k) + '">' +
                     '<img src="' + escapeHtml(destPhotoUrl(item)) + '" alt="" referrerpolicy="no-referrer" data-dest-img="' + escapeHtml(k) + '">' +
-                    '<span><strong>' + escapeHtml(item.title) + '</strong>' + escapeHtml(item.price || '') + '</span>' +
+                    '<span><strong>' + escapeHtml(item.title) + '</strong></span>' +
                 '</button>'
             );
         }).join('');
@@ -859,6 +1019,43 @@ function initExploreSearch() {
     const input = document.querySelector('.search-hero .search-bar input');
     const status = document.getElementById('destSearchStatus');
     if (!input) return;
+    const wrapper = input.closest('.search-bar-wrapper');
+    let suggestions = wrapper?.querySelector('.destination-suggestions');
+    if (!suggestions && wrapper) {
+        suggestions = document.createElement('div');
+        suggestions.className = 'destination-suggestions';
+        suggestions.hidden = true;
+        wrapper.appendChild(suggestions);
+    }
+
+    const paintSuggestions = (matches, query) => {
+        if (!suggestions) return;
+        if (!query || !matches.length) {
+            suggestions.hidden = true;
+            suggestions.classList.remove('is-scrollable');
+            suggestions.innerHTML = '';
+            return;
+        }
+        const catalog = window.RoamitraDestinations.DESTINATIONS;
+        suggestions.innerHTML = matches.map((key) => {
+            const destination = catalog[key];
+            return `<button type="button" class="destination-suggestion" data-suggestion-place="${escapeHtml(key)}">
+                <span class="destination-suggestion-icon"><i class="bi bi-geo-alt"></i></span>
+                <span><strong>${escapeHtml(destination.title)}</strong><small>${escapeHtml(destination.planner || destination.meta || 'India')}</small></span>
+            </button>`;
+        }).join('');
+        suggestions.classList.toggle('is-scrollable', matches.length > 4);
+        suggestions.hidden = false;
+        suggestions.querySelectorAll('[data-suggestion-place]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const key = button.dataset.suggestionPlace;
+                input.value = catalog[key].title;
+                suggestions.hidden = true;
+                suggestions.classList.remove('is-scrollable');
+                openDestination(key, true);
+            });
+        });
+    };
 
     const run = (submit) => {
         const q = input.value.trim();
@@ -866,18 +1063,26 @@ function initExploreSearch() {
         const resolve = window.RoamitraDestinations && window.RoamitraDestinations.resolveDestinationKey;
         if (!find) return;
 
-        const matches = find(q);
+        const normalized = q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const matches = find(q).filter((key) => {
+            if (!normalized) return true;
+            const destination = window.RoamitraDestinations.DESTINATIONS[key] || {};
+            const city = String(destination.planner || '').toLowerCase();
+            return city.includes(normalized) || destinationSearchTerms(key, destination).includes(normalized);
+        });
+        paintSuggestions(matches, q);
         if (status) {
             if (!q) {
                 status.hidden = true;
                 status.textContent = '';
             } else if (!matches.length) {
                 status.hidden = false;
-                status.textContent = 'No destinations match “' + q + '”. Try Bali, Tokyo, Agra, or Mumbai.';
+                status.textContent = 'No destinations match “' + q + '”. Try Agra, Mumbai, Jaipur, or Goa.';
             } else {
                 status.hidden = false;
                 status.textContent = matches.length + ' destination' + (matches.length === 1 ? '' : 's') + ' match “' + q + '”.';
             }
+
         }
 
         if (!q) destGridOpen = false;
@@ -900,6 +1105,22 @@ function initExploreSearch() {
         if (e.key === 'Enter') {
             e.preventDefault();
             run(true);
+        } else if (e.key === 'Escape' && suggestions) {
+            suggestions.hidden = true;
         }
     });
+    input.addEventListener('focus', () => {
+        if (input.value.trim()) run(false);
+    });
+    document.addEventListener('click', (event) => {
+        if (wrapper && !wrapper.contains(event.target) && suggestions) {
+            suggestions.hidden = true;
+            suggestions.classList.remove('is-scrollable');
+        }
+    });
+}
+
+function destinationSearchTerms(key, destination) {
+    return [key, destination.title, destination.planner, destination.meta, destination.desc, destination.keywords]
+        .filter(Boolean).join(' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
 }

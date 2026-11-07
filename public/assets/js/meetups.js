@@ -1,60 +1,9 @@
 (function () {
-    const KEY = 'roamitra.meetups.v2';
-    const seeds = [
-        {
-            id: 'sunset-yoga',
-            title: 'Sunset Beach Yoga & Bonfire',
-            host: 'Emma Wilson',
-            photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&h=120&q=60',
-            place: 'Seminyak Beach, Bali',
-            date: 'May 28, 2026',
-            time: '5:30 PM',
-            going: 12,
-            capacity: 20,
-            tags: ['Wellness', 'Social'],
-            week: true,
-            gradient: 'linear-gradient(100deg,#ff7a3c 0%,#e83e8c 48%,#7a3cff 100%)'
-        },
-        {
-            id: 'ubud-walk',
-            title: 'Ubud Morning Market Walk',
-            host: 'Priya Sharma',
-            photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&h=120&q=60',
-            place: 'Ubud Art Market, Bali',
-            date: 'May 30, 2026',
-            time: '8:00 AM',
-            going: 6,
-            capacity: 16,
-            tags: ['Food', 'Culture'],
-            week: true,
-            gradient: 'linear-gradient(100deg,#ffb703 0%,#fb5607 55%,#ff006e 100%)'
-        },
-        {
-            id: 'goa-hangout',
-            title: 'Goa Sunset Hangout',
-            host: 'Raj Patel',
-            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=60',
-            place: 'Anjuna Beach, Goa',
-            date: 'Jun 6, 2026',
-            time: '6:00 PM',
-            going: 9,
-            capacity: 18,
-            tags: ['Beach', 'Social'],
-            week: false,
-            gradient: 'linear-gradient(100deg,#ff9f1c 0%,#ff6b00 100%)'
-        }
-    ];
-
-    function load() {
-        try {
-            const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-            if (Array.isArray(saved) && saved.length) return saved;
-        } catch (err) { /* use seeds */ }
-        return seeds.map((item) => Object.assign({ joined: false }, item));
-    }
-
-    function save(items) {
-        localStorage.setItem(KEY, JSON.stringify(items));
+    let items = [];
+    async function load() {
+        const data = await RoamitraApi.get('/meetups');
+        items = data.meetups || [];
+        return items;
     }
 
     function escapeHtml(text) {
@@ -67,8 +16,8 @@
         const going = Math.min(item.capacity, Number(item.going) || 0);
         return `
             <article class="lm-card">
-                <div class="lm-banner" style="background:${item.gradient}">
-                    <img src="${escapeHtml(item.photo)}" alt="" referrerpolicy="no-referrer">
+                <div class="lm-banner" style="background:${escapeHtml(item.gradient || 'linear-gradient(100deg,#0b1f3a 0%,#12b36a 100%)')}">
+                    ${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="" referrerpolicy="no-referrer">` : '<i class="bi bi-people-fill" aria-hidden="true"></i>'}
                 </div>
                 <div class="lm-body">
                     <h3>${escapeHtml(item.title)}</h3>
@@ -88,13 +37,16 @@
         document.querySelectorAll('[data-meetup-root]').forEach((root) => {
             const filter = root.dataset.view || 'upcoming';
             const tag = root.dataset.activeTag || '';
-            const items = load().filter((item) => {
-                if (filter === 'week' && !item.week) return false;
+            const visible = items.filter((item) => {
+                if (filter === 'week' && !item.week && !(
+                    new Date(item.date).getTime() >= Date.now() &&
+                    new Date(item.date).getTime() <= Date.now() + 7 * 86400000
+                )) return false;
                 if (tag && !(item.tags || []).includes(tag)) return false;
                 return true;
             });
             const list = root.querySelector('[data-meetup-list]');
-            if (list) list.innerHTML = items.map(card).join('') || '<p class="lm-empty">No meetups in this view yet.</p>';
+            if (list) list.innerHTML = visible.map(card).join('') || '<p class="lm-empty">No meetups in this view yet.</p>';
             root.querySelectorAll('[data-filter]').forEach((button) => {
                 button.classList.toggle('on', button.dataset.filter === filter);
             });
@@ -130,8 +82,8 @@
             <form class="lm-form" data-create-form hidden>
                 <label>Title<input name="title" required maxlength="80" placeholder="Sunset beach yoga"></label>
                 <label>Place<input name="place" required maxlength="80" placeholder="Seminyak Beach, Bali"></label>
-                <label>Date<input name="date" required maxlength="40" placeholder="Jun 12, 2026"></label>
-                <label>Time<input name="time" required maxlength="20" placeholder="5:30 PM"></label>
+                <label>Date<input name="date" type="date" required></label>
+                <label>Time<input name="time" type="time" required></label>
                 <label>Spots<input name="capacity" type="number" min="2" max="200" value="20" required></label>
                 <div class="lm-form-actions">
                     <button type="submit">Publish meetup</button>
@@ -179,36 +131,21 @@
             }
             const join = event.target.closest('[data-join]');
             if (!join || join.disabled) return;
-            const items = load();
-            const item = items.find((row) => row.id === join.dataset.join);
-            if (!item || item.joined || item.going >= item.capacity) return;
-            item.joined = true;
-            item.going += 1;
-            save(items);
-            paint();
+            return;
         });
-        root.addEventListener('submit', (event) => {
+        root.addEventListener('submit', async (event) => {
             const form = event.target.closest('[data-create-form]');
             if (!form) return;
             event.preventDefault();
             const data = new FormData(form);
-            const items = load();
-            items.unshift({
-                id: 'm' + Date.now(),
+            const payload = {
                 title: String(data.get('title') || '').trim(),
-                host: 'You',
-                photo: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=120&h=120&q=60',
                 place: String(data.get('place') || '').trim(),
                 date: String(data.get('date') || '').trim(),
                 time: String(data.get('time') || '').trim(),
-                going: 1,
-                capacity: Math.max(2, parseInt(data.get('capacity'), 10) || 20),
-                tags: ['Social'],
-                week: true,
-                joined: true,
-                gradient: 'linear-gradient(100deg,#0b1f3a 0%,#12b36a 100%)'
-            });
-            save(items);
+                capacity: Math.max(2, parseInt(data.get('capacity'), 10) || 20)
+            };
+            await RoamitraApi.post('/meetups', payload);
             form.reset();
             form.hidden = true;
             const note = root.querySelector('[data-note]');
@@ -217,9 +154,15 @@
                 note.textContent = 'Meetup published. You are marked as going.';
             }
             root.dataset.view = 'upcoming';
-            paint();
+            await refresh();
         });
     });
 
-    paint();
+    async function refresh() {
+        try { await load(); paint(); } catch (error) {
+            document.querySelectorAll('[data-meetup-list]').forEach((list) => { list.innerHTML = `<p class="lm-empty">${escapeHtml(error.message || 'Could not load meetups.')}</p>`; });
+        }
+    }
+    refresh();
+    setInterval(refresh, 30000);
 })();

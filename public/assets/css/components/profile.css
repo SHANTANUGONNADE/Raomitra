@@ -934,3 +934,23 @@ img.nav-profile-avatar {
 
 [data-theme="dark"] .cust-card,
 [data-theme="dark"] .cust-achieve { background: var(--color-surface); color: var(--color-text); }
+.connection-requests {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+}
+
+.connection-requests h3 {
+    font-size: 1rem;
+    margin-bottom: .75rem;
+}
+
+.connection-request {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .5rem 0;
+}
