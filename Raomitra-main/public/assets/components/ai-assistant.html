@@ -1,0 +1,45 @@
+<!-- AI Assistant Floating Button -->
+<button class="ai-assistant-fab" id="aiFab" aria-label="Open Roamitra AI Assistant">
+    <img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo">
+</button>
+
+<!-- AI Assistant Chat Popup -->
+<div class="ai-assistant-popup" id="aiPopup" role="dialog" aria-label="Roamitra AI Chat">
+    <div class="ai-assistant-header">
+        <div class="ai-assistant-header-info">
+            <div class="ai-assistant-avatar">
+                <img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo">
+            </div>
+            <div>
+                <h4>Roamitra AI</h4>
+                <p>Your travel assistant</p>
+            </div>
+        </div>
+        <button class="ai-assistant-close" id="aiClose" aria-label="Close chat">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="ai-assistant-messages" id="aiMessages">
+        <div class="ai-message bot">
+            <div class="ai-message-avatar"><img src="assets/images/ai-bot.jpeg" alt="" class="ai-bot-photo"></div>
+            <div class="ai-message-bubble">
+                Hi! I'm Roamitra AI, your travel assistant. How can I help you today? Ask me about destinations, bookings, host registration, or anything travel-related!
+            </div>
+        </div>
+    </div>
+
+    <div class="ai-assistant-suggestions" id="aiSuggestions">
+        <button class="ai-suggestion-chip" data-question="What travel packages do you offer?">Travel Packages</button>
+        <button class="ai-suggestion-chip" data-question="How do I become a host?">Become a Host</button>
+        <button class="ai-suggestion-chip" data-question="What is the cancellation policy?">Cancellation Policy</button>
+        <button class="ai-suggestion-chip" data-question="How does booking work?">Booking Process</button>
+    </div>
+
+    <div class="ai-assistant-input">
+        <input type="text" id="aiInput" placeholder="Ask me anything about travel..." autocomplete="off">
+        <button id="aiSend" aria-label="Send message">
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </div>
+</div>

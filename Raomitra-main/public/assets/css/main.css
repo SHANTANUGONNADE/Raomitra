@@ -1,0 +1,626 @@
+/* =============================================
+   Roamitra — Main Stylesheet
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap');
+
+@import 'variables.css';
+@import 'components/buttons.css?v=btnblack1';
+@import 'components/navbar.css?v=navmenu11';
+@import 'components/footer.css';
+@import 'components/cards.css';
+@import 'components/ai-assistant.css?v=mob2';
+@import 'components/roamini-page.css?v=page16';
+@import 'components/auth.css?v=slides3';
+@import 'components/explore.css?v=photos3';
+@import 'components/host.css?v=hostask1';
+@import 'components/community.css?v=connect1';
+@import 'components/meetups.css?v=join5';
+@import 'components/profile.css?v=savedfeed3';
+@import 'components/admin.css?v=adm3';
+@import 'components/app.css?v=act3';
+@import 'components/motion.css';
+
+/* ---- Base Reset & Typography ---- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    overflow-x: clip;
+    overflow-anchor: none;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    line-height: 1.65;
+    letter-spacing: -0.01em;
+    overflow-x: clip;
+    overflow-anchor: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.vehicle-title,
+.dest-title,
+.feature-card h3,
+.meetup-title,
+.planner-kicker,
+.roamitra-logo-text,
+.roamitra-footer-heading,
+.auth-page h1 {
+    font-family: var(--font-display);
+    letter-spacing: -0.04em;
+    font-weight: 700;
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-navy);
+    margin-bottom: 0.25rem;
+    background: linear-gradient(90deg, var(--color-navy) 0%, var(--color-accent) 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.container {
+    max-width: var(--container-max);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+a {
+    color: inherit;
+}
+
+/* ---- Layout Utilities ---- */
+.section-padding {
+    padding: 1.25rem 0;
+}
+
+.section-padding-sm {
+    padding: 1rem 0;
+}
+
+.section-subtitle {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-lg);
+    letter-spacing: -0.01em;
+}
+
+/* ---- Search Hero ---- */
+.search-hero {
+    padding: 0.4rem 0 0.2rem;
+    background-color: var(--color-bg);
+    overflow: visible;
+    position: relative;
+    z-index: 20;
+}
+
+.search-bar-wrapper {
+    position: relative;
+    z-index: 21;
+    max-width: var(--search-max);
+    margin: 0 auto;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-bg-search);
+    border: 1.5px solid var(--color-border-light);
+    border-radius: var(--radius-pill);
+    padding: 0.25rem 0.25rem 0.25rem 1.25rem;
+    box-shadow: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search-bar:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 182, 115, 0.16);
+    background-color: var(--color-surface);
+}
+
+.search-bar .search-icon {
+    color: var(--color-text-light);
+    font-size: 1.125rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: var(--font-family);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text);
+    background: transparent;
+    padding: 0.625rem 0;
+}
+
+.search-bar input::placeholder {
+    color: var(--color-text-light);
+}
+
+.search-bar .search-ai-btn {
+    display: none;
+}
+
+.destination-suggestions {
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    height: auto;
+    max-height: min(276px, calc(100vh - 9rem));
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    scrollbar-width: thin;
+}
+
+.destination-suggestion {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    padding: 0.75rem 0.8rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.destination-suggestion:hover,
+.destination-suggestion:focus-visible {
+    background: var(--color-card-blue);
+    outline: none;
+    transform: translateX(2px);
+}
+
+.destination-suggestion-icon {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-card-green);
+    color: var(--color-primary);
+}
+
+.destination-suggestion strong,
+.destination-suggestion small {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.destination-suggestion strong {
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.destination-suggestion small {
+    margin-top: 0.1rem;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    .destination-suggestions {
+        left: 0.25rem;
+        right: 0.25rem;
+        max-height: min(248px, calc(100vh - 8rem));
+        border-radius: 0.9rem;
+    }
+}
+
+/* ---- Filter Pills ---- */
+.filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.filter-pill {
+    padding: 0.5rem 1.125rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    border: 1.5px solid var(--color-border);
+    background-color: var(--color-white);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.filter-pill:hover {
+    border-color: var(--color-navy);
+    color: var(--color-navy);
+}
+
+.filter-pill.active {
+    background-color: var(--color-navy);
+    border-color: var(--color-navy);
+    color: var(--color-white);
+}
+
+.section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ---- Star Rating Utility ---- */
+.star-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.star-rating i {
+    color: var(--color-star);
+    font-size: 0.75rem;
+}
+
+/* ---- Scrollbar (AI Chat) ---- */
+.ai-assistant-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ai-assistant-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-assistant-messages::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 4px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 767.98px) {
+    .section-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .search-bar {
+        flex-direction: column;
+        border-radius: var(--radius-xl);
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .search-bar input {
+        width: 100%;
+        text-align: center;
+    }
+
+    .search-bar .search-icon {
+        display: none;
+    }
+
+    .search-bar .search-ai-btn {
+        width: 100%;
+    }
+
+    .search-bar .search-ai-btn .btn-roamitra-ai {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .section-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .section-padding {
+        padding: var(--spacing-xl) 0;
+    }
+}
+
+body {
+    font-family: 'Manrope', 'Segoe UI', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.vehicle-title,
+.dest-title,
+.feature-card h3,
+.btn-roamitra,
+.filter-pill,
+.roamitra-nav-links .nav-link {
+    font-family: 'Sora', 'Manrope', sans-serif;
+}
+
+.roamitra-navbar {
+    background: transparent !important;
+    border: 0 !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.roamitra-navbar .navbar-glass,
+.roamitra-navbar .container.navbar-glass,
+.roamitra-navbar > .container {
+    background: color-mix(in srgb, var(--color-surface) 86%, transparent) !important;
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    border: 1px solid var(--color-border) !important;
+    border-radius: 999px !important;
+    padding: 0.3rem 0.75rem !important;
+    box-shadow: 0 8px 24px rgba(5, 22, 53, 0.08);
+}
+
+.roamitra-navbar.is-scrolled .navbar-glass,
+.roamitra-navbar.is-scrolled > .container {
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent) !important;
+    box-shadow: 0 12px 28px rgba(5, 22, 53, 0.12);
+}
+
+@media (max-width: 991.98px) {
+    .roamitra-navbar {
+        position: sticky !important;
+        top: 0;
+        left: auto;
+        right: auto;
+        background: var(--color-bg) !important;
+    }
+
+    .roamitra-navbar .navbar-glass,
+    .roamitra-navbar > .container {
+        border-radius: 22px !important;
+        background: var(--color-surface) !important;
+        overflow: visible !important;
+    }
+}
+
+.roamitra-logo-text {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    -webkit-text-fill-color: #083024 !important;
+    color: #083024 !important;
+    animation: none !important;
+    text-transform: none !important;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .roamitra-logo-text {
+    -webkit-text-fill-color: #B8F7C8 !important;
+    color: #B8F7C8 !important;
+}
+
+.auth-visual .roamitra-logo-text {
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
+}
+
+.roamitra-nav-links .nav-link.ai-link {
+    color: #051635 !important;
+    background: linear-gradient(135deg, #76D885, #47A8A3);
+    box-shadow: 0 6px 16px rgba(43, 182, 115, 0.28);
+}
+
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.row.g-3,
+.row.g-4 {
+    --bs-gutter-y: 0.75rem;
+}
+
+.mb-4 { margin-bottom: 1rem !important; }
+.mb-5 { margin-bottom: 1.25rem !important; }
+.pt-3 { padding-top: 0.65rem !important; }
+
+.section-subtitle {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.vehicle-title,
+.dest-title,
+.feature-card h3 {
+    letter-spacing: -0.045em;
+}
+
+.nav-liquid {
+    top: 0 !important;
+    left: 0 !important;
+    transform: none;
+}
+
+[data-theme="dark"] body {
+    --bs-body-bg: var(--color-bg);
+    --bs-body-color: var(--color-text);
+    --bs-border-color: var(--color-border);
+    background:
+        radial-gradient(1200px 420px at 12% -10%, rgba(111, 220, 138, 0.12), transparent 55%),
+        radial-gradient(900px 380px at 90% 0%, rgba(110, 200, 192, 0.08), transparent 50%),
+        var(--color-bg);
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .form-text,
+[data-theme="dark"] .small.text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] textarea.form-control {
+    background-color: var(--color-bg-muted);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--color-bg-muted);
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    box-shadow: 0 0 0 3px rgba(111, 220, 138, 0.18);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+    color: var(--color-text-light);
+}
+
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--color-surface);
+    --bs-table-color: var(--color-text);
+    --bs-table-border-color: var(--color-border);
+    --bs-table-striped-bg: var(--color-bg-muted);
+    --bs-table-hover-bg: var(--color-bg-muted);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .btn-roamitra-primary,
+[data-theme="dark"] .btn-roamitra-navy,
+[data-theme="dark"] .btn-roamitra-outline,
+[data-theme="dark"] .btn-roamitra-ghost,
+[data-theme="dark"] .btn-roamitra-ai {
+    background-color: #111111;
+    color: #ffffff;
+    border-color: #3a3a3a;
+}
+
+[data-theme="dark"] .btn-roamitra-primary:hover,
+[data-theme="dark"] .btn-roamitra-navy:hover,
+[data-theme="dark"] .btn-roamitra-outline:hover,
+[data-theme="dark"] .btn-roamitra-ghost:hover,
+[data-theme="dark"] .btn-roamitra-ai:hover {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #4a4a4a;
+}
+
+[data-theme="dark"] .filter-pill.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #062014;
+}
+
+[data-theme="dark"] .roamitra-nav-links .nav-link.active {
+    color: var(--color-primary-light);
+}
+
+[data-theme="dark"] .roamitra-nav-links .nav-link.ai-link {
+    color: #062014 !important;
+}
+
+[data-theme="dark"] .person-avatar,
+[data-theme="dark"] .feed-post-avatar,
+[data-theme="dark"] .nav-profile-avatar {
+    color: #fff;
+}
+
+[data-theme="dark"] .destination-card .dest-bookmark {
+    background: rgba(22, 33, 28, 0.88);
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .auth-error,
+[data-theme="dark"] .form-alert.error {
+    background: #3a1c1c;
+    color: #fecaca;
+}
+
+[data-theme="dark"] .auth-success {
+    background: #16362c;
+    color: #bbf7d0;
+}
+
+[data-theme="dark"] .search-bar {
+    box-shadow: inset 0 0 0 1px rgba(111, 220, 138, 0.08);
+}
+
+[data-theme="dark"] .feature-card,
+[data-theme="dark"] .vehicle-card,
+[data-theme="dark"] .local-card,
+[data-theme="dark"] .host-card,
+[data-theme="dark"] .stay-card,
+[data-theme="dark"] .feed-post,
+[data-theme="dark"] .community-stat-card {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.dest-bento {
+    display: none;
+}
+
+.dest-stage.is-grid .dest-bento {
+    display: grid;
+}
+
+@media (max-width: 991.98px) {
+    .dest-bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 639.98px) {
+    .dest-bento {
+        grid-template-columns: 1fr;
+    }
+}

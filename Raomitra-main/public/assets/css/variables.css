@@ -1,0 +1,140 @@
+/* =============================================
+   Roamitra Design System — CSS Variables
+   Palette from the roamitra logo (navy + lime/teal)
+   ============================================= */
+
+:root {
+    --color-primary: #2BB673;
+    --color-primary-dark: #1A8A58;
+    --color-primary-light: #76D885;
+    --color-primary-bright: #8EE89A;
+    --color-primary-hover: #239A62;
+    --color-accent: #47A8A3;
+    --color-logo-navy: #051635;
+
+    --color-navy: #051635;
+    --color-navy-light: #0A2148;
+    --color-navy-btn: #0A2148;
+
+    --color-white: #FFFFFF;
+    --color-bg: #F3FBF6;
+    --color-bg-light: #F7FCF9;
+    --color-bg-muted: #E6F6EC;
+    --color-bg-search: #EAF7EF;
+    --color-border: #D5E8DC;
+    --color-border-light: #E4F1E8;
+    --color-surface: #FFFFFF;
+
+    --color-text: #0B1B2B;
+    --color-text-secondary: #2C3F4F;
+    --color-text-muted: #5B6E78;
+    --color-text-light: #8AA0A8;
+
+    --color-card-green: #EDFAF3;
+    --color-card-green-border: #A7E3C9;
+    --color-card-green-icon: #10B981;
+    --color-card-orange: #FFF4EB;
+    --color-card-orange-border: #FED7AA;
+    --color-card-orange-icon: #F97316;
+    --color-card-blue: #EBF4FF;
+    --color-card-blue-border: #BFDBFE;
+    --color-card-blue-icon: #3B82F6;
+    --color-card-purple: #F3EEFF;
+    --color-card-purple-border: #DDD6FE;
+    --color-card-purple-icon: #8B5CF6;
+
+    --color-banner-blue: #EEF8F2;
+    --color-banner-blue-icon: #2BB673;
+
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-star: #FBBF24;
+
+    --font-family: 'Manrope', 'Segoe UI', sans-serif;
+    --font-display: 'Sora', 'Manrope', sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.25rem;
+    --spacing-xl: 1.5rem;
+    --spacing-2xl: 2rem;
+    --spacing-3xl: 2.75rem;
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-pill: 50px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px rgba(5, 22, 53, 0.06);
+    --shadow-md: 0 4px 12px rgba(5, 22, 53, 0.08);
+    --shadow-lg: 0 8px 24px rgba(5, 22, 53, 0.1);
+    --shadow-card: 0 1px 4px rgba(5, 22, 53, 0.06);
+
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+
+    --navbar-height: 64px;
+    --container-max: 1140px;
+    --search-max: 420px;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --color-primary: #6FDC8A;
+    --color-primary-dark: #3FAF78;
+    --color-primary-light: #8EE89A;
+    --color-primary-bright: #B6F3C0;
+    --color-primary-hover: #5FCB78;
+    --color-accent: #6EC8C0;
+
+    --color-navy: #EAF6EF;
+    --color-navy-light: #24352E;
+    --color-navy-btn: #6FDC8A;
+
+    --color-white: #18241F;
+    --color-bg: #0B1210;
+    --color-bg-light: #101916;
+    --color-bg-muted: #1B2923;
+    --color-bg-search: #1B2923;
+    --color-border: #2E443A;
+    --color-border-light: #25362F;
+    --color-surface: #16211C;
+
+    --color-text: #F2FAF5;
+    --color-text-secondary: #C9DCD2;
+    --color-text-muted: #A3B8AD;
+    --color-text-light: #7F978C;
+
+    --color-card-green: #16362C;
+    --color-card-green-border: #2A6A54;
+    --color-card-green-icon: #8EE89A;
+    --color-card-orange: #3A2818;
+    --color-card-orange-border: #8A5628;
+    --color-card-orange-icon: #FDBA74;
+    --color-card-blue: #173044;
+    --color-card-blue-border: #2F5A78;
+    --color-card-blue-icon: #7DD3FC;
+    --color-card-purple: #2A1C42;
+    --color-card-purple-border: #53407A;
+    --color-card-purple-icon: #C4B5FD;
+
+    --color-banner-blue: #16362C;
+    --color-banner-blue-icon: #8EE89A;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.38);
+    --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.48);
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
