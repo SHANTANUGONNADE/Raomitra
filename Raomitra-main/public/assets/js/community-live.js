@@ -96,6 +96,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const hosts = document.getElementById('hostsGrid');
         const hostPanel = document.getElementById('commHostPanel');
         if (!locals && !hosts) return;
+        if (locals) locals.innerHTML = '<p class="text-muted">Loading registered travelers...</p>';
+        if (hosts) hosts.innerHTML = '<p class="text-muted">Loading approved hosts...</p>';
         try {
             const [peopleData, hostData] = await Promise.all([
                 RoamitraApi.get('/community/people'),
