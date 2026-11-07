@@ -431,9 +431,32 @@ function escapeHtml(text) {
     return d.innerHTML;
 }
 
+const DEST_FILM_WINDOW = 24;
+const DEST_GRID_PAGE = 48;
+let destGridShown = DEST_GRID_PAGE;
+
 function destKeys() {
-    const catalog = window.RoamitraDestinations && window.RoamitraDestinations.DESTINATIONS;
-    return catalog ? Object.keys(catalog) : [];
+    const api = window.RoamitraDestinations;
+    const catalog = api && api.DESTINATIONS;
+    if (!catalog) return [];
+    const featured = api.FEATURED_DESTINATION_KEYS;
+    if (Array.isArray(featured) && featured.length) {
+        return featured.filter((key) => catalog[key]);
+    }
+    return Object.keys(catalog);
+}
+
+function filmIndexes(index, n, size) {
+    const out = [];
+    if (n <= size) {
+        for (let i = 0; i < n; i++) out.push(i);
+        return out;
+    }
+    let start = index - Math.floor(size / 2);
+    if (start < 0) start = 0;
+    if (start + size > n) start = n - size;
+    for (let i = 0; i < size; i++) out.push(start + i);
+    return out;
 }
 
 let cylinderIndex = 0;
@@ -444,16 +467,191 @@ function destTags(d) {
     return (d.facts || []).slice(0, 3).map((f) => '<span class="dest-tag">' + escapeHtml(f) + '</span>').join('');
 }
 
+function destPhotoUrl(d) {
+    return d && d.image ? d.image : '';
+}
+
 function destBentoHtml(key, d, featured) {
+    if (!d) return '';
     return (
         '<article class="dest-tile js-open-destination' + (featured ? ' is-hero' : '') + '" data-place="' + escapeHtml(key) + '">' +
-            '<img src="' + escapeHtml(d.image) + '" alt="' + escapeHtml(d.title) + '" loading="lazy">' +
+            '<img src="' + escapeHtml(destPhotoUrl(d)) + '" alt="' + escapeHtml(d.title) + '" loading="lazy" referrerpolicy="no-referrer" data-dest-img="' + escapeHtml(key) + '">' +
             '<div class="dest-tile-copy">' +
                 '<span class="dest-tile-rating"><i class="bi bi-star-fill"></i> ' + escapeHtml(d.rating || '') + '</span>' +
                 '<h3>' + escapeHtml(d.title) + '</h3>' +
                 '<p>' + escapeHtml(d.price || '') + ' / week</p>' +
             '</div>' +
         '</article>'
+    );
+}
+
+const destPhotoCache = new Map();
+const destPhotoUsed = new Set();
+let destPhotoChain = Promise.resolve();
+
+function destPhotoTokens(text) {
+    return String(text || '').toLowerCase().match(/[a-z0-9]+/g) || [];
+}
+
+function destAllowsTransit(title) {
+    return /railway|station|metro|train|tram|miniature railway/i.test(title || '');
+}
+
+function destIsMemorial(title) {
+    return /statue|memorial|smarak|tomb|samadhi|monument/i.test(title || '');
+}
+
+function destImageIsUnwanted(dest, imageUrl, pageTitle, description) {
+    const title = (dest && dest.title) || '';
+    const blob = [imageUrl, pageTitle, description].join(' ').toLowerCase();
+    if (!imageUrl) return true;
+    if ((/taj mahal|taj_mahal/.test(blob) || /photo-1564507592333/.test(blob)) && !/taj/i.test(title)) return true;
+    if (/india_gate|map of|locator|\.svg|flag of|coat of arms/i.test(blob) && !/taj|india gate/i.test(title)) return true;
+    if (/portrait|photograph of|photo of|headshot|self-?portrait|oil on canvas|painting of|mugshot|passport|bust of|close-?up|cropped|prime[_ ]minister|narendra|fifa|footballer|actress/i.test(blob)) return true;
+    if (/actor|actress|politician|cricketer|footballer|singer|poet|writer|activist|philosopher|yogi|guru|artist|model|chess/i.test(blob) && !destIsMemorial(title)) return true;
+    if (/metro station|metro line|metro train|subway|rapid transit|namma metro|delhi metro|rolling stock/i.test(blob) && !destAllowsTransit(title)) return true;
+    return false;
+}
+
+function destPhotoMatches(dest, pageTitle, imageUrl, description) {
+    if (destImageIsUnwanted(dest, imageUrl, pageTitle, description)) return false;
+    const title = (dest.title || '').toLowerCase();
+    const page = String(pageTitle || '').toLowerCase();
+    if ((/taj mahal|taj_mahal/.test(page)) && !/taj/.test(title)) return false;
+    if (/india gate|map of|locator/.test(page) && !/india gate/.test(title)) return false;
+    const stop = { india: 1, indian: 1, temple: 1, mandir: 1, the: 1, and: 1, of: 1 };
+    const words = destPhotoTokens(dest.title).filter((w) => w.length > 3 && !stop[w]);
+    if (!words.length) return destPhotoTokens(dest.planner).some((w) => page.includes(w));
+    return words.some((w) => page.includes(w));
+}
+
+function destNeedsPhotoFix(dest) {
+    const src = dest && dest.image || '';
+    const title = (dest && dest.title) || '';
+    if (!src) return true;
+    if (destImageIsUnwanted(dest, src, '', '')) return true;
+    if (/unsplash\.com|photo-1564507592333|photo-1524492412937|taj_mahal|India_Gate/i.test(src) && !/taj/i.test(title)) return true;
+    if (destIsMemorial(title) && !/statue|memorial|smarak|monument|sculpt|tomb/i.test(src)) return true;
+    if (/library|ashram|university|college/i.test(title) && !/library|ashram|university|college|building|campus|exterior/i.test(src)) return true;
+    return false;
+}
+
+function normalizeSpotlightImage(dest, sourceUrl) {
+    if (!dest || !sourceUrl) return sourceUrl;
+    const title = (dest.title || '').toLowerCase();
+    const url = String(sourceUrl);
+    if (/(jpg|jpeg|png|webp)(\?.*)?$/i.test(url) && !/thumb\.wikimedia|upload\.wikimedia/i.test(url)) {
+        return url;
+    }
+    if (/upload\.wikimedia|thumb\.wikimedia/.test(url) && !/\.svg/i.test(url)) {
+        return url;
+    }
+    if (/(wikipedia|wikimedia|commons)/i.test(url) && /landmark|temple|fort|monument|palace|bridge|bahai|mosque|church|garden|waterfall|beach|ghat/i.test(title)) {
+        return url;
+    }
+    return url;
+}
+
+function queueDestWikiPhoto(key, dest, apply) {
+    destPhotoChain = destPhotoChain.then(async () => {
+        if (destPhotoCache.has(key)) {
+            apply(destPhotoCache.get(key));
+            return;
+        }
+        const query = [dest.title || key, dest.planner || '', 'India', destIsMemorial(dest.title) ? 'monument exterior' : 'landmark'].filter(Boolean).join(' ');
+        const wiki = 'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' +
+            encodeURIComponent(query) +
+            '&gsrlimit=10&prop=pageimages|coordinates|description&piprop=thumbnail&pithumbsize=800&format=json&origin=*';
+        const commons = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' +
+            encodeURIComponent('"' + (dest.title || key) + '" ' + (dest.planner || '') + ' building -portrait -metro') +
+            '&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*';
+        let thumb = '';
+        try {
+            const data = await fetch(wiki).then((r) => r.json());
+            const pages = Object.keys((data.query && data.query.pages) || {}).map((id) => data.query.pages[id]);
+            pages.sort((a, b) => (b.coordinates ? 1 : 0) - (a.coordinates ? 1 : 0));
+            pages.some((page) => {
+                const src = page.thumbnail && page.thumbnail.source;
+                if (src && destPhotoMatches(dest, page.title, src, page.description) && !destPhotoUsed.has(src)) {
+                    thumb = normalizeSpotlightImage(dest, src);
+                    return true;
+                }
+                return false;
+            });
+            if (!thumb) {
+                const files = await fetch(commons).then((r) => r.json());
+                const filePages = (files.query && files.query.pages) || {};
+                Object.keys(filePages).some((id) => {
+                    const info = (filePages[id].imageinfo && filePages[id].imageinfo[0]) || {};
+                    const src = info.thumburl || info.url;
+                    if (src && destPhotoMatches(dest, filePages[id].title, src) && !destPhotoUsed.has(src)) {
+                        thumb = normalizeSpotlightImage(dest, src);
+                        return true;
+                    }
+                    return false;
+                });
+            }
+            if (thumb) {
+                destPhotoCache.set(key, thumb);
+                destPhotoUsed.add(thumb);
+                dest.image = thumb;
+                apply(thumb);
+            }
+        } catch (err) {
+            /* keep catalog photo */
+        }
+        await new Promise((ok) => setTimeout(ok, 70));
+    });
+}
+
+function hydrateVisibleDestPhotos() {
+    const catalog = window.RoamitraDestinations && window.RoamitraDestinations.DESTINATIONS;
+    if (!catalog) return;
+    document.querySelectorAll('img[data-dest-img]').forEach((img) => {
+        const key = img.getAttribute('data-dest-img');
+        const dest = catalog[key];
+        if (!dest) return;
+        const apply = (url) => {
+            if (url && img.getAttribute('src') !== url) img.setAttribute('src', url);
+        };
+        if (destPhotoCache.has(key)) {
+            apply(destPhotoCache.get(key));
+            destPhotoUsed.add(destPhotoCache.get(key));
+            return;
+        }
+        if (!(window.RoamitraIndiaCities && window.RoamitraIndiaCities[key])) return;
+        if (destNeedsPhotoFix(dest)) {
+            queueDestWikiPhoto(key, dest, apply);
+            return;
+        }
+        destPhotoUsed.add(dest.image || '');
+        if (img.dataset.destAspectBound === '1') return;
+        img.dataset.destAspectBound = '1';
+        const checkPortrait = () => {
+            if (!img.naturalWidth || destPhotoCache.has(key)) return;
+            const tall = img.naturalHeight > img.naturalWidth * 1.18;
+            const allowTall = /statue|tower|minar|lighthouse|memorial|smarak/i.test(dest.title || '');
+            if (tall && !allowTall) queueDestWikiPhoto(key, dest, apply);
+        };
+        if (img.complete) checkPortrait();
+        else img.addEventListener('load', checkPortrait, { once: true });
+    });
+}
+
+function destLoadMoreHtml(shown, n) {
+    const pct = n ? Math.max(8, Math.round((shown / n) * 100)) : 0;
+    const remain = Math.max(0, n - shown);
+    return (
+        '<div class="dest-load-more-wrap">' +
+            '<button type="button" class="dest-load-more" data-dest-more>' +
+                '<span class="dest-load-more-row">' +
+                    '<strong>Load more destinations</strong>' +
+                    '<span class="dest-load-more-chip">' + shown.toLocaleString() + ' / ' + n.toLocaleString() + '</span>' +
+                '</span>' +
+                '<span class="dest-load-more-count">' + remain.toLocaleString() + ' more places to explore</span>' +
+                '<span class="dest-load-more-bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>' +
+            '</button>' +
+        '</div>'
     );
 }
 
@@ -483,7 +681,27 @@ function applyCoverflow() {
     if (bento) {
         bento.hidden = !destGridOpen;
         if (destGridOpen && catalog) {
-            bento.innerHTML = cylinderKeys.map((key, i) => destBentoHtml(key, catalog[key], i === 0)).join('');
+            const shown = Math.min(destGridShown, n);
+            const existing = bento.querySelectorAll('.dest-tile').length;
+            const sameSet = bento.getAttribute('data-dest-n') === String(n);
+            if (sameSet && existing && existing < shown) {
+                const moreWrap = bento.querySelector('.dest-load-more-wrap');
+                const extras = cylinderKeys.slice(existing, shown).map((key, i) => destBentoHtml(key, catalog[key], existing + i === 0)).join('');
+                if (moreWrap) moreWrap.insertAdjacentHTML('beforebegin', extras);
+                else bento.insertAdjacentHTML('beforeend', extras);
+            } else if (!sameSet || existing !== shown) {
+                let html = cylinderKeys.slice(0, shown).map((key, i) => destBentoHtml(key, catalog[key], i === 0)).join('');
+                bento.innerHTML = html;
+            }
+            bento.setAttribute('data-dest-n', String(n));
+            const moreWrap = bento.querySelector('.dest-load-more-wrap');
+            if (shown < n) {
+                if (moreWrap) moreWrap.outerHTML = destLoadMoreHtml(shown, n);
+                else bento.insertAdjacentHTML('beforeend', destLoadMoreHtml(shown, n));
+            } else if (moreWrap) {
+                moreWrap.remove();
+            }
+            hydrateVisibleDestPhotos();
         }
     }
 
@@ -495,7 +713,7 @@ function applyCoverflow() {
     if (spot && d) {
         spot.dataset.place = key;
         spot.innerHTML =
-            '<img src="' + escapeHtml(d.image) + '" alt="' + escapeHtml(d.title) + '">' +
+            '<img src="' + escapeHtml(destPhotoUrl(d)) + '" alt="' + escapeHtml(d.title) + '" referrerpolicy="no-referrer" data-dest-img="' + escapeHtml(key) + '">' +
             '<div class="dest-spot-shade"></div>' +
             '<div class="dest-spot-copy">' +
                 '<span class="dest-spot-kicker">Now featuring</span>' +
@@ -512,9 +730,10 @@ function applyCoverflow() {
         const extras = [1, 2].map((off) => cylinderKeys[(cylinderIndex + off) % n]).filter(Boolean);
         stack.innerHTML = extras.map((k) => {
             const item = catalog[k];
+            if (!item) return '';
             return (
                 '<button type="button" class="dest-mini" data-select-place="' + escapeHtml(k) + '">' +
-                    '<img src="' + escapeHtml(item.image) + '" alt="">' +
+                    '<img src="' + escapeHtml(destPhotoUrl(item)) + '" alt="" referrerpolicy="no-referrer" data-dest-img="' + escapeHtml(k) + '">' +
                     '<span><strong>' + escapeHtml(item.title) + '</strong>' + escapeHtml(item.price || '') + '</span>' +
                 '</button>'
             );
@@ -523,20 +742,31 @@ function applyCoverflow() {
 
     const filmEl = document.getElementById('destFilm');
     if (filmEl) {
-        filmEl.innerHTML = cylinderKeys.map((k, i) => {
+        filmEl.innerHTML = filmIndexes(cylinderIndex, n, DEST_FILM_WINDOW).map((i) => {
+            const k = cylinderKeys[i];
             const item = catalog[k];
+            if (!item) return '';
             return (
                 '<button type="button" class="dest-chip' + (i === cylinderIndex ? ' is-active' : '') + '" data-select-place="' + escapeHtml(k) + '" aria-label="' + escapeHtml(item.title) + '">' +
-                    '<img src="' + escapeHtml(item.image) + '" alt="">' +
+                    '<img src="' + escapeHtml(destPhotoUrl(item)) + '" alt="" loading="lazy" referrerpolicy="no-referrer" data-dest-img="' + escapeHtml(k) + '">' +
                 '</button>'
             );
         }).join('');
+
         const active = filmEl.querySelector('.is-active');
         if (active) {
-            const left = active.offsetLeft - (filmEl.clientWidth - active.offsetWidth) / 2;
-            filmEl.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+            const activeLeft = active.offsetLeft;
+            const activeWidth = active.offsetWidth;
+            const containerWidth = filmEl.clientWidth;
+            const desiredLeft = activeLeft - Math.max(0, (containerWidth - activeWidth) / 2);
+            const currentLeft = filmEl.scrollLeft;
+            const delta = desiredLeft - currentLeft;
+            if (Math.abs(delta) > 12) {
+                filmEl.scrollTo({ left: Math.max(0, desiredLeft), behavior: 'smooth' });
+            }
         }
     }
+    hydrateVisibleDestPhotos();
 }
 
 function renderDestCylinder(keys) {
@@ -576,6 +806,7 @@ function selectDestination(key) {
 function toggleDestGrid() {
     if (!cylinderKeys.length) return;
     destGridOpen = !destGridOpen;
+    if (destGridOpen) destGridShown = DEST_GRID_PAGE;
     applyCoverflow();
     document.getElementById('destCylinderScene')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -615,6 +846,13 @@ function initDestCylinder() {
         e.stopPropagation();
         selectDestination(pick.getAttribute('data-select-place'));
     });
+    document.getElementById('destCylinder')?.addEventListener('click', (e) => {
+        const more = e.target.closest('[data-dest-more]');
+        if (!more) return;
+        e.preventDefault();
+        destGridShown = Math.min(destGridShown + DEST_GRID_PAGE, cylinderKeys.length);
+        applyCoverflow();
+    });
 }
 
 function initExploreSearch() {
@@ -635,7 +873,7 @@ function initExploreSearch() {
                 status.textContent = '';
             } else if (!matches.length) {
                 status.hidden = false;
-                status.textContent = 'No destinations match “' + q + '”. Try Bali, Tokyo, Paris, Rome, or Iceland.';
+                status.textContent = 'No destinations match “' + q + '”. Try Bali, Tokyo, Agra, or Mumbai.';
             } else {
                 status.hidden = false;
                 status.textContent = matches.length + ' destination' + (matches.length === 1 ? '' : 's') + ' match “' + q + '”.';

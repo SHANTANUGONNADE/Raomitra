@@ -295,6 +295,11 @@
 .host-available { color: #16a34a; font-weight: 700; }
 
 .host-ask {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
     border: 0;
     background: linear-gradient(180deg, #3ee08a, #12b36a);
     color: #fff;
@@ -322,12 +327,23 @@
     }
 
     .host-person-foot {
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: stretch;
+        flex-wrap: nowrap;
+    }
+
+    .host-foot-meta {
+        text-align: left;
     }
 
     .host-ask {
+        display: flex;
         width: 100%;
-        min-height: 48px;
+        margin: 0 auto;
+        min-height: 52px;
+        text-align: center;
+        justify-content: center;
+        align-items: center;
     }
 
     .host-stats {
