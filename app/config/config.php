@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 /**
  * Application configuration.
- * Database name is required to remain `raomitra` for MySQL.
+ * The local database defaults to `raomitra`; hosted database settings are environment-specific.
  */
 $dbUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: getenv('RAOMITRA_DATABASE_URL') ?: '';
 $db = [
     'host' => getenv('RAOMITRA_DB_HOST') ?: '127.0.0.1',
     'port' => (int) (getenv('RAOMITRA_DB_PORT') ?: 3306),
-    'name' => 'raomitra',
+    'name' => getenv('RAOMITRA_DB_NAME') ?: (getenv('VERCEL') === '1' ? 'defaultdb' : 'raomitra'),
     'user' => getenv('RAOMITRA_DB_USER') ?: 'root',
     'pass' => getenv('RAOMITRA_DB_PASS') !== false ? (string) getenv('RAOMITRA_DB_PASS') : '',
     'charset' => 'utf8mb4',
@@ -28,8 +28,11 @@ if (is_string($dbUrl) && $dbUrl !== '' && preg_match('#^mysqls?://#i', $dbUrl) =
         }
         $query = [];
         parse_str((string) ($parts['query'] ?? ''), $query);
-        if (!empty($query['ssl-mode']) || !empty($query['ssl'])) {
+        $sslMode = strtolower(trim((string) ($query['ssl-mode'] ?? $query['ssl'] ?? '')));
+        if (in_array($sslMode, ['required', 'require', 'verify-ca', 'verify-identity', '1', 'true', 'yes'], true)) {
             $db['ssl'] = true;
+        } elseif (in_array($sslMode, ['disabled', 'disable', '0', 'false', 'no'], true)) {
+            $db['ssl'] = false;
         }
     }
 }

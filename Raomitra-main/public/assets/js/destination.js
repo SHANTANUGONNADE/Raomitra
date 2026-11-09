@@ -29306,8 +29306,7 @@ function renderDestination(place) {
     const facts = document.getElementById('destFacts');
     const highlights = document.getElementById('destHighlights');
     const plan = document.getElementById('destPlan');
-    if (!title || !img) return dest;
-
+    if (!title || !img) return dest
     document.title = dest.title + ' — Roamitra';
     title.textContent = dest.title;
     if (meta) {

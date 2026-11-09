@@ -678,12 +678,39 @@ async function handle(req, res) {
 
     try {
         if (method === 'GET' && (p === '/health' || p === '/')) {
-            return send(res, 200, {
+            let database;
+            try {
+                database = await mysqlStore.checkConnection();
+            } catch (err) {
+                console.error('Database health check failed:', err);
+                if (process.env.VERCEL === '1') {
+                    return send(res, 503, {
+                        service: 'roamitra',
+                        driver: 'vercel-node',
+                        storage: mysqlStore.storageLabel(),
+                        database: mysqlStore.databaseName(),
+                        error: 'Database connection failed. Check the Vercel MySQL settings and Aiven SSL configuration.',
+                    });
+                }
+                throw err;
+            }
+            const databaseUnavailable = process.env.VERCEL === '1' && !database.connected;
+            return send(res, databaseUnavailable ? 503 : 200, {
                 ok: true,
                 service: 'roamitra',
                 driver: 'vercel-node',
                 storage: mysqlStore.storageLabel(),
+                database: database.database,
+                database_status: database.connected ? 'connected' : 'not_configured',
+                ...(databaseUnavailable ? {
+                    ok: false,
+                    error: 'Configure the original Aiven MySQL connection in Vercel and set its database to defaultdb.',
+                } : {}),
             });
+        }
+
+        if (process.env.VERCEL === '1' && !mysqlStore.isConfigured()) {
+            return fail(res, 'Configure the original Aiven MySQL connection in Vercel and set its database to defaultdb.', 503);
         }
 
         if (method === 'POST' && p === '/auth/register') {
@@ -762,7 +789,7 @@ async function handle(req, res) {
                     ? (await mysqlStore.findUserByEmail('admin@raomitra.com')) || (await mysqlStore.findUserByEmail('admin@roamitra.com'))
                     : await mysqlStore.findUserByEmail(email);
             }
-            if (!row) {
+            if (!row && process.env.VERCEL !== '1') {
                 row = adminEmails.includes(email)
                     ? db.users.find((u) => adminEmails.includes(u.email))
                     : db.users.find((u) => u.email === email);

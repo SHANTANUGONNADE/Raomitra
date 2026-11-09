@@ -30,7 +30,7 @@ final class Database
         $localHost = $host === '' || $host === '127.0.0.1' || $host === 'localhost';
 
         if ($serverless && $localHost) {
-            return self::connectSqlite();
+            throw new RuntimeException('Hosted MySQL connection settings are required on Vercel.');
         }
 
         if (in_array('mysql', PDO::getAvailableDrivers(), true)) {
@@ -38,17 +38,15 @@ final class Database
                 return self::connectMysql($db, $serverless);
             } catch (Throwable $e) {
                 if ($serverless) {
-                    return self::connectSqlite();
+                    throw new RuntimeException('Could not connect to MySQL on Vercel.', 0, $e);
                 }
                 throw $e;
             }
         }
 
-        if ($serverless && in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-            return self::connectSqlite();
-        }
-
-        throw new RuntimeException('No PDO database driver is available.');
+        throw new RuntimeException($serverless
+            ? 'The PDO MySQL driver is required on Vercel.'
+            : 'No PDO database driver is available.');
     }
 
     private static function connectMysql(array $db, bool $serverless): PDO
@@ -96,23 +94,4 @@ final class Database
         return self::$pdo;
     }
 
-    private static function connectSqlite(): PDO
-    {
-        if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-            throw new RuntimeException('PDO SQLite driver is not available.');
-        }
-        $path = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'raomitra.sqlite';
-        self::$pdo = new PDO('sqlite:' . $path, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        self::$pdo->exec('PRAGMA foreign_keys = ON');
-        try {
-            self::$pdo->exec('PRAGMA journal_mode = WAL');
-        } catch (Throwable $e) {
-            // Some serverless filesystems reject WAL; DELETE mode still works.
-        }
-        self::$driver = 'sqlite';
-        return self::$pdo;
-    }
 }

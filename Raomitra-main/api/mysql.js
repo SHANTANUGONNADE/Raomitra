@@ -1,11 +1,10 @@
 'use strict';
 
 const mysql = require('mysql2/promise');
-const bcrypt = require('bcryptjs');
 
 let pool = null;
 
-function parseUrl(url) {
+function parseUrl(url, defaultDatabase) {
     if (!url) return null;
     try {
         const u = new URL(url);
@@ -16,7 +15,7 @@ function parseUrl(url) {
             port: Number(u.port || 3306),
             user: decodeURIComponent(u.username || ''),
             password: decodeURIComponent(u.password || ''),
-            database: (u.pathname || '/raomitra').replace(/^\//, '').split('?')[0] || 'raomitra',
+            database: decodeURIComponent(u.pathname.replace(/^\/+/, '').split('/')[0] || defaultDatabase),
             ssl: sslMode && sslMode !== '0' && sslMode !== 'false' && sslMode !== 'disabled',
         };
     } catch (e) {
@@ -25,14 +24,18 @@ function parseUrl(url) {
 }
 
 function config() {
-    const fromUrl = parseUrl(process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.RAOMITRA_DATABASE_URL || '');
+    const defaultDatabase = process.env.RAOMITRA_DB_NAME || (process.env.VERCEL === '1' ? 'defaultdb' : 'raomitra');
+    const fromUrl = parseUrl(
+        process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.RAOMITRA_DATABASE_URL || '',
+        defaultDatabase
+    );
     if (fromUrl) return fromUrl;
     return {
         host: process.env.RAOMITRA_DB_HOST || '',
         port: Number(process.env.RAOMITRA_DB_PORT || 3306),
         user: process.env.RAOMITRA_DB_USER || '',
         password: process.env.RAOMITRA_DB_PASS || '',
-        database: process.env.RAOMITRA_DB_NAME || 'raomitra',
+        database: defaultDatabase,
         ssl: ['1', 'true', 'yes'].includes(String(process.env.RAOMITRA_DB_SSL || '').toLowerCase()),
     };
 }
@@ -40,9 +43,14 @@ function config() {
 function isConfigured() {
     const c = config();
     const host = String(c.host || '').toLowerCase();
-    if (!host || !c.user) return false;
+    if (!host || !c.user || !c.database) return false;
+    if (process.env.VERCEL === '1' && c.database !== 'defaultdb') return false;
     if (host === '127.0.0.1' || host === 'localhost') return false;
     return true;
+}
+
+function databaseName() {
+    return config().database;
 }
 
 async function getPool() {
@@ -61,6 +69,27 @@ async function getPool() {
     });
     await ensureSchema(pool);
     return pool;
+}
+
+async function checkConnection() {
+    const c = config();
+    if (!isConfigured()) return { connected: false, database: c.database };
+
+    const connection = await mysql.createConnection({
+        host: c.host,
+        port: c.port,
+        user: c.user,
+        password: c.password,
+        database: c.database,
+        ssl: c.ssl ? { rejectUnauthorized: false } : undefined,
+        connectTimeout: 5000,
+    });
+    try {
+        const [rows] = await connection.query('SELECT DATABASE() AS database');
+        return { connected: true, database: rows[0] && rows[0].database };
+    } finally {
+        await connection.end();
+    }
 }
 
 async function ensureUserColumn(p, column, ddl) {
@@ -107,8 +136,6 @@ async function ensureSchema(p) {
     try {
         await p.query("ALTER TABLE users MODIFY role VARCHAR(32) NOT NULL DEFAULT 'customer'");
     } catch (e) { /* already varchar */ }
-    await p.query("UPDATE users SET role = 'admin' WHERE LOWER(TRIM(role)) IN ('admin','administrator','superadmin','super_admin')");
-    await p.query("UPDATE users SET role = 'co_admin' WHERE LOWER(REPLACE(TRIM(role),'-','_')) IN ('co_admin','coadmin')");
     await p.query(`
         CREATE TABLE IF NOT EXISTS wallets (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -170,17 +197,6 @@ async function ensureSchema(p) {
             KEY idx_messages_conversation (sender_id, recipient_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
-    const [admins] = await p.query(
-        "SELECT id FROM users WHERE email IN ('admin@raomitra.com','admin@roamitra.com') LIMIT 1"
-    );
-    if (!admins.length) {
-        const hash = bcrypt.hashSync('Admin1234!', 10);
-        const [result] = await p.query(
-            'INSERT INTO users (full_name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-            ['Roamitra Admin', 'admin@raomitra.com', hash, 'admin']
-        );
-        await p.query('INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, ?)', [result.insertId, 'USD']);
-    }
 }
 
 async function findUserByEmail(email) {
@@ -682,6 +698,8 @@ async function reviewHostApplication(id, status, note, reviewerId) {
 
 module.exports = {
     isConfigured,
+    databaseName,
+    checkConnection,
     getPool,
     findUserByEmail,
     findUserById,
@@ -714,6 +732,7 @@ module.exports = {
     listHostApplications,
     reviewHostApplication,
     storageLabel() {
-        return isConfigured() ? 'mysql:raomitra' : 'vercel-tmp (not phpMyAdmin)';
+        if (isConfigured()) return 'mysql:' + databaseName();
+        return process.env.VERCEL === '1' ? 'unconfigured' : 'local-json';
     },
 };
