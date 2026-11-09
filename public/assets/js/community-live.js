@@ -5,6 +5,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.querySelectorAll('.comm-ask-stage > .feed-post').forEach((post) => post.remove());
 
+    function escapeHtml(text) {
+        const d = document.createElement('div');
+        d.textContent = text == null ? '' : String(text);
+        return d.innerHTML;
+    }
+
+    // Moved to top-level scope so it can be called independently of refresh()
+    async function refreshStats() {
+        try {
+            const data = await RoamitraApi.get('/community/stats');
+            const stats = data.stats || {};
+            document.querySelectorAll('[data-community-stat]').forEach((element) => {
+                const value = Number(stats[element.dataset.communityStat] || 0);
+                element.textContent = value.toLocaleString();
+            });
+        } catch (error) {
+            document.querySelectorAll('[data-community-stat]').forEach((element) => {
+                element.textContent = '—';
+            });
+        }
+    }
+
     async function refresh() {
         try {
             const data = await RoamitraApi.get('/community/posts');
@@ -16,20 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            async function refreshStats() {
-                try {
-                    const data = await RoamitraApi.get('/community/stats');
-                    const stats = data.stats || {};
-                    document.querySelectorAll('[data-community-stat]').forEach((element) => {
-                        const value = Number(stats[element.dataset.communityStat] || 0);
-                        element.textContent = value.toLocaleString();
-                    });
-                } catch (error) {
-                    document.querySelectorAll('[data-community-stat]').forEach((element) => {
-                        element.textContent = '—';
-                    });
-                }
-            }
             list.innerHTML = posts.map(p => `
                 <article class="feed-post live-post" data-id="${p.id}">
                     <div class="feed-post-header">
@@ -81,12 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             else alert(err.message);
         }
     });
-
-    function escapeHtml(text) {
-        const d = document.createElement('div');
-        d.textContent = text == null ? '' : String(text);
-        return d.innerHTML;
-    }
 
     refresh();
     refreshStats();
@@ -226,6 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const status = document.getElementById('commAskStatus');
         const note = document.getElementById('commAskNote');
         const name = sheet?.dataset.hostName || 'this host';
+        const personId = Number(sheet?.dataset.personId || 0);
         const text = (note?.value || '').trim();
         if (!text) {
             if (status) {
@@ -236,9 +239,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         try {
+            // Send as a connect request so the server handler accepts it
             await RoamitraApi.post('/community/requests', {
-                kind: 'host',
-                person_id: sheet?.dataset.personId || '',
+                kind: 'connect',
+                person_id: personId,
                 person_name: name,
                 note: text
             });
