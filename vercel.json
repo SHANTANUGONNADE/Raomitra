@@ -1,13 +1,11 @@
+
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "includeFiles": [
-        "app/data/roamini-examples.json",
-        "public/assets/js/mumbai-data.js"
-      ]
+      "includeFiles": "{app/data/roamini-examples.json,public/assets/js/mumbai-data.js}"
     }
   },
   "headers": [
