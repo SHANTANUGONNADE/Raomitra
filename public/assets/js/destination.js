@@ -29250,9 +29250,25 @@ const DESTINATIONS = {
     });
 })();
 
+const MUMBAI_DATA = window.RoamitraMumbaiData || { places: [], tips: [] };
+const MUMBAI_PLACE_KEYS = [];
+const mumbaiImage = (window.RoamitraIndiaCities || {}).gatewayofindia?.image || '';
+MUMBAI_DATA.places.forEach((place) => {
+    const key = place.key;
+    if (!key) return;
+    const current = DESTINATIONS[key] || {};
+    DESTINATIONS[key] = Object.assign({}, current, place, {
+        image: current.image || mumbaiImage
+    });
+    MUMBAI_PLACE_KEYS.push(key);
+});
+
 // The Explore catalog is intentionally India-only. Keep the larger source
 // catalog available for legacy links, but never expose non-India places.
-const FEATURED_DESTINATION_KEYS = (window.RoamitraIndiaFeatured || [])
+const FEATURED_DESTINATION_KEYS = Array.from(new Set([
+    ...(window.RoamitraIndiaFeatured || []),
+    ...MUMBAI_PLACE_KEYS
+]))
     .filter((key) => DESTINATIONS[key]);
 
 const DESTINATION_ALIASES = {
@@ -29271,7 +29287,7 @@ const DESTINATION_ALIASES = {
 };
 
 function destinationSearchBlob(key, dest) {
-    return [key, dest.title, dest.desc, dest.facts.join(' '), dest.keywords || '', dest.planner]
+    return [key, dest.title, dest.desc, (dest.facts || []).join(' '), dest.keywords || '', dest.planner, dest.area || '', dest.local_tip || '']
         .join(' ')
         .toLowerCase();
 }
@@ -29296,6 +29312,46 @@ function resolveDestinationKey(query) {
     return titled || matches[0] || null;
 }
 
+function renderMumbaiDetails(destination) {
+    const section = document.getElementById('destMumbaiDetails');
+    if (!section) return;
+    if (!destination.local_tip) {
+        section.hidden = true;
+        return;
+    }
+
+    section.hidden = false;
+    const facts = document.getElementById('destMumbaiFacts');
+    facts.replaceChildren();
+    [
+        ['Area', destination.area],
+        ['Category', destination.category],
+        ['Approximate cost', destination.approx_cost],
+        ['Opening hours', destination.timings],
+        ['Best time to visit', destination.best_time],
+        ['Nearest station', destination.nearest_station]
+    ].filter(([, value]) => value).forEach(([label, value]) => {
+        const item = document.createElement('div');
+        const heading = document.createElement('strong');
+        const text = document.createElement('span');
+        heading.textContent = label;
+        text.textContent = value;
+        item.append(heading, text);
+        facts.appendChild(item);
+    });
+
+    document.getElementById('destMumbaiTip').textContent = destination.local_tip;
+    const cityTips = document.getElementById('destMumbaiCityTips');
+    cityTips.replaceChildren();
+    MUMBAI_DATA.tips.forEach((entry) => {
+        const item = document.createElement('li');
+        const category = document.createElement('strong');
+        category.textContent = entry.category + ': ';
+        item.append(category, document.createTextNode(entry.tip));
+        cityTips.appendChild(item);
+    });
+}
+
 function renderDestination(place) {
     const safePlace = FEATURED_DESTINATION_KEYS.includes(place) ? place : FEATURED_DESTINATION_KEYS[0];
     const dest = DESTINATIONS[safePlace];
@@ -29316,6 +29372,7 @@ function renderDestination(place) {
         meta.textContent = [location, 'India', rating].filter(Boolean).join(' · ');
     }
     if (desc) desc.textContent = dest.desc;
+    renderMumbaiDetails(dest);
     const base = typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '';
     img.src = dest.image.indexOf('http') === 0 ? dest.image : base + dest.image;
     img.alt = dest.title;

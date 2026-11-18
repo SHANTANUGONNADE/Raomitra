@@ -144,11 +144,10 @@ final class Auth
         $payload = json_encode($row, JSON_UNESCAPED_UNICODE);
         $sig = hash_hmac('sha256', (string) $payload, self::secret());
         $value = rtrim(strtr(base64_encode((string) $payload), '+/', '-_'), '=') . '.' . $sig;
-        $vercel = getenv('VERCEL') === '1';
         $params = session_get_cookie_params();
-        $secure = $vercel || !empty($params['secure']);
+        $secure = !empty($params['secure']);
         setcookie(self::COOKIE, $value, [
-            'expires' => ($remember || $vercel) ? time() + (60 * 60 * 24 * 30) : 0,
+            'expires' => $remember ? time() + (60 * 60 * 24 * 30) : 0,
             'path' => '/',
             'secure' => $secure,
             'httponly' => true,

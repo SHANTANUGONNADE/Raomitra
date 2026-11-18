@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const list = document.getElementById('liveQuestions');
     const form = document.getElementById('communityForm');
-    if (!list || !form) return;
 
     document.querySelectorAll('.comm-ask-stage > .feed-post').forEach((post) => post.remove());
 
@@ -13,18 +12,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Moved to top-level scope so it can be called independently of refresh()
     async function refreshStats() {
+        const statElements = document.querySelectorAll('[data-community-stat]');
+        if (!statElements.length) return;
         try {
             const data = await RoamitraApi.get('/community/stats');
             const stats = data.stats || {};
-            document.querySelectorAll('[data-community-stat]').forEach((element) => {
+            statElements.forEach((element) => {
                 const value = Number(stats[element.dataset.communityStat] || 0);
                 element.textContent = value.toLocaleString();
             });
         } catch (error) {
-            document.querySelectorAll('[data-community-stat]').forEach((element) => {
+            statElements.forEach((element) => {
                 element.textContent = '—';
             });
         }
+    }
+
+    if (!list || !form) {
+        await refreshStats();
+        setInterval(refreshStats, 30000);
+        return;
     }
 
     async function refresh() {

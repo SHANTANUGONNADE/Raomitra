@@ -19,10 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
 function initNearbyPeople() {
     const list = document.getElementById('explorePeopleList');
     const status = document.getElementById('explorePeopleStatus');
+    const filter = document.getElementById('explorePeopleFilter');
     if (!list || typeof RoamitraApi === 'undefined') return;
-    const load = () => {
+    populateNearbyLocationFilter(filter);
+    if (filter) {
         let currentLocation = '';
         try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
+        setNearbyPeopleLocation(filter, currentLocation);
+    }
+
+    const load = () => {
+        let currentLocation = filter ? filter.value : '';
+        if (!filter) {
+            try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
+        }
         const query = currentLocation ? '?location=' + encodeURIComponent(currentLocation) : '';
         return RoamitraApi.get('/community/people' + query).then((data) => {
             const people = Array.isArray(data.people) ? data.people : [];
@@ -67,31 +77,85 @@ function initNearbyPeople() {
             if (status) status.textContent = 'Could not load registered travelers right now.';
         });
     };
+    filter?.addEventListener('change', load);
     load();
-    window.addEventListener('roamitra-location-updated', load);
+    window.addEventListener('roamitra-location-updated', () => {
+        if (filter) {
+            let currentLocation = '';
+            try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
+            setNearbyPeopleLocation(filter, currentLocation);
+        }
+        load();
+    });
     window.setInterval(load, 30000);
 }
 
 function initNearbyPlaces() {
     const list = document.getElementById('explorePlacesList');
     if (!list) return;
+    const filter = document.getElementById('explorePlacesFilter');
     const api = window.RoamitraDestinations;
     const keys = api && Array.isArray(api.FEATURED_DESTINATION_KEYS)
-        ? api.FEATURED_DESTINATION_KEYS.slice(0, 8)
+        ? api.FEATURED_DESTINATION_KEYS
         : [];
+    populateNearbyLocationFilter(filter);
+    const render = () => {
+        const city = filter ? filter.value.toLowerCase() : '';
+        const matches = city
+            ? keys.filter((key) => String(api.DESTINATIONS[key].planner || '').toLowerCase() === city)
+            : keys.slice(0, 8);
+        if (!matches.length) {
+            list.innerHTML = '<p class="text-muted mb-0">No places found for this city.</p>';
+            return;
+        }
+        list.innerHTML = matches.map((key) => {
+            const destination = api.DESTINATIONS[key];
+            const title = destination.title || key;
+            const meta = String(destination.meta || '').split(' · ')[0];
+            return '<a href="' + destinationUrl(key) + '" class="place-row js-open-destination" data-place="' + escapeHtml(key) + '">'
+                + '<img src="' + escapeHtml(destination.image || '') + '" alt="' + escapeHtml(title) + '" class="place-thumb" loading="lazy">'
+                + '<div class="place-info"><h4>' + escapeHtml(title) + '</h4><p>' + escapeHtml(meta) + '</p></div>'
+                + '</a>';
+        }).join('');
+    };
     if (!keys.length) {
         list.innerHTML = '<p class="text-muted mb-0">No destinations available.</p>';
         return;
     }
-    list.innerHTML = keys.map((key) => {
-        const destination = api.DESTINATIONS[key];
-        const title = destination.title || key;
-        const meta = String(destination.meta || '').split(' · ')[0];
-        return '<a href="' + destinationUrl(key) + '" class="place-row js-open-destination" data-place="' + escapeHtml(key) + '">'
-            + '<img src="' + escapeHtml(destination.image || '') + '" alt="' + escapeHtml(title) + '" class="place-thumb" loading="lazy">'
-            + '<div class="place-info"><h4>' + escapeHtml(title) + '</h4><p>' + escapeHtml(meta) + '</p></div>'
-            + '</a>';
-    }).join('');
+    if (filter) filter.addEventListener('change', render);
+    render();
+}
+
+function getExploreCities() {
+    const api = window.RoamitraDestinations;
+    if (!api || !Array.isArray(api.FEATURED_DESTINATION_KEYS)) return [];
+    return Array.from(new Set(api.FEATURED_DESTINATION_KEYS
+        .map((key) => String((api.DESTINATIONS[key] || {}).planner || '').trim())
+        .filter(Boolean)))
+        .sort((a, b) => a.localeCompare(b));
+}
+
+function populateNearbyLocationFilter(filter) {
+    if (!filter || filter.dataset.ready) return;
+    const cities = getExploreCities();
+    filter.innerHTML = '<option value="">All cities</option>' + cities.map((city) =>
+        '<option value="' + escapeHtml(city) + '">' + escapeHtml(city) + '</option>'
+    ).join('');
+    filter.dataset.ready = 'true';
+}
+
+function setNearbyPeopleLocation(filter, location) {
+    if (!filter || !location) return;
+    const normalizedLocation = location.toLowerCase();
+    const matchingCity = getExploreCities().find((city) => normalizedLocation.includes(city.toLowerCase()));
+    const value = matchingCity || location;
+    if (!Array.from(filter.options).some((option) => option.value.toLowerCase() === value.toLowerCase())) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        filter.appendChild(option);
+    }
+    filter.value = value;
 }
 
 function initPeopleChat() {

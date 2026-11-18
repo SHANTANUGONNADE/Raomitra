@@ -32,7 +32,7 @@ $config = require $root . '/app/config/config.php';
 $helpers = [
     'Database', 'Schema', 'SessionStore', 'Response', 'Auth',
     'WalletService', 'NotificationService', 'ItineraryEngine',
-    'PlacesCatalog', 'TranslatorService', 'RoaminiEngine',
+    'PlacesCatalog', 'TranslatorService', 'RoaminiKnowledge', 'RoaminiEngine',
 ];
 $controllers = [
     'AuthController', 'ProfileController', 'TripController',

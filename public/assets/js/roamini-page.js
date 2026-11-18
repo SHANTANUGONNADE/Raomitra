@@ -138,6 +138,13 @@
     let customStyles = [];
     let paceTouched = false;
     let syncing = false;
+    let arrivalDateSelected = false;
+    let departureDateSelected = false;
+
+    function updateTravelTimeVisibility() {
+        document.getElementById('raiArrivalTimeSection').hidden = !arrivalDateSelected || !startInput.value;
+        document.getElementById('raiDepartureTimeSection').hidden = !departureDateSelected || !endInput.value;
+    }
 
     function iso(date) {
         const z = (n) => String(n).padStart(2, '0');
@@ -304,6 +311,9 @@
         dest.value = source.destination || '';
         if (source.start_date) startInput.value = source.start_date;
         if (source.end_date) endInput.value = source.end_date;
+        arrivalDateSelected = Boolean(source.start_date);
+        departureDateSelected = Boolean(source.end_date);
+        updateTravelTimeVisibility();
         if (source.start_date && source.end_date) setDaysFromDates();
         else setDatesFromDays();
         budgetInput.value = source.budget == null ? '' : source.budget;
@@ -318,11 +328,21 @@
         const pace = document.querySelector(`input[name="pace"][value="${source.pace || 'moderate'}"]`);
         if (pace) pace.checked = true;
         const prefs = prefsFromTrip(source.preferences);
+        const standardPrefs = new Set([
+            ...Array.from(document.querySelectorAll('#raiStyles button[data-pref], #raiInterests input'))
+                .map((input) => input.dataset.pref || input.value)
+                .filter(Boolean)
+        ]);
+        customStyles = prefs.filter((preference) => !standardPrefs.has(preference));
+        paintCustom();
         document.querySelectorAll('#raiStyles button').forEach((btn) => {
             const pref = btn.dataset.pref;
             const on = (pref && prefs.includes(pref)) || (btn.dataset.style === 'slow' && source.pace === 'relaxed');
             btn.classList.toggle('on', !!on);
         });
+        if (customStyles.length) {
+            document.querySelector('#raiStyles button[data-style="custom"]').classList.add('on');
+        }
         document.querySelectorAll('#raiInterests input').forEach((input) => {
             input.checked = prefs.includes(input.value);
         });
@@ -518,9 +538,23 @@
 
     document.getElementById('raiForm').onsubmit = submitPlan;
     dest.oninput = refreshGenerate;
-    daysInput.oninput = setDatesFromDays;
-    startInput.onchange = () => { setDatesFromDays(); };
-    endInput.onchange = setDaysFromDates;
+    daysInput.oninput = () => {
+        setDatesFromDays();
+        arrivalDateSelected = Boolean(startInput.value);
+        departureDateSelected = Boolean(endInput.value);
+        updateTravelTimeVisibility();
+    };
+    startInput.onchange = () => {
+        arrivalDateSelected = true;
+        setDatesFromDays();
+        departureDateSelected = Boolean(endInput.value);
+        updateTravelTimeVisibility();
+    };
+    endInput.onchange = () => {
+        departureDateSelected = true;
+        setDaysFromDates();
+        updateTravelTimeVisibility();
+    };
     styleText.onkeydown = (event) => {
         if (event.key !== 'Enter') return;
         event.preventDefault();

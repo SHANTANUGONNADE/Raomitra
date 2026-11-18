@@ -69,16 +69,16 @@ const RoamitraNav = {
                         <img src="${base}assets/images/logo.png" alt="Roamitra" class="roamitra-logo-img">
                         <span class="roamitra-logo-text">Roamitra</span>
                     </a>
-                    <ul class="roamitra-nav-links">
+                    <ul class="roamitra-nav-links" id="roamitraPrimaryLinks">
                         <li><a href="${base}explore.html" class="nav-link" data-nav="explore"><i class="bi bi-compass"></i> Explore</a></li>
                         <li><a href="${base}community.html" class="nav-link" data-nav="community"><i class="bi bi-people"></i> Community</a></li>
                         <li><a href="${base}roamini.html" class="nav-link" data-nav="roamini"><i class="bi bi-stars"></i> Roamini AI</a></li>
                     </ul>
-                    <button type="button" class="roamitra-navbar-toggler" aria-label="Open menu" aria-expanded="false">
-                        <i class="bi bi-list"></i>
-                    </button>
                     <div class="navbar-end">
                         <div class="roamitra-nav-actions"></div>
+                        <button type="button" class="roamitra-navbar-toggler" aria-label="Open menu" aria-expanded="false" aria-controls="roamitraPrimaryLinks">
+                            <i class="bi bi-list"></i>
+                        </button>
                     </div>
                 </div>
             </div>

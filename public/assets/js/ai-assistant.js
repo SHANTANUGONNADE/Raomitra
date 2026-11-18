@@ -213,7 +213,7 @@ const RoamitraAI = {
         'become a host': 'To become a host, log in and open Ask to Host. Submit your city, phone, and a short bio. Admin approval makes you a verified host.',
         'cancellation policy': 'Most bookings can be cancelled up to 48 hours before for a full refund. Vehicle rentals and meetups may have different terms.',
         'booking process': 'Open Ask to Rent, choose a vehicle, and click Book Now. Pick pickup and return dates, then confirm. You must be logged in.',
-        'destinations': 'Popular spots include Bali, Tokyo, Paris, Yosemite, and Bangalore. Use the Explore page for featured destinations and local tips.',
+        'destinations': 'Open Explore to see the destinations currently listed on Roamitra. Tell me your budget or travel style to narrow them down.',
         'host registration': 'Host registration needs a verified account, the application form, and identity details. Review typically takes 3–5 business days.',
         'faq': 'How do I book? Create an account, search, and book. How do I become a host? Apply via Ask to Host. Need more help? Ask me anything!',
         'default': 'Thanks for your question! I can help with destinations, Ask to Rent, Ask to Host, meetups, and trip planning. Tell me a bit more.'
@@ -861,6 +861,7 @@ const RoamitraAI = {
                 response = (data && (data.reply || data.message || data.text)) || '';
             }
         } catch (err) {
+            console.error('Roamini chat request failed:', err && err.message ? err.message : String(err));
             response = '';
         }
         if (!response) {

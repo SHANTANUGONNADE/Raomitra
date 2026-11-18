@@ -472,8 +472,8 @@
 
     .navbar-brand { order: 1; flex: 0 1 auto; min-width: 0; }
     .navbar-end { order: 2; margin-left: auto; flex: 0 1 auto; min-width: 0; }
-    .roamitra-navbar-toggler { display: none; }
-    .roamitra-nav-links { display: none !important; }
+    .roamitra-navbar-toggler { display: inline-flex; }
+    .roamitra-nav-links { display: none; }
     .roamitra-nav-actions > .btn-roamitra { display: none; }
 
     .nav-mobile-auth { display: none !important; }
@@ -553,9 +553,6 @@
         flex-wrap: nowrap;
     }
 
-    .roamitra-navbar.is-open .roamitra-nav-actions .btn-roamitra {
-        display: inline-flex !important;
-    }
 }
 
 @media (max-width: 575.98px) {
@@ -590,11 +587,17 @@
     .roamitra-navbar .theme-toggle,
     .roamitra-navbar .nav-icon-btn,
     .roamitra-navbar .nav-profile-btn,
-    .roamitra-navbar .nav-admin,
-    .roamitra-navbar .roamitra-navbar-toggler {
+    .roamitra-navbar .nav-admin {
         width: 34px;
         height: 34px;
         min-width: 34px;
+        padding: 0;
+    }
+
+    .roamitra-navbar .roamitra-navbar-toggler {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
         padding: 0;
     }
 
