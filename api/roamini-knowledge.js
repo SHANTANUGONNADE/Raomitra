@@ -23,8 +23,64 @@ function loadData() {
     if (!Array.isArray(examples.examples)) {
         throw new Error('Roamini approved examples have an unexpected format.');
     }
-    cachedData = { places: mumbai.places, tips: mumbai.tips, examples: examples.examples };
+    const citySource = fs.readFileSync(path.join(root, 'public', 'assets', 'js', 'india-cities.js'), 'utf8');
+    const cityStart = citySource.indexOf('=');
+    const cityEnd = citySource.indexOf(';', cityStart);
+    if (cityStart < 0 || cityEnd < 0) throw new Error('Roamini city reference data file is invalid.');
+    const cities = JSON.parse(citySource.slice(cityStart + 1, cityEnd).trim());
+    cachedData = { places: mumbai.places, tips: mumbai.tips, examples: examples.examples, cities };
     return cachedData;
+}
+
+function normalizePlaceName(text) {
+    return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function cityLocationsAnswer(message) {
+    const data = loadData();
+    const query = normalizePlaceName(message);
+    const cities = Array.from(new Set(Object.values(data.cities)
+        .map((place) => String(place.planner || '').trim())
+        .filter(Boolean))).sort((a, b) => b.length - a.length);
+    let city = cities.find((name) => {
+        const normalized = normalizePlaceName(name);
+        return new RegExp('(^| )' + normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '( |$)').test(query);
+    });
+    if (!city && /(^| )bombay( |$)/.test(query)) city = cities.find((name) => normalizePlaceName(name) === 'mumbai');
+    if (!city) return null;
+
+    const cityName = normalizePlaceName(city);
+    const filler = new Set([
+        'a', 'about', 'any', 'are', 'can', 'city', 'do', 'find', 'for', 'give', 'help', 'in',
+        'location', 'locations', 'me', 'nearby', 'of', 'place', 'places', 'show', 'some',
+        'tell', 'the', 'things', 'to', 'tourist', 'travel', 'visit', 'what', 'where', 'which',
+        'with', 'you', 'is', 'best', 'attraction', 'attractions', 'spot', 'spots', 'explore',
+    ]);
+    const remaining = query.split(' ').filter((word) => word && !cityName.split(' ').includes(word) && !filler.has(word));
+    const locationIntent = /\b(location|locations|place|places|attraction|attractions|spot|spots|visit|tourist|explore|nearby|travel|things to do)\b/.test(query);
+    if (remaining.length && !locationIntent) return null;
+
+    const places = cityName === 'mumbai'
+        ? data.places
+        : Object.values(data.cities).filter((place) => normalizePlaceName(place.planner) === cityName);
+    const score = (place) => {
+        const title = normalizePlaceName(place.title);
+        if (/\b(gateway|marine drive|beach|fort|temple|museum|market|garden|park|palace|monument|caves|promenade|lake|waterfall)\b/.test(title)) return 3;
+        if (/\b(airport|railway station|bus stand|office|school|college|hospital)\b/.test(title)) return -1;
+        return 0;
+    };
+    if (cityName !== 'mumbai') {
+        places.sort((a, b) => score(b) - score(a) || String(a.title).localeCompare(String(b.title)));
+    }
+    const selected = places.slice(0, 8);
+    if (!selected.length) return null;
+
+    const lines = selected.map((place) => '- ' + place.title + (place.area ? ' (' + place.area + ')' : ''));
+    return 'Popular places in ' + city + ' from Roamitra’s mapped guide (' + places.length
+        + (places.length === 1 ? ' place listed' : ' places listed')
+        + '; details may need verification):\n' + lines.join('\n')
+        + '\nTell me what kind of places you want—food, heritage, beaches, or family-friendly spots.';
 }
 
 function tokens(text) {
@@ -103,4 +159,4 @@ function retrieve(message, history = []) {
     return { has_relevant: true, context: lines.join('\n') };
 }
 
-module.exports = { retrieve };
+module.exports = { retrieve, cityLocationsAnswer };

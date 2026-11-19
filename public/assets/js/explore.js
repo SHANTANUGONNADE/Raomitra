@@ -838,6 +838,11 @@ function hydrateVisibleDestPhotos() {
         const apply = (url) => {
             if (url && img.getAttribute('src') !== url) img.setAttribute('src', url);
         };
+        window.RoamitraDestinations.bindImageFallback(
+            key,
+            img,
+            () => queueDestWikiPhoto(key, dest, apply)
+        );
         if (destPhotoCache.has(key)) {
             apply(destPhotoCache.get(key));
             destPhotoUsed.add(destPhotoCache.get(key));

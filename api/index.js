@@ -87,6 +87,7 @@ function emptyDb() {
         community_replies: [],
         connections: [],
         direct_messages: [],
+        local_feeds: [],
         host_applications: [],
         vehicle_bookings: [],
         meetups: [],
@@ -505,6 +506,8 @@ async function roaminiChat(message, history) {
     if (lower.includes('cancel')) {
         return 'Most Roamitra bookings can be cancelled up to 48 hours before for a full refund. Check the listing for vehicle and meetup terms.';
     }
+    const cityAnswer = roaminiKnowledge.cityLocationsAnswer(q);
+    if (cityAnswer) return cityAnswer;
     const knowledge = roaminiKnowledge.retrieve(q, history);
     const modelReply = await roaminiModelReply(q, history, knowledge.context);
     if (modelReply) return modelReply;
@@ -690,6 +693,7 @@ async function handle(req, res) {
     }
 
     const db = loadDb();
+    if (!Array.isArray(db.local_feeds)) db.local_feeds = [];
     const method = req.method || 'GET';
     const p = routePath(req);
     let input = {};
@@ -1126,6 +1130,77 @@ async function handle(req, res) {
             if (!message) return fail(res, 'Type a question for Roamini.');
             const reply = await roaminiChat(message, input.history || []);
             return send(res, 200, { ok: true, reply });
+        }
+
+        if (method === 'GET' && p === '/local/feeds') {
+            const user = await currentUser(req, db);
+            if (mysqlStore.isConfigured()) {
+                const feeds = await mysqlStore.listLocalFeeds(user ? user.id : 0);
+                return send(res, 200, { ok: true, feeds: feeds || [] });
+            }
+            const feeds = db.local_feeds.slice()
+                .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+                .slice(0, 40)
+                .map((feed) => {
+                    const author = db.users.find((candidate) => candidate.id === feed.user_id);
+                    return Object.assign({}, feed, {
+                        full_name: author ? author.full_name : 'Traveler',
+                        mine: Boolean(user && Number(feed.user_id) === Number(user.id)),
+                    });
+                });
+            return send(res, 200, { ok: true, feeds });
+        }
+
+        if (method === 'POST' && p === '/local/feeds') {
+            const user = await needUser();
+            const category = String(input.category || '').trim();
+            const title = String(input.title || '').trim();
+            const body = String(input.body || '').trim();
+            const place = String(input.place || '').trim().slice(0, 160);
+            if (!['safety', 'jobs', 'food', 'gems'].includes(category)) return fail(res, 'Choose a category.');
+            if (!title || title.length > 180) return fail(res, 'Add a short title, up to 180 characters.');
+            if (!body || body.length > 800) return fail(res, 'Write the tip, up to 800 characters.');
+            if (mysqlStore.isConfigured()) {
+                const feed = await mysqlStore.createLocalFeed(user.id, { category, title, body, place });
+                await mysqlStore.createNotification(
+                    user.id,
+                    'community',
+                    'Local tip posted',
+                    'You shared: ' + title,
+                    'explore.html#feed-user-' + feed.id
+                );
+                return send(res, 201, { ok: true, feed });
+            }
+            const feed = addRow(db, 'local_feeds', {
+                user_id: user.id,
+                category,
+                title,
+                body,
+                place,
+                created_at: nowIso(),
+            });
+            notify(db, user.id, 'community', 'Local tip posted', 'You shared: ' + title, 'explore.html#feed-user-' + feed.id);
+            saveDb(db);
+            return send(res, 201, {
+                ok: true,
+                feed: Object.assign({}, feed, { full_name: user.full_name, mine: true }),
+            });
+        }
+
+        const localFeedDelete = p.match(/^\/local\/feeds\/(\d+)\/delete$/);
+        if (method === 'POST' && localFeedDelete) {
+            const user = await needUser();
+            const id = Number(localFeedDelete[1]);
+            if (mysqlStore.isConfigured()) {
+                const deleted = await mysqlStore.deleteLocalFeed(id, user.id);
+                if (!deleted) return fail(res, 'Tip not found.', 404);
+            } else {
+                const index = db.local_feeds.findIndex((feed) => Number(feed.id) === id && Number(feed.user_id) === Number(user.id));
+                if (index < 0) return fail(res, 'Tip not found.', 404);
+                db.local_feeds.splice(index, 1);
+                saveDb(db);
+            }
+            return send(res, 200, { ok: true, deleted: true });
         }
 
         if (method === 'POST' && p === '/translate') {

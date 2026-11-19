@@ -29374,6 +29374,7 @@ function renderDestination(place) {
     if (desc) desc.textContent = dest.desc;
     renderMumbaiDetails(dest);
     const base = typeof RoamitraApi !== 'undefined' ? RoamitraApi.basePath() : '';
+    bindImageFallback(safePlace, img);
     img.src = dest.image.indexOf('http') === 0 ? dest.image : base + dest.image;
     img.alt = dest.title;
     img.referrerPolicy = 'no-referrer';
@@ -29421,12 +29422,35 @@ function renderDestination(place) {
     return dest;
 }
 
+function bindImageFallback(place, img, onExhausted) {
+    if (!img || img.dataset.destFallbackBound === '1') return;
+    img.dataset.destFallbackBound = '1';
+    const alternatives = {
+        achalgarhfort: [
+            'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Achalgarh_2015.jpg/960px-Achalgarh_2015.jpg',
+            'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Achalgarh_temple.jpg/960px-Achalgarh_temple.jpg',
+            'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Achalgarh_temple_nandhi.jpg/960px-Achalgarh_temple_nandhi.jpg'
+        ]
+    }[place] || [];
+    let index = 0;
+    img.addEventListener('error', () => {
+        const next = alternatives[index++];
+        if (next) {
+            if (DESTINATIONS[place]) DESTINATIONS[place].image = next;
+            img.src = next;
+        } else if (typeof onExhausted === 'function') {
+            onExhausted();
+        }
+    });
+}
+
 window.RoamitraDestinations = {
     DESTINATIONS,
     FEATURED_DESTINATION_KEYS,
     renderDestination,
     findDestinations,
-    resolveDestinationKey
+    resolveDestinationKey,
+    bindImageFallback
 };
 
 document.addEventListener('DOMContentLoaded', () => {

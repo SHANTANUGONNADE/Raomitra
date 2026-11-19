@@ -11,6 +11,13 @@ final class RoaminiEngine
         }
 
         $local = self::localAnswer($message);
+        $cityPrompt = preg_match('/\b(recommend|destination|places?|locations?|where should i go)\b/', self::normalize($message)) === 1;
+        if ($local === null || $cityPrompt) {
+            $cityAnswer = RoaminiKnowledge::cityLocationsAnswer($message);
+            if ($cityAnswer !== null) {
+                return $cityAnswer;
+            }
+        }
         $config = require dirname(__DIR__) . '/config/config.php';
         if (!empty($config['openai_api_key']) && $local !== null && self::shouldUseLocalAnswer($message)) {
             return $local;

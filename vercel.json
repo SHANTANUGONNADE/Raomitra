@@ -5,7 +5,7 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "includeFiles": "{app/data/roamini-examples.json,public/assets/js/mumbai-data.js}"
+      "includeFiles": "{app/data/roamini-examples.json,public/assets/js/mumbai-data.js,public/assets/js/india-cities.js}"
     }
   },
   "headers": [

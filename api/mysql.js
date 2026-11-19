@@ -396,6 +396,54 @@ async function createPost(userId, title, body) {
     return result.insertId;
 }
 
+async function listLocalFeeds(userId = 0) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [rows] = await p.query(`
+        SELECT f.id, f.user_id, f.category, f.title, f.body, f.place,
+               DATE_FORMAT(f.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+               u.full_name
+        FROM local_feeds f
+        JOIN users u ON u.id = f.user_id
+        ORDER BY f.created_at DESC
+        LIMIT 40
+    `);
+    return rows.map((row) => Object.assign(row, {
+        id: Number(row.id),
+        mine: Number(row.user_id) === Number(userId),
+    }));
+}
+
+async function createLocalFeed(userId, fields) {
+    const p = await getPool();
+    if (!p) return null;
+    await ensureOpsTables(p);
+    const [result] = await p.query(
+        'INSERT INTO local_feeds (user_id, category, title, body, place) VALUES (?, ?, ?, ?, ?)',
+        [userId, fields.category, fields.title, fields.body, fields.place || null]
+    );
+    const [rows] = await p.query(`
+        SELECT f.id, f.category, f.title, f.body, f.place,
+               DATE_FORMAT(f.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+               u.full_name
+        FROM local_feeds f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.id = ?
+        LIMIT 1
+    `, [result.insertId]);
+    if (!rows[0]) throw new Error('The local tip was saved but could not be loaded.');
+    return Object.assign(rows[0], { id: Number(rows[0].id), mine: true });
+}
+
+async function deleteLocalFeed(id, userId) {
+    const p = await getPool();
+    if (!p) return false;
+    await ensureOpsTables(p);
+    const [result] = await p.query('DELETE FROM local_feeds WHERE id = ? AND user_id = ?', [id, userId]);
+    return Number(result.affectedRows) > 0;
+}
+
 async function updateUserRole(userId, role) {
     const p = await getPool();
     if (!p) return false;
@@ -499,6 +547,19 @@ async function ensureOpsTables(p) {
             capacity INT UNSIGNED NOT NULL DEFAULT 20,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY idx_meetups_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS local_feeds (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            category VARCHAR(20) NOT NULL,
+            title VARCHAR(180) NOT NULL,
+            body VARCHAR(800) NOT NULL,
+            place VARCHAR(160) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_local_feeds_created (created_at),
+            KEY idx_local_feeds_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 }
@@ -717,6 +778,9 @@ module.exports = {
     markNotificationRead,
     markNotificationsRead,
     createPost,
+    listLocalFeeds,
+    createLocalFeed,
+    deleteLocalFeed,
     addReply,
     updateUserRole,
     listUsers,

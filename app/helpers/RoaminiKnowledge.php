@@ -5,6 +5,84 @@ final class RoaminiKnowledge
 {
     private static $data = null;
 
+    public static function cityLocationsAnswer(string $message): ?string
+    {
+        $data = self::loadData();
+        $query = self::normalizePlaceName($message);
+        $cities = [];
+        foreach ($data['cities'] as $place) {
+            $city = trim((string) ($place['planner'] ?? ''));
+            if ($city !== '') {
+                $cities[self::normalizePlaceName($city)] = $city;
+            }
+        }
+        uasort($cities, static fn (string $left, string $right): int => strlen($right) <=> strlen($left));
+
+        $city = null;
+        foreach ($cities as $normalized => $name) {
+            if (preg_match('/(?:^| )' . preg_quote($normalized, '/') . '(?: |$)/', $query) === 1) {
+                $city = $name;
+                break;
+            }
+        }
+        if ($city === null && preg_match('/(?:^| )bombay(?: |$)/', $query) === 1) {
+            $city = $cities['mumbai'] ?? null;
+        }
+        if ($city === null) {
+            return null;
+        }
+
+        $cityName = self::normalizePlaceName($city);
+        $filler = [
+            'a', 'about', 'any', 'are', 'can', 'city', 'do', 'find', 'for', 'give', 'help', 'in',
+            'location', 'locations', 'me', 'nearby', 'of', 'place', 'places', 'show', 'some',
+            'tell', 'the', 'things', 'to', 'tourist', 'travel', 'visit', 'what', 'where', 'which',
+            'with', 'you', 'is', 'best', 'attraction', 'attractions', 'spot', 'spots', 'explore',
+        ];
+        $remaining = array_filter(
+            explode(' ', $query),
+            static fn (string $word): bool => $word !== ''
+                && !in_array($word, explode(' ', $cityName), true)
+                && !in_array($word, $filler, true)
+        );
+        $locationIntent = preg_match('/\b(location|locations|place|places|attraction|attractions|spot|spots|visit|tourist|explore|nearby|travel|things to do)\b/', $query) === 1;
+        if ($remaining !== [] && !$locationIntent) {
+            return null;
+        }
+
+        $places = $cityName === 'mumbai'
+            ? $data['places']
+            : array_values(array_filter(
+                $data['cities'],
+                static fn (array $place): bool => self::normalizePlaceName((string) ($place['planner'] ?? '')) === $cityName
+            ));
+        $score = static function (array $place): int {
+            $title = self::normalizePlaceName((string) ($place['title'] ?? ''));
+            if (preg_match('/\b(gateway|marine drive|beach|fort|temple|museum|market|garden|park|palace|monument|caves|promenade|lake|waterfall)\b/', $title) === 1) {
+                return 3;
+            }
+            if (preg_match('/\b(airport|railway station|bus stand|office|school|college|hospital)\b/', $title) === 1) {
+                return -1;
+            }
+            return 0;
+        };
+        if ($cityName !== 'mumbai') {
+            usort($places, static fn (array $left, array $right): int => $score($right) <=> $score($left)
+                ?: strcasecmp((string) ($left['title'] ?? ''), (string) ($right['title'] ?? '')));
+        }
+        $selected = array_slice($places, 0, 8);
+        if ($selected === []) {
+            return null;
+        }
+
+        $lines = array_map(static fn (array $place): string => '- ' . (string) ($place['title'] ?? '')
+            . (!empty($place['area']) ? ' (' . (string) $place['area'] . ')' : ''), $selected);
+        return 'Popular places in ' . $city . ' from Roamitra’s mapped guide (' . count($places)
+            . (count($places) === 1 ? ' place listed' : ' places listed')
+            . '; details may need verification):' . "\n" . implode("\n", $lines)
+            . "\nTell me what kind of places you want—food, heritage, beaches, or family-friendly spots.";
+    }
+
     public static function retrieve(string $message, array $history = []): array
     {
         $searchText = $message;
@@ -100,12 +178,39 @@ final class RoaminiKnowledge
             throw new RuntimeException('Roamini approved examples have an unexpected format.');
         }
 
+        $cityPath = $root . '/public/assets/js/india-cities.js';
+        if (!is_file($cityPath)) {
+            throw new RuntimeException('Roamini city reference data file is missing.');
+        }
+        $citySource = file_get_contents($cityPath);
+        if (!is_string($citySource)
+            || preg_match('/^window\.RoamitraIndiaCities\s*=\s*(\{.*\});\r?$/m', $citySource, $cityMatch) !== 1) {
+            throw new RuntimeException('Roamini city reference data file is invalid.');
+        }
+        $cities = json_decode($cityMatch[1], true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($cities)) {
+            throw new RuntimeException('Roamini city reference data has an unexpected format.');
+        }
+
         self::$data = [
             'places' => $mumbai['places'],
             'tips' => $mumbai['tips'],
             'examples' => $examples['examples'],
+            'cities' => $cities,
         ];
         return self::$data;
+    }
+
+    private static function normalizePlaceName(string $text): string
+    {
+        $text = strtolower($text);
+        if (function_exists('iconv')) {
+            $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+            if (is_string($ascii)) {
+                $text = $ascii;
+            }
+        }
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $text) ?? $text);
     }
 
     private static function rank(array $rows, array $queryTokens, array $weights): array
