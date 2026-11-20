@@ -36,6 +36,18 @@ assert_true(($it['days'][0]['window']['kind'] ?? '') === 'arrival_late', 'late-n
 $last = $it['days'][count($it['days']) - 1];
 assert_true(($last['window']['kind'] ?? '') === 'depart_early', 'morning departure shortens last day');
 assert_true((int) $it['party']['group_size'] === 6, 'group size is 6');
+$clockTrip = array_merge($trip, ['arrival_time' => '17:45', 'departure_time' => '15:30']);
+$clockItinerary = ItineraryEngine::generate($clockTrip);
+$clockLast = $clockItinerary['days'][count($clockItinerary['days']) - 1];
+assert_true(($clockItinerary['days'][0]['window']['start'] ?? '') === '19:15', 'arrival time controls first-day activity window');
+assert_true(($clockLast['window']['end'] ?? '') === '12:30', 'departure time controls last-day activity window');
+assert_true(str_contains($clockItinerary['summary'] ?? '', 'Arrival: 17:45 IST. Departure: 15:30 IST.'), 'summary reports exact IST times');
+$edgeTrip = array_merge($trip, ['arrival_time' => '23:30', 'departure_time' => '01:00']);
+$edgeItinerary = ItineraryEngine::generate($edgeTrip);
+$edgeArrival = $edgeItinerary['days'][0];
+$edgeDeparture = $edgeItinerary['days'][count($edgeItinerary['days']) - 1];
+assert_true(($edgeArrival['activities'][0]['end_time'] ?? '') === '23:59', 'late arrival activity stays within the arrival day');
+assert_true(($edgeDeparture['window']['start'] ?? '') === '00:00', 'overnight departure window does not wrap to the previous day');
 $names = [];
 $dup = false;
 foreach ($it['days'] as $day) {

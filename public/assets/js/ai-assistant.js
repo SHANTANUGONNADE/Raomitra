@@ -559,7 +559,6 @@ const RoamitraAI = {
             ['custom', 'Your Choice', '✏️']
         ];
         const withWho = ['solo', 'couple', 'family', 'friends', 'group'];
-        const times = ['morning', 'afternoon', 'evening', 'late_night'];
         plan.innerHTML = `
             <div class="roamini-plan-head">
                 <button type="button" class="roamini-icon-btn" id="roaminiPlanBack" aria-label="Back to trips"><i class="bi bi-list"></i></button>
@@ -592,12 +591,12 @@ const RoamitraAI = {
                     <input id="romiGroup" type="number" min="3" max="12" placeholder="4">
                 </div>
                 <div class="roamini-field">
-                    <label>Arrival time</label>
-                    <div class="roamini-choice-row">${times.map((v, i) => `<label><input type="radio" name="romiArrive" value="${v}" ${i === 0 ? 'checked' : ''}> ${v.replace('_', ' ')}</label>`).join('')}</div>
+                    <label for="romiArrive">Arrival time (IST, 24-hour)</label>
+                    <input id="romiArrive" name="romiArrive" type="time" lang="en-GB" value="10:00" step="60" required>
                 </div>
                 <div class="roamini-field">
-                    <label>Departure time</label>
-                    <div class="roamini-choice-row">${times.map((v, i) => `<label><input type="radio" name="romiDepart" value="${v}" ${i === 2 ? 'checked' : ''}> ${v.replace('_', ' ')}</label>`).join('')}</div>
+                    <label for="romiDepart">Departure time (IST, 24-hour)</label>
+                    <input id="romiDepart" name="romiDepart" type="time" lang="en-GB" value="14:00" step="60" required>
                 </div>
                 <div class="roamini-field">
                     <label>Travel Style <span style="font-weight:500;color:#6b7c90;">(Multi-select)</span></label>
@@ -649,10 +648,11 @@ const RoamitraAI = {
             if (budget && trip.budget != null) budget.value = trip.budget;
             const withRadio = document.querySelector(`input[name="romiWith"][value="${trip.traveling_with}"]`);
             if (withRadio) withRadio.checked = true;
-            const arrive = document.querySelector(`input[name="romiArrive"][value="${trip.arrival_time}"]`);
-            const depart = document.querySelector(`input[name="romiDepart"][value="${trip.departure_time}"]`);
-            if (arrive) arrive.checked = true;
-            if (depart) depart.checked = true;
+            const legacyTimes = { morning: '09:00', afternoon: '14:00', evening: '18:00', late_night: '22:00' };
+            const arrive = document.querySelector('input[name="romiArrive"]');
+            const depart = document.querySelector('input[name="romiDepart"]');
+            if (arrive) arrive.value = legacyTimes[trip.arrival_time] || trip.arrival_time || '10:00';
+            if (depart) depart.value = legacyTimes[trip.departure_time] || trip.departure_time || '14:00';
             document.getElementById('roaminiPlanForm').dataset.edit = String(id);
             this.refreshPlanButton();
         } catch (e) { /* new plan if the trip cannot be loaded */ }
@@ -684,8 +684,8 @@ const RoamitraAI = {
             budget: document.getElementById('romiBudget').value,
             traveling_with: styles.includes('solo') ? 'solo' : withWho,
             group_size: document.getElementById('romiGroup')?.value || '',
-            arrival_time: document.querySelector('input[name="romiArrive"]:checked')?.value || 'morning',
-            departure_time: document.querySelector('input[name="romiDepart"]:checked')?.value || 'evening',
+            arrival_time: document.querySelector('input[name="romiArrive"]')?.value || '10:00',
+            departure_time: document.querySelector('input[name="romiDepart"]')?.value || '14:00',
             pace: styles.includes('slow') ? 'relaxed' : 'moderate',
             preferences: styles.map((s) => prefMap[s]).filter(Boolean)
         };

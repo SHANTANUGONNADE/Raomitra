@@ -223,8 +223,8 @@ CREATE TABLE `trips` (
   `budget_currency` varchar(8) NOT NULL DEFAULT 'USD',
   `traveling_with` enum('solo','couple','family','friends','group') NOT NULL DEFAULT 'solo',
   `group_size` tinyint(3) UNSIGNED DEFAULT NULL,
-  `arrival_time` enum('morning','afternoon','evening','late_night') DEFAULT NULL,
-  `departure_time` enum('morning','afternoon','evening','late_night') DEFAULT NULL,
+  `arrival_time` varchar(5) DEFAULT NULL,
+  `departure_time` varchar(5) DEFAULT NULL,
   `preferences` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`preferences`)),
   `pace` enum('relaxed','moderate','packed') NOT NULL DEFAULT 'moderate',
   `status` enum('draft','generated','saved') NOT NULL DEFAULT 'draft',
@@ -238,7 +238,7 @@ CREATE TABLE `trips` (
 --
 
 INSERT INTO `trips` (`id`, `user_id`, `destination`, `start_date`, `end_date`, `budget`, `budget_currency`, `traveling_with`, `group_size`, `arrival_time`, `departure_time`, `preferences`, `pace`, `status`, `is_saved`, `created_at`, `updated_at`) VALUES
-(3, 5, 'bali', '2026-08-28', '2026-09-02', 10.00, 'USD', 'couple', 2, 'morning', 'afternoon', '[\"food\"]', 'moderate', 'generated', 0, '2026-08-27 13:43:52', '2026-08-27 13:43:52');
+(3, 5, 'bali', '2026-08-28', '2026-09-02', 10.00, 'USD', 'couple', 2, '09:00', '14:00', '[\"food\"]', 'moderate', 'generated', 0, '2026-08-27 13:43:52', '2026-08-27 13:43:52');
 
 -- --------------------------------------------------------
 

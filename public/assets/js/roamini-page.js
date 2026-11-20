@@ -321,10 +321,11 @@
         if (withRadio) withRadio.checked = true;
         toggleGroup();
         if (source.group_size) document.getElementById('raiGroup').value = String(source.group_size);
-        const arrival = document.querySelector(`input[name="arrival_time"][value="${source.arrival_time || 'morning'}"]`);
-        const departure = document.querySelector(`input[name="departure_time"][value="${source.departure_time || 'afternoon'}"]`);
-        if (arrival) arrival.checked = true;
-        if (departure) departure.checked = true;
+        const legacyTimes = { morning: '09:00', afternoon: '14:00', evening: '18:00', late_night: '22:00' };
+        const arrival = document.querySelector('input[name="arrival_time"]');
+        const departure = document.querySelector('input[name="departure_time"]');
+        if (arrival) arrival.value = legacyTimes[source.arrival_time] || source.arrival_time || '10:00';
+        if (departure) departure.value = legacyTimes[source.departure_time] || source.departure_time || '14:00';
         const pace = document.querySelector(`input[name="pace"][value="${source.pace || 'moderate'}"]`);
         if (pace) pace.checked = true;
         const prefs = prefsFromTrip(source.preferences);
@@ -381,8 +382,8 @@
             budget: budgetInput.value === '' ? null : Number(budgetInput.value),
             traveling_with: withWhom,
             group_size: withWhom === 'group' ? document.getElementById('raiGroup').value : null,
-            arrival_time: document.querySelector('input[name="arrival_time"]:checked')?.value || 'morning',
-            departure_time: document.querySelector('input[name="departure_time"]:checked')?.value || 'afternoon',
+            arrival_time: document.querySelector('input[name="arrival_time"]')?.value || '10:00',
+            departure_time: document.querySelector('input[name="departure_time"]')?.value || '14:00',
             preferences: collectPrefs(),
             pace
         };

@@ -102,6 +102,10 @@
     color: var(--color-text);
 }
 
+.rai-plan input.rai-time-input {
+    margin-bottom: 8px;
+}
+
 .rai-split {
     display: grid;
     grid-template-columns: 1fr 1fr;

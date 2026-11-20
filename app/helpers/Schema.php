@@ -51,8 +51,8 @@ final class Schema
                 budget_currency VARCHAR(8) NOT NULL DEFAULT 'USD',
                 traveling_with ENUM('solo','couple','family','friends','group') NOT NULL DEFAULT 'solo',
                 group_size TINYINT UNSIGNED NULL,
-                arrival_time ENUM('morning','afternoon','evening','late_night') NULL,
-                departure_time ENUM('morning','afternoon','evening','late_night') NULL,
+                arrival_time VARCHAR(5) NULL,
+                departure_time VARCHAR(5) NULL,
                 preferences JSON NULL,
                 pace ENUM('relaxed','moderate','packed') NOT NULL DEFAULT 'moderate',
                 status ENUM('draft','generated','saved') NOT NULL DEFAULT 'draft',
@@ -279,8 +279,9 @@ final class Schema
 
         self::seedAdmin($pdo);
 
-        self::ensureColumn($pdo, 'trips', 'arrival_time', "ALTER TABLE trips ADD COLUMN arrival_time ENUM('morning','afternoon','evening','late_night') NULL AFTER group_size");
-        self::ensureColumn($pdo, 'trips', 'departure_time', "ALTER TABLE trips ADD COLUMN departure_time ENUM('morning','afternoon','evening','late_night') NULL AFTER arrival_time");
+        self::ensureColumn($pdo, 'trips', 'arrival_time', 'ALTER TABLE trips ADD COLUMN arrival_time VARCHAR(5) NULL AFTER group_size');
+        self::ensureColumn($pdo, 'trips', 'departure_time', 'ALTER TABLE trips ADD COLUMN departure_time VARCHAR(5) NULL AFTER arrival_time');
+        self::migrateTripTimeColumns($pdo);
         self::ensureColumn($pdo, 'trips', 'group_size', 'ALTER TABLE trips ADD COLUMN group_size TINYINT UNSIGNED NULL AFTER traveling_with');
         self::ensureColumn($pdo, 'trips', 'is_saved', 'ALTER TABLE trips ADD COLUMN is_saved TINYINT(1) NOT NULL DEFAULT 0 AFTER status');
         self::ensureColumn($pdo, 'users', 'cover_url', 'ALTER TABLE users ADD COLUMN cover_url MEDIUMTEXT NULL AFTER avatar_url');
@@ -294,6 +295,31 @@ final class Schema
             // already wide enough
         }
         self::widenRoleColumn($pdo);
+    }
+
+    private static function migrateTripTimeColumns(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT DATA_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        foreach (['arrival_time', 'departure_time'] as $column) {
+            $stmt->execute(['trips', $column]);
+            if (strtolower((string) $stmt->fetchColumn()) !== 'enum') {
+                continue;
+            }
+            $pdo->exec("ALTER TABLE trips MODIFY `$column` VARCHAR(16) NULL");
+            $pdo->exec(
+                "UPDATE trips SET `$column` = CASE `$column`
+                    WHEN 'morning' THEN '09:00'
+                    WHEN 'afternoon' THEN '14:00'
+                    WHEN 'evening' THEN '18:00'
+                    WHEN 'late_night' THEN '22:00'
+                    ELSE `$column`
+                 END"
+            );
+            $pdo->exec("ALTER TABLE trips MODIFY `$column` VARCHAR(5) NULL");
+        }
     }
 
     private static function widenRoleColumn(PDO $pdo): void

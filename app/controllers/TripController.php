@@ -4,7 +4,6 @@ declare(strict_types=1);
 final class TripController
 {
     private const WITH = ['solo', 'couple', 'family', 'friends', 'group'];
-    private const TIMES = ['morning', 'afternoon', 'evening', 'late_night'];
     private const PACE = ['relaxed', 'moderate', 'packed'];
 
     public static function create(array $input): void
@@ -212,7 +211,8 @@ final class TripController
         if (!in_array($with, self::WITH, true)) {
             Response::error('Choose who you are traveling with.');
         }
-        if (!in_array($arrival, self::TIMES, true) || !in_array($departure, self::TIMES, true)) {
+        $validTime = static fn(string $time): bool => preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time) === 1;
+        if (!$validTime($arrival) || !$validTime($departure)) {
             Response::error('Select arrival and departure times.');
         }
         if (!in_array($pace, self::PACE, true)) {

@@ -625,9 +625,9 @@ function parseTripInput(input) {
     }
     if (end < start) throw new Error('Departure date must be on or after arrival date.');
     const WITH = ['solo', 'couple', 'family', 'friends', 'group'];
-    const TIMES = ['morning', 'afternoon', 'evening', 'late_night'];
     if (!WITH.includes(withWho)) throw new Error('Choose who you are traveling with.');
-    if (!TIMES.includes(arrival) || !TIMES.includes(departure)) {
+    const validTime = (time) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
+    if (!validTime(arrival) || !validTime(departure)) {
         throw new Error('Select arrival and departure times.');
     }
     if (!['relaxed', 'moderate', 'packed'].includes(pace)) pace = 'moderate';

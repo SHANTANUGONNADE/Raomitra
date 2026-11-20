@@ -35,11 +35,15 @@ final class ItineraryEngine
 
             $activities = [];
             if ($window['kind'] === 'arrival_late') {
+                $activityEnd = self::addMinutes($window['start'], 90);
+                $activityEnd = $activityEnd > $window['start']
+                    ? self::clampTime($activityEnd, $window['end'])
+                    : $window['end'];
                 $activities[] = self::activity(
                     'Hotel check-in & rest',
                     'accommodation',
                     $window['start'],
-                    self::addMinutes($window['start'], 90),
+                    $activityEnd,
                     0,
                     'Late-night arrival — keep this evening light and rest for tomorrow.'
                 );
@@ -50,7 +54,7 @@ final class ItineraryEngine
                     $window['start'],
                     $window['end'],
                     15,
-                    'Morning departure — only a short buffer before leaving ' . $trip['destination'] . '.'
+                    'Departure transfer and airport check-in buffer before leaving ' . $trip['destination'] . '.'
                 );
             } else {
                 foreach ($slots as $slot) {
@@ -601,24 +605,37 @@ final class ItineraryEngine
         $fullStart = '09:00';
         $fullEnd = '20:00';
         if ($index === 0) {
-            return match ($arrival) {
-                'morning' => ['start' => '10:00', 'end' => '20:00', 'kind' => 'arrival_morning'],
-                'afternoon' => ['start' => '14:30', 'end' => '20:30', 'kind' => 'arrival_afternoon'],
-                'evening' => ['start' => '18:30', 'end' => '21:30', 'kind' => 'arrival_evening'],
-                'late_night' => ['start' => '21:30', 'end' => '23:00', 'kind' => 'arrival_late'],
-                default => ['start' => $fullStart, 'end' => $fullEnd, 'kind' => 'full'],
-            };
+            $arrival = self::clockTime($arrival);
+            if ($arrival === null) {
+                return ['start' => $fullStart, 'end' => $fullEnd, 'kind' => 'full'];
+            }
+            if ($arrival >= '20:00') {
+                $end = self::addMinutes($arrival, 90);
+                return ['start' => $arrival, 'end' => $end > $arrival ? $end : '23:59', 'kind' => 'arrival_late'];
+            }
+            $kind = $arrival >= '17:00' ? 'arrival_evening' : ($arrival >= '12:00' ? 'arrival_afternoon' : 'arrival_morning');
+            return ['start' => self::addMinutes($arrival, 90), 'end' => $arrival >= '17:00' ? '23:00' : $fullEnd, 'kind' => $kind];
         }
         if ($index === $dayCount - 1 && $dayCount > 1) {
-            return match ($departure) {
-                'morning' => ['start' => '07:00', 'end' => '09:00', 'kind' => 'depart_early'],
-                'afternoon' => ['start' => '08:00', 'end' => '13:00', 'kind' => 'depart_afternoon'],
-                'evening' => ['start' => '08:30', 'end' => '17:00', 'kind' => 'depart_evening'],
-                'late_night' => ['start' => '09:00', 'end' => '20:00', 'kind' => 'depart_late'],
-                default => ['start' => $fullStart, 'end' => $fullEnd, 'kind' => 'full'],
-            };
+            $departure = self::clockTime($departure);
+            if ($departure === null) {
+                return ['start' => $fullStart, 'end' => $fullEnd, 'kind' => 'full'];
+            }
+            if ($departure <= '12:00') {
+                $start = self::addMinutes($departure, -180);
+                return ['start' => $start < $departure ? $start : '00:00', 'end' => $departure, 'kind' => 'depart_early'];
+            }
+            $kind = $departure >= '20:00' ? 'depart_late' : ($departure >= '17:00' ? 'depart_evening' : 'depart_afternoon');
+            return ['start' => $fullStart, 'end' => self::addMinutes($departure, -180), 'kind' => $kind];
         }
         return ['start' => $fullStart, 'end' => $fullEnd, 'kind' => 'full'];
+    }
+
+    private static function clockTime(?string $value): ?string
+    {
+        $legacy = ['morning' => '09:00', 'afternoon' => '14:00', 'evening' => '18:00', 'late_night' => '22:00'];
+        $time = $legacy[$value ?? ''] ?? $value;
+        return is_string($time) && preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time) === 1 ? $time : null;
     }
 
     private static function timeSlots(string $start, string $end, int $count): array
@@ -969,13 +986,8 @@ final class ItineraryEngine
 
     private static function labelTime(?string $value): string
     {
-        return match ($value) {
-            'morning' => 'Morning',
-            'afternoon' => 'Afternoon',
-            'evening' => 'Evening',
-            'late_night' => 'Late night',
-            default => 'Flexible',
-        };
+        $time = self::clockTime($value);
+        return $time === null ? 'Flexible' : $time . ' IST';
     }
 
     private static function addMinutes(string $time, int $minutes): string

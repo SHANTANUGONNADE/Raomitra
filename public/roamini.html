@@ -56,26 +56,16 @@
                         <label for="raiStart">Arrival date</label>
                         <input id="raiStart" name="start_date" type="date" required>
                         <div id="raiArrivalTimeSection" hidden>
-                            <p class="rai-label">Arrival time</p>
-                            <div class="rai-choices">
-                                <label><input type="radio" name="arrival_time" value="morning" checked> Morning</label>
-                                <label><input type="radio" name="arrival_time" value="afternoon"> Afternoon</label>
-                                <label><input type="radio" name="arrival_time" value="evening"> Evening</label>
-                                <label><input type="radio" name="arrival_time" value="late_night"> Late night</label>
-                            </div>
+                            <label for="raiArrivalTime" class="rai-label">Arrival time (IST, 24-hour)</label>
+                            <input id="raiArrivalTime" class="rai-time-input" name="arrival_time" type="time" lang="en-GB" value="10:00" step="60" required>
                         </div>
                     </div>
                     <div>
                         <label for="raiEnd">Departure date</label>
                         <input id="raiEnd" name="end_date" type="date" required>
                         <div id="raiDepartureTimeSection" hidden>
-                            <p class="rai-label">Departure time</p>
-                            <div class="rai-choices">
-                                <label><input type="radio" name="departure_time" value="morning"> Morning</label>
-                                <label><input type="radio" name="departure_time" value="afternoon" checked> Afternoon</label>
-                                <label><input type="radio" name="departure_time" value="evening"> Evening</label>
-                                <label><input type="radio" name="departure_time" value="late_night"> Late night</label>
-                            </div>
+                            <label for="raiDepartureTime" class="rai-label">Departure time (IST, 24-hour)</label>
+                            <input id="raiDepartureTime" class="rai-time-input" name="departure_time" type="time" lang="en-GB" value="14:00" step="60" required>
                         </div>
                     </div>
                 </div>

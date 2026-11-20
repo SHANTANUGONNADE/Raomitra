@@ -173,7 +173,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function label(v) {
-        return ({ morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', late_night: 'Late night' })[v] || 'Flexible';
+        const legacyTimes = { morning: '09:00', afternoon: '14:00', evening: '18:00', late_night: '22:00' };
+        const time = legacyTimes[v] || v;
+        return /^\d{2}:\d{2}$/.test(time) ? `${time} IST` : 'Flexible';
     }
     function escapeHtml(text) {
         const d = document.createElement('div');
