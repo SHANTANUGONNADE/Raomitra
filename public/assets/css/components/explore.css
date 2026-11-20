@@ -552,6 +552,17 @@
     background: var(--color-white);
 }
 
+.local-feed-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.location-chip-clear {
+    cursor: pointer;
+}
+
 .location-chip i {
     color: var(--color-primary-light);
 }

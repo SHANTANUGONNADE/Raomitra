@@ -142,7 +142,10 @@
                     </div>
                     <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" id="localFeedAdd">Add a tip</button>
                 </div>
-                <button type="button" class="location-chip js-edit-location" aria-label="Edit location"><i class="bi bi-geo-alt-fill"></i> <span class="js-location-label">Set your location</span> <i class="bi bi-pencil"></i></button>
+                <div class="local-feed-location-actions">
+                    <button type="button" class="location-chip js-edit-location" aria-label="Edit location"><i class="bi bi-geo-alt-fill"></i> <span class="js-location-label">Set your location</span> <i class="bi bi-pencil"></i></button>
+                    <button type="button" class="location-chip location-chip-clear" id="localFeedClearLocation" hidden><i class="bi bi-x-circle"></i> Clear location</button>
+                </div>
             </div>
             <form class="feed-compose" id="localFeedForm" hidden>
                 <h3>Share a local tip</h3>
@@ -175,7 +178,7 @@
             <p class="feed-filter-empty" id="feedFilterEmpty" hidden>No local tips in this category yet.</p>
             <div id="localFeedList"></div>
 
-            <div class="feed-post" data-feed-id="majestic-safety" data-feed-category="safety" data-likes="24" data-comments="8" data-feed-title="Avoid walking alone near Majestic bus stand after 10 PM.">
+            <div class="feed-post" data-feed-id="majestic-safety" data-feed-city="Bengaluru" data-feed-category="safety" data-likes="24" data-comments="8" data-feed-title="Avoid walking alone near Majestic bus stand after 10 PM.">
                 <div class="feed-post-header">
                     <div class="feed-post-avatar">AP</div>
                     <div class="feed-post-meta">
@@ -207,7 +210,7 @@
                 </div>
             </div>
 
-            <div class="feed-post" data-feed-id="ctr-dosa" data-feed-category="food" data-likes="56" data-comments="12" data-feed-title="Best masala dosa in Bangalore is at CTR, Malleshwaram.">
+            <div class="feed-post" data-feed-id="ctr-dosa" data-feed-city="Bengaluru" data-feed-category="food" data-likes="56" data-comments="12" data-feed-title="Best masala dosa in Bangalore is at CTR, Malleshwaram.">
                 <div class="feed-post-header">
                     <div class="feed-post-avatar" style="background:var(--color-card-orange);color:var(--color-card-orange-icon);">RK</div>
                     <div class="feed-post-meta">
@@ -239,7 +242,7 @@
                 </div>
             </div>
 
-            <div class="feed-post" data-feed-id="nandi-hills" data-feed-category="gems" data-likes="89" data-comments="23" data-feed-title="Nandi Hills sunrise trek is 60km from the city.">
+            <div class="feed-post" data-feed-id="nandi-hills" data-feed-city="Bengaluru" data-feed-category="gems" data-likes="89" data-comments="23" data-feed-title="Nandi Hills sunrise trek is 60km from the city.">
                 <div class="feed-post-header">
                     <div class="feed-post-avatar" style="background:var(--color-card-purple);color:var(--color-card-purple-icon);">PS</div>
                     <div class="feed-post-meta">

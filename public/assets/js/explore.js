@@ -326,13 +326,52 @@ function applyFeedFilter() {
     const empty = document.getElementById('feedFilterEmpty');
     const active = document.querySelector('.feed-filters .filter-pill.active');
     const filter = active?.dataset.filter || 'all';
+    const location = currentLocalFeedLocation();
     let shown = 0;
     document.querySelectorAll('#panel-local .feed-post[data-feed-category]').forEach((post) => {
-        const match = filter === 'all' || post.dataset.feedCategory === filter;
+        const categoryMatch = filter === 'all' || post.dataset.feedCategory === filter;
+        const locationMatch = localFeedLocationMatches(post, location);
+        const match = categoryMatch && locationMatch;
         post.hidden = !match;
         if (match) shown += 1;
     });
-    if (empty) empty.hidden = shown !== 0;
+    if (empty) {
+        empty.hidden = shown !== 0;
+        empty.textContent = location
+            ? 'No local tips for ' + location + ' in this category yet. Be the first to share one.'
+            : 'No local tips in this category yet.';
+    }
+}
+
+function currentLocalFeedLocation() {
+    try { return localStorage.getItem('roamitra-local-place') || ''; } catch (e) { return ''; }
+}
+
+function normalizeLocalFeedLocation(value) {
+    const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (normalized === 'bangalore') return 'bengaluru';
+    if (normalized === 'bombay') return 'mumbai';
+    return normalized;
+}
+
+function localFeedLocationMatches(post, location) {
+    if (!location) return true;
+    const selected = normalizeLocalFeedLocation(location);
+    const city = normalizeLocalFeedLocation(post.dataset.feedCity);
+    const place = normalizeLocalFeedLocation(post.dataset.feedLocation);
+    const area = normalizeLocalFeedLocation(post.dataset.feedArea);
+    if (city && (selected === city || selected.includes(city))) return true;
+    return [place, area].some((value) => value && (value === selected || value.includes(selected) || selected.includes(value)));
+}
+
+function escapeFeedAttribute(value) {
+    return String(value || '').replace(/[&"'<>]/g, (character) => ({
+        '&': '&amp;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '<': '&lt;',
+        '>': '&gt;'
+    })[character]);
 }
 
 function initFeedFilters() {
@@ -357,15 +396,20 @@ function localFeedCard(feed) {
     const parts = String(who).trim().split(/\s+/).slice(0, 2);
     const initials = parts.map((part) => part.charAt(0).toUpperCase()).join('') || 'Y';
     const place = feed.place ? ' · ' + escapeHtml(feed.place) : '';
+    const id = feed.guide ? 'guide-' + String(feed.id) : 'user-' + Number(feed.id);
+    const city = feed.city ? ' data-feed-city="' + escapeFeedAttribute(feed.city) + '"' : '';
+    const area = feed.area ? ' data-feed-area="' + escapeFeedAttribute(feed.area) + '"' : '';
+    const feedPlace = feed.place ? ' data-feed-location="' + escapeFeedAttribute(feed.place) + '"' : '';
     const remove = feed.mine
         ? '<button type="button" class="feed-action" data-feed-act="delete" aria-label="Delete"><i class="bi bi-trash"></i></button>'
         : '';
-    return '<div class="feed-post" data-feed-id="user-' + Number(feed.id) + '" data-feed-db="' + Number(feed.id) + '" data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
+    const dbId = feed.mine ? ' data-feed-db="' + Number(feed.id) + '"' : '';
+    return '<div class="feed-post" data-feed-id="' + escapeHtml(id) + '"' + dbId + city + area + feedPlace + ' data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
         + '<div class="feed-post-header">'
         + '<div class="feed-post-avatar">' + escapeHtml(initials) + '</div>'
         + '<div class="feed-post-meta">'
-        + '<div class="feed-post-name">' + escapeHtml(who) + '</div>'
-        + '<div class="feed-post-time">' + escapeHtml(localFeedTime(feed.created_at)) + place + '</div>'
+        + '<div class="feed-post-name">' + escapeHtml(who) + (feed.guide ? ' <span class="feed-verified"><i class="bi bi-patch-check-fill"></i> City Guide</span>' : '') + '</div>'
+        + '<div class="feed-post-time">' + escapeHtml(feed.guide ? 'Local tip' : localFeedTime(feed.created_at)) + place + '</div>'
         + '</div>'
         + '<span class="feed-category ' + escapeHtml(category) + '">' + escapeHtml(labels[category]) + '</span>'
         + '</div>'
@@ -399,6 +443,7 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
     const list = document.getElementById('localFeedList');
     const form = document.getElementById('localFeedForm');
     const addBtn = document.getElementById('localFeedAdd');
+    const clearLocationBtn = document.getElementById('localFeedClearLocation');
     const loginForFeed = () => {
         location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('explore.html#panel-local');
     };
@@ -467,16 +512,53 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
 
     const refresh = async (openHash) => {
         if (!list) return;
+        list.replaceChildren();
+        const selectedLocation = normalizeLocalFeedLocation(currentLocalFeedLocation());
+        const mumbaiTips = !selectedLocation || selectedLocation.includes('mumbai')
+            ? (window.RoamitraMumbaiData?.places || []).filter((place) => place.local_tip)
+            : [];
+        mumbaiTips.forEach((place) => {
+            const category = /food|restaurant|cafe|street food/i.test(place.category || '') ? 'food' : 'gems';
+            mount({
+                id: place.key,
+                guide: true,
+                city: place.planner || 'Mumbai',
+                area: place.area || '',
+                place: place.area || place.planner || 'Mumbai',
+                category,
+                title: place.title,
+                body: place.local_tip,
+                full_name: 'Roamitra City Guide'
+            }, false);
+        });
+        applyFeedFilter();
         try {
             const res = await RoamitraApi.get('/local/feeds');
-            list.replaceChildren();
-            (res.feeds || []).forEach((feed) => mount(feed, false));
+            if (selectedLocation !== normalizeLocalFeedLocation(currentLocalFeedLocation())) return;
+            [...(res.feeds || [])].reverse().forEach((feed) => mount(feed, true));
+            applyFeedFilter();
             if (openHash && typeof openSavedTip === 'function') openSavedTip();
         } catch (error) {
             if (openHash && typeof openSavedTip === 'function') openSavedTip();
         }
     };
+    const updateClearLocationButton = () => {
+        if (clearLocationBtn) clearLocationBtn.hidden = !currentLocalFeedLocation().trim();
+    };
+    clearLocationBtn?.addEventListener('click', () => {
+        try { localStorage.removeItem('roamitra-local-place'); } catch (e) { /* location stays cleared for this page */ }
+        document.querySelectorAll('.js-location-label').forEach((label) => {
+            label.textContent = 'Set your location';
+        });
+        updateClearLocationButton();
+        window.dispatchEvent(new CustomEvent('roamitra-location-updated'));
+    });
+    updateClearLocationButton();
     refresh(true);
+    window.addEventListener('roamitra-location-updated', () => {
+        updateClearLocationButton();
+        refresh(false);
+    });
     setInterval(() => {
         if (!document.hidden) refresh(false);
     }, 15000);
