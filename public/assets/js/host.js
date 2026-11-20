@@ -1,14 +1,27 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(location.search);
-    if (params.get('type') === 'vehicle') {
+    const vehicleMode = params.get('type') === 'vehicle';
+    if (vehicleMode) {
         const vehicleRadio = document.querySelector('input[name="listing_type"][value="vehicle"]');
         if (vehicleRadio) vehicleRadio.checked = true;
+        document.getElementById('hostDirectory').hidden = true;
+        document.getElementById('listingTypeFieldset').hidden = true;
+        document.getElementById('listingFormTitle').textContent = 'List your vehicle';
+        document.querySelector('.lm-head h2').textContent = 'List vehicle';
+        document.getElementById('listingFormDescription').textContent =
+            'Add your vehicle details, category, location, and daily rental price. Your listing will appear after admin approval.';
+        document.getElementById('hostSubmit').textContent = 'Submit vehicle listing';
+        document.title = 'List Your Vehicle — Roamitra';
     }
 
     const vehicleWrap = document.getElementById('vehicleWrap');
+    const vehiclePriceWrap = document.getElementById('vehiclePriceWrap');
     const syncType = () => {
         const type = document.querySelector('input[name="listing_type"]:checked')?.value;
         vehicleWrap.hidden = type !== 'vehicle';
+        vehiclePriceWrap.hidden = type !== 'vehicle';
+        document.getElementById('vehicle_category').required = type === 'vehicle';
+        document.getElementById('daily_rate').required = type === 'vehicle';
     };
     document.querySelectorAll('input[name="listing_type"]').forEach(el => el.addEventListener('change', syncType));
     syncType();
@@ -47,17 +60,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadHosts();
 
     async function refreshApplication() {
-        const data = await RoamitraApi.get('/host/me');
+        const data = await RoamitraApi.get('/host/me' + (vehicleMode ? '?type=vehicle' : ''));
         const app = data.application;
         const role = data.user?.role;
-        if (role === 'host' || role === 'admin' || role === 'co_admin') {
+        if (role === 'admin' || role === 'co_admin' || (role === 'host' && !vehicleMode)) {
             existing.hidden = false;
             existing.innerHTML = `<h3 class="h5 mb-2">You are already a ${escapeHtml(role)}</h3>
-                <p class="mb-0">Staff and verified hosts do not submit this form. Sign in as a member to send a host request to admin.</p>`;
+                <p class="mb-0">This account cannot submit this listing request.</p>`;
             form.hidden = true;
         } else if (app) {
             showExisting(app);
-            form.hidden = app.status === 'pending' || app.status === 'approved';
+            form.hidden = app.status === 'pending' || (!vehicleMode && app.status === 'approved');
+        } else {
+            existing.hidden = true;
+            form.hidden = false;
         }
     }
 
@@ -90,7 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (err) {
             if (err.status === 401) {
-                window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('host.html#hostApply');
+                const next = vehicleMode ? 'host.html?type=vehicle#hostApply' : 'host.html#hostApply';
+                window.location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent(next);
                 return;
             }
             statusBox.className = 'form-alert error';
@@ -103,8 +120,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     function showExisting(app) {
         existing.hidden = false;
         const status = app.status || 'pending';
-        existing.innerHTML = `<h3 class="h5 mb-2">Host request: ${escapeHtml(status)}</h3>
+        const vehicleDetails = app.listing_type === 'vehicle'
+            ? `<p class="mb-0">${escapeHtml(app.vehicle_info || '')} · ${escapeHtml(app.vehicle_category || '')} · ₹${escapeHtml(app.daily_rate || '')}/day</p>`
+            : '';
+        existing.innerHTML = `<h3 class="h5 mb-2">${vehicleMode ? 'Vehicle listing' : 'Host request'}: ${escapeHtml(status)}</h3>
             <p class="mb-0">${escapeHtml(app.city || '')}${app.review_note ? ' — ' + escapeHtml(app.review_note) : ''}</p>
+            ${vehicleDetails}
             ${status === 'pending' ? '<p class="mb-0 mt-2 text-muted">Admin can see this request on the Admin dashboard.</p>' : ''}`;
     }
 

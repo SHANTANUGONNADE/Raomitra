@@ -85,6 +85,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p>${escapeHtml(a.city)}, ${escapeHtml(a.country)} · ${statusBadge(a.status)}</p>
                     <p>${escapeHtml(a.bio || '')}</p>
                     ${a.vehicle_info ? `<p><strong>Vehicle:</strong> ${escapeHtml(a.vehicle_info)}</p>` : ''}
+                    ${a.listing_type === 'vehicle' && a.status === 'approved' ? `
+                    <div class="admin-actions">
+                        <input class="form-control form-control-sm js-vehicle-rate" type="number" min="100" max="100000" step="50"
+                            data-id="${a.id}" value="${escapeHtml(a.daily_rate || '')}" placeholder="Daily price (₹)" aria-label="Daily rental price">
+                        <select class="form-select form-select-sm js-vehicle-category" data-id="${a.id}" aria-label="Vehicle category">
+                            ${['scooters','bikes','cars'].map(c => `<option value="${c}" ${String(a.vehicle_category).toLowerCase() === c ? 'selected' : ''}>${c === 'scooters' ? 'Scooter' : c === 'bikes' ? 'Bike' : 'Car'}</option>`).join('')}
+                        </select>
+                        <button type="button" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm js-vehicle-save" data-id="${a.id}">Save price</button>
+                    </div>` : ''}
                 </div>
                 ${withActions && a.status === 'pending' ? `
                 <div class="admin-actions">
@@ -109,6 +118,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await load();
                 } catch (err) {
                     alertBox.textContent = err.message;
+                    alertBox.hidden = false;
+                }
+            });
+        });
+        root.querySelectorAll('.js-vehicle-save').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = Number(btn.dataset.id);
+                const rateInput = root.querySelector(`.js-vehicle-rate[data-id="${id}"]`);
+                const categorySelect = root.querySelector(`.js-vehicle-category[data-id="${id}"]`);
+                try {
+                    await RoamitraApi.post('/admin/vehicles/update', {
+                        id,
+                        vehicle_category: categorySelect?.value || '',
+                        daily_rate: Number(rateInput?.value || 0)
+                    });
+                    await load();
+                } catch (err) {
+                    alertBox.textContent = err.message || 'Could not update vehicle listing.';
                     alertBox.hidden = false;
                 }
             });

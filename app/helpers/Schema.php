@@ -245,6 +245,8 @@ final class Schema
                 bio TEXT NOT NULL,
                 experience VARCHAR(80) NULL,
                 vehicle_info VARCHAR(255) NULL,
+                vehicle_category VARCHAR(20) NULL,
+                daily_rate DECIMAL(10,2) NULL,
                 status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
                 review_note VARCHAR(255) NULL,
                 reviewed_by INT UNSIGNED NULL,
@@ -284,6 +286,8 @@ final class Schema
         self::ensureColumn($pdo, 'users', 'cover_url', 'ALTER TABLE users ADD COLUMN cover_url MEDIUMTEXT NULL AFTER avatar_url');
         self::ensureColumn($pdo, 'users', 'bio', 'ALTER TABLE users ADD COLUMN bio VARCHAR(400) NULL AFTER cover_url');
         self::ensureColumn($pdo, 'users', 'location', 'ALTER TABLE users ADD COLUMN location VARCHAR(120) NULL AFTER bio');
+        self::ensureColumn($pdo, 'host_applications', 'vehicle_category', "ALTER TABLE host_applications ADD COLUMN vehicle_category VARCHAR(20) NULL AFTER vehicle_info");
+        self::ensureColumn($pdo, 'host_applications', 'daily_rate', 'ALTER TABLE host_applications ADD COLUMN daily_rate DECIMAL(10,2) NULL AFTER vehicle_category');
         try {
             $pdo->exec('ALTER TABLE users MODIFY avatar_url MEDIUMTEXT NULL');
         } catch (Throwable $e) {
@@ -341,6 +345,19 @@ final class Schema
 
     private static function migrateSqlite(PDO $pdo): void
     {
+        $ensureSqliteColumn = function (string $table, string $column, string $definition) use ($pdo): void {
+            $columns = $pdo->query("PRAGMA table_info({$table})")->fetchAll();
+            $exists = false;
+            foreach ($columns as $info) {
+                if (strtolower((string) ($info['name'] ?? '')) === strtolower($column)) {
+                    $exists = true;
+                    break;
+                }
+            }
+            if (!$exists) {
+                $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+            }
+        };
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS app_sessions (
                 id TEXT PRIMARY KEY,
@@ -543,6 +560,8 @@ final class Schema
                 bio TEXT NOT NULL,
                 experience TEXT NULL,
                 vehicle_info TEXT NULL,
+                vehicle_category TEXT NULL,
+                daily_rate REAL NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
                 review_note TEXT NULL,
                 reviewed_by INTEGER NULL,
@@ -551,6 +570,8 @@ final class Schema
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ");
+        $ensureSqliteColumn('host_applications', 'vehicle_category', 'TEXT NULL');
+        $ensureSqliteColumn('host_applications', 'daily_rate', 'REAL NULL');
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS vehicle_bookings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

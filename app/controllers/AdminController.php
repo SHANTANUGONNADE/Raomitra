@@ -10,7 +10,8 @@ final class AdminController
 
         $apps = $pdo->query(
             "SELECT a.id, a.user_id, u.full_name, u.email, a.listing_type, a.city, a.country, a.phone,
-                    a.bio, a.experience, a.vehicle_info, a.status, a.review_note, a.created_at
+                    a.bio, a.experience, a.vehicle_info, a.vehicle_category, a.daily_rate,
+                    a.status, a.review_note, a.created_at
              FROM host_applications a
              INNER JOIN users u ON u.id = a.user_id
              ORDER BY FIELD(a.status,'pending','approved','rejected'), a.created_at DESC"
@@ -148,6 +149,32 @@ final class AdminController
         }
 
         Response::ok(['message' => $status === 'approved' ? 'Host approved.' : 'Application rejected.']);
+    }
+
+    public static function updateVehicle(array $input): void
+    {
+        Auth::requireRole(['admin', 'co_admin']);
+        $id = (int) ($input['id'] ?? 0);
+        $category = strtolower(trim((string) ($input['vehicle_category'] ?? '')));
+        $rate = (float) ($input['daily_rate'] ?? 0);
+        if ($id < 1 || !in_array($category, ['scooters', 'bikes', 'cars'], true)) {
+            Response::error('Choose a valid vehicle listing.');
+        }
+        if ($rate < 100 || $rate > 100000) {
+            Response::error('Enter a valid daily price (at least ₹100).');
+        }
+
+        $pdo = Database::pdo();
+        $stmt = $pdo->prepare(
+            "UPDATE host_applications
+             SET vehicle_category = ?, daily_rate = ?
+             WHERE id = ? AND listing_type = 'vehicle'"
+        );
+        $stmt->execute([$category, $rate, $id]);
+        if ($stmt->rowCount() === 0) {
+            Response::error('Vehicle listing not found.', 404);
+        }
+        Response::ok(['message' => 'Vehicle listing updated.', 'daily_rate' => $rate]);
     }
 
     public static function setUserRole(array $input): void

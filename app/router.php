@@ -90,12 +90,14 @@ try {
         $method === 'POST' && $path === '/host/apply' => HostController::apply($input),
         $method === 'GET' && $path === '/host/me' => HostController::mine(),
         $method === 'GET' && $path === '/hosts' => HostController::listHosts(),
+        $method === 'GET' && $path === '/vehicles' => HostController::listVehicles(),
         $method === 'GET' && $path === '/meetups' => MeetupController::list(),
         $method === 'POST' && $path === '/meetups' => MeetupController::create($input),
 
         $method === 'GET' && $path === '/admin/overview' => AdminController::overview(),
         $method === 'GET' && $path === '/admin/users' => AdminController::listUsers(),
         $method === 'POST' && $path === '/admin/hosts/review' => AdminController::reviewHost($input),
+        $method === 'POST' && $path === '/admin/vehicles/update' => AdminController::updateVehicle($input),
         $method === 'POST' && $path === '/admin/users/role' => AdminController::setUserRole($input),
 
         default => Response::error('Not found.', 404),

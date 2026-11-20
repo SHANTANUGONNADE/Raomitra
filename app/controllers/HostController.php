@@ -10,13 +10,14 @@ final class HostController
             Response::error('Please log in to continue.', 401);
         }
         $userId = (int) $user['id'];
-        if (in_array($user['role'], ['host', 'admin', 'co_admin'], true)) {
-            Response::error('Your account is already a host or staff account.');
-        }
 
         $type = (string) ($input['listing_type'] ?? 'host');
         if (!in_array($type, ['host', 'vehicle'], true)) {
             $type = 'host';
+        }
+        if (in_array($user['role'], ['admin', 'co_admin'], true)
+            || ($user['role'] === 'host' && $type !== 'vehicle')) {
+            Response::error('Your account cannot submit this listing request.');
         }
         $city = trim((string) ($input['city'] ?? ''));
         $country = trim((string) ($input['country'] ?? 'India'));
@@ -24,6 +25,8 @@ final class HostController
         $bio = trim((string) ($input['bio'] ?? ''));
         $experience = trim((string) ($input['experience'] ?? ''));
         $vehicleInfo = trim((string) ($input['vehicle_info'] ?? ''));
+        $vehicleCategory = strtolower(trim((string) ($input['vehicle_category'] ?? '')));
+        $dailyRate = (float) ($input['daily_rate'] ?? 0);
 
         if ($city === '' || strlen($city) > 120) {
             Response::error('Enter the city you host or list from.');
@@ -37,12 +40,19 @@ final class HostController
         if ($type === 'vehicle' && $vehicleInfo === '') {
             Response::error('Describe the vehicle you want to list.');
         }
+        if ($type === 'vehicle' && !in_array($vehicleCategory, ['scooters', 'bikes', 'cars'], true)) {
+            Response::error('Choose a vehicle category.');
+        }
+        if ($type === 'vehicle' && ($dailyRate < 100 || $dailyRate > 100000)) {
+            Response::error('Enter a valid daily price (at least ₹100).');
+        }
 
         $pdo = Database::pdo();
         $pending = $pdo->prepare(
-            "SELECT id FROM host_applications WHERE user_id = ? AND status = 'pending' LIMIT 1"
+            "SELECT id FROM host_applications
+             WHERE user_id = ? AND listing_type = ? AND status = 'pending' LIMIT 1"
         );
-        $pending->execute([$userId]);
+        $pending->execute([$userId, $type]);
         if ($pending->fetch()) {
             Response::error('You already have a host application waiting for review.');
         }
@@ -51,8 +61,9 @@ final class HostController
         try {
             $pdo->prepare(
                 'INSERT INTO host_applications
-                 (user_id, listing_type, city, country, phone, bio, experience, vehicle_info, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 (user_id, listing_type, city, country, phone, bio, experience, vehicle_info,
+                  vehicle_category, daily_rate, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             )->execute([
                 $userId,
                 $type,
@@ -62,6 +73,8 @@ final class HostController
                 $bio,
                 $experience !== '' ? $experience : null,
                 $vehicleInfo !== '' ? $vehicleInfo : null,
+                $vehicleCategory !== '' ? $vehicleCategory : null,
+                $type === 'vehicle' ? $dailyRate : null,
                 'pending',
             ]);
             $pdo->commit();
@@ -76,8 +89,10 @@ final class HostController
             NotificationService::create(
                 $userId,
                 'host',
-                'Host request sent to admin',
-                'Your Become a Host request is now in the admin dashboard for review.',
+                $type === 'vehicle' ? 'Vehicle listing sent to admin' : 'Host request sent to admin',
+                $type === 'vehicle'
+                    ? 'Your vehicle listing is now in the admin dashboard for review.'
+                    : 'Your Become a Host request is now in the admin dashboard for review.',
                 'host.html'
             );
             NotificationService::notifyStaff(
@@ -91,15 +106,21 @@ final class HostController
         }
 
         Response::ok([
-            'application' => self::latestFor($userId),
-            'message' => 'Your host request was sent to admin. You will be notified after review.',
+            'application' => self::latestFor($userId, $type),
+            'message' => $type === 'vehicle'
+                ? 'Your vehicle listing was sent to admin for approval.'
+                : 'Your host request was sent to admin. You will be notified after review.',
         ]);
     }
 
     public static function mine(): void
     {
         $userId = Auth::requireUser();
-        Response::ok(['application' => self::latestFor($userId), 'user' => Auth::user()]);
+        $type = (string) ($_GET['type'] ?? 'host');
+        if (!in_array($type, ['host', 'vehicle'], true)) {
+            $type = 'host';
+        }
+        Response::ok(['application' => self::latestFor($userId, $type), 'user' => Auth::user()]);
     }
 
     public static function listHosts(): void
@@ -118,13 +139,38 @@ final class HostController
         Response::ok(['hosts' => $stmt->fetchAll()]);
     }
 
-    private static function latestFor(int $userId): ?array
+    public static function listVehicles(): void
+    {
+        $pdo = Database::pdo();
+        $stmt = $pdo->query(
+            "SELECT a.id, a.user_id, u.full_name, a.city, a.country, a.vehicle_info,
+                    a.vehicle_category, a.daily_rate
+             FROM host_applications a
+             INNER JOIN users u ON u.id = a.user_id
+             WHERE a.status = 'approved' AND a.listing_type = 'vehicle'
+               AND a.vehicle_info IS NOT NULL AND a.vehicle_category IS NOT NULL
+               AND a.daily_rate IS NOT NULL
+             ORDER BY a.created_at DESC"
+        );
+        $vehicles = $stmt->fetchAll();
+        foreach ($vehicles as &$vehicle) {
+            $vehicle['name'] = trim((string) explode(',', (string) $vehicle['vehicle_info'])[0]);
+            $vehicle['location'] = trim(($vehicle['city'] ?? '') . ', ' . ($vehicle['country'] ?? 'India'), ', ');
+            $vehicle['category'] = $vehicle['vehicle_category'];
+            $vehicle['price'] = (float) $vehicle['daily_rate'];
+        }
+        unset($vehicle);
+        Response::ok(['vehicles' => $vehicles]);
+    }
+
+    private static function latestFor(int $userId, string $type = 'host'): ?array
     {
         $stmt = Database::pdo()->prepare(
-            'SELECT id, listing_type, city, country, phone, bio, experience, vehicle_info, status, review_note, created_at, updated_at
-             FROM host_applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+            'SELECT id, listing_type, city, country, phone, bio, experience, vehicle_info,
+                    vehicle_category, daily_rate, status, review_note, created_at, updated_at
+             FROM host_applications WHERE user_id = ? AND listing_type = ? ORDER BY created_at DESC LIMIT 1'
         );
-        $stmt->execute([$userId]);
+        $stmt->execute([$userId, $type]);
         $row = $stmt->fetch();
         return $row ?: null;
     }

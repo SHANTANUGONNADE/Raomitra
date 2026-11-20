@@ -20,6 +20,7 @@
                 <a class="lm-back" href="community.html" aria-label="Back to community"><i class="bi bi-chevron-left"></i></a>
                 <h2>Hosting</h2>
             </div>
+            <div id="hostDirectory">
             <div class="host-hero">
                 <div class="host-hero-kicker"><i class="bi bi-house-door"></i> Become a Host</div>
                 <h1>Welcome Travelers, Build Community</h1>
@@ -132,15 +133,17 @@
                     <a class="host-ask" href="#hostApply">Ask to<br>Host</a>
                 </div>
             </article>
+            </div>
 
             <div id="hostApply">
-            <p class="section-subtitle">Send a request to host travelers or list a vehicle. It appears on the Admin dashboard for approval.</p>
+            <h1 id="listingFormTitle" class="section-title mb-2">Become a host</h1>
+            <p id="listingFormDescription" class="section-subtitle">Send a request to host travelers or list a vehicle. It appears on the Admin dashboard for approval.</p>
 
             <div id="hostStatus" class="form-alert" hidden></div>
             <div id="hostExisting" class="planner-card mb-4" hidden></div>
 
             <form id="hostForm" class="planner-card planner-form">
-                <fieldset class="mb-3">
+                <fieldset class="mb-3" id="listingTypeFieldset">
                     <legend class="form-label fw-semibold">What do you want to list?</legend>
                     <div class="planner-options">
                         <label class="choice-card"><input type="radio" name="listing_type" value="host" checked> Local host / stay</label>
@@ -172,6 +175,21 @@
                 <div class="mb-3" id="vehicleWrap" hidden>
                     <label class="form-label fw-semibold" for="vehicle_info">Vehicle details</label>
                     <input class="form-control" id="vehicle_info" name="vehicle_info" placeholder="e.g. Honda Activa 6G, 2022, with helmets">
+                </div>
+                <div class="row g-3 mb-3" id="vehiclePriceWrap" hidden>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="vehicle_category">Vehicle category</label>
+                        <select class="form-select" id="vehicle_category" name="vehicle_category">
+                            <option value="">Choose category</option>
+                            <option value="scooters">Scooter</option>
+                            <option value="bikes">Bike</option>
+                            <option value="cars">Car</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="daily_rate">Daily rental price (₹)</label>
+                        <input class="form-control" id="daily_rate" name="daily_rate" type="number" min="100" max="100000" step="50" placeholder="e.g. 550">
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold" for="bio">About you</label>
