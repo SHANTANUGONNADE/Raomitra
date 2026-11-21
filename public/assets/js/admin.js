@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div>
                     <h3>${escapeHtml(a.full_name)} · ${escapeHtml(a.listing_type)}</h3>
                     <p>${escapeHtml(a.email)} · ${escapeHtml(a.phone)}</p>
-                    <p>${escapeHtml(a.city)}, ${escapeHtml(a.country)} · ${statusBadge(a.status)}</p>
+                    <p>${escapeHtml([a.city, a.state, a.country].filter(Boolean).join(', '))} · ${statusBadge(a.status)}</p>
                     <p>${escapeHtml(a.bio || '')}</p>
                     ${a.vehicle_info ? `<p><strong>Vehicle:</strong> ${escapeHtml(a.vehicle_info)}</p>` : ''}
                     ${a.listing_type === 'vehicle' && a.status === 'approved' ? `

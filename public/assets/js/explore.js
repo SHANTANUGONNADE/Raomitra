@@ -2,6 +2,24 @@
  * Roamitra — Explore Page
  */
 
+const MUMBAI_LOCAL_TIPS = [
+    { category: 'dos', tip: 'Avoid local trains 8–11 AM and 6–9 PM on weekdays; they are packed beyond capacity.' },
+    { category: 'transport', tip: 'Buy local train tickets on the UTS app to skip ticket queues.' },
+    { category: 'transport', tip: 'Use the m-Indicator app for train, bus and metro timings.' },
+    { category: 'transport', tip: 'Trains run on three main lines: Western, Central and Harbour. Check which one you need before boarding.' },
+    { category: 'dos', tip: 'Every train has ladies-only compartments; men should not board them.' },
+    { category: 'transport', tip: "Auto-rickshaws don't run in South Mumbai (roughly south of Bandra/Sion); use kaali-peeli taxis or app cabs there." },
+    { category: 'dos', tip: 'Insist on the meter in autos and black-yellow taxis.' },
+    { category: 'planning', tip: 'Best time to visit is November to February. June to September is heavy monsoon with waterlogging.' },
+    { category: 'safety', tip: 'During heavy monsoon, check for rain alerts and train delays before heading out; Elephanta ferries may stop.' },
+    { category: 'safety', tip: "Don't swim at Mumbai's city beaches; currents are strong and water is polluted." },
+    { category: 'dos', tip: "Dress modestly at Haji Ali, Siddhivinayak and other religious sites." },
+    { category: 'planning', tip: 'Ganesh Chaturthi (Aug/Sep) is the biggest festival: amazing to see, but roads and trains get very crowded.' },
+    { category: 'food', tip: 'Vada pav, pav bhaji, misal pav, bhel puri and Irani chai are must-try street foods.' },
+    { category: 'safety', tip: 'Drink only sealed bottled or filtered water.' },
+    { category: 'safety', tip: 'Keep phones and wallets in front pockets on crowded trains and markets.' }
+];
+
 document.addEventListener('DOMContentLoaded', () => {
     initExploreTabs();
     initFeedFilters();
@@ -355,6 +373,7 @@ function normalizeLocalFeedLocation(value) {
 }
 
 function localFeedLocationMatches(post, location) {
+    if (post.dataset.mumbaiOnly === 'true' && !normalizeLocalFeedLocation(location).includes('mumbai')) return false;
     if (!location) return true;
     const selected = normalizeLocalFeedLocation(location);
     const city = normalizeLocalFeedLocation(post.dataset.feedCity);
@@ -386,9 +405,12 @@ function initFeedFilters() {
 
 function localFeedCard(feed) {
     const labels = {
-        safety: 'Safety Alert',
+        dos: "Do's & Don'ts",
+        transport: 'Transport',
+        planning: 'Planning',
+        safety: 'Safety',
         jobs: 'Part-time Job',
-        food: 'Food Tip',
+        food: 'Food',
         gems: 'Hidden Gem'
     };
     const category = labels[feed.category] ? feed.category : 'gems';
@@ -404,7 +426,9 @@ function localFeedCard(feed) {
         ? '<button type="button" class="feed-action" data-feed-act="delete" aria-label="Delete"><i class="bi bi-trash"></i></button>'
         : '';
     const dbId = feed.mine ? ' data-feed-db="' + Number(feed.id) + '"' : '';
-    return '<div class="feed-post" data-feed-id="' + escapeHtml(id) + '"' + dbId + city + area + feedPlace + ' data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
+    const mumbaiOnly = feed.mumbaiOnly ? ' data-mumbai-only="true"' : '';
+    const title = feed.curatedTip ? '' : '<p class="feed-post-title">' + escapeHtml(feed.title) + '</p>';
+    return '<div class="feed-post" data-feed-id="' + escapeHtml(id) + '"' + dbId + city + area + feedPlace + mumbaiOnly + ' data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
         + '<div class="feed-post-header">'
         + '<div class="feed-post-avatar">' + escapeHtml(initials) + '</div>'
         + '<div class="feed-post-meta">'
@@ -413,7 +437,7 @@ function localFeedCard(feed) {
         + '</div>'
         + '<span class="feed-category ' + escapeHtml(category) + '">' + escapeHtml(labels[category]) + '</span>'
         + '</div>'
-        + '<p class="feed-post-title">' + escapeHtml(feed.title) + '</p>'
+        + title
         + '<p class="feed-post-content">' + escapeHtml(feed.body) + '</p>'
         + '<div class="feed-post-actions"><div class="feed-actions-left">'
         + '<button type="button" class="feed-action" data-feed-act="like" aria-pressed="false"><i class="bi bi-hand-thumbs-up"></i> <span data-feed-count="likes">0</span></button>'
@@ -514,6 +538,22 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
         if (!list) return;
         list.replaceChildren();
         const selectedLocation = normalizeLocalFeedLocation(currentLocalFeedLocation());
+        if (selectedLocation.includes('mumbai')) {
+            MUMBAI_LOCAL_TIPS.forEach((tip, index) => {
+                mount({
+                    id: 'mumbai-sheet-' + index,
+                    guide: true,
+                    city: 'Mumbai',
+                    place: 'Mumbai',
+                    category: tip.category,
+                    title: tip.tip,
+                    body: tip.tip,
+                    full_name: 'Roamitra City Guide',
+                    curatedTip: true,
+                    mumbaiOnly: true
+                }, false);
+            });
+        }
         const mumbaiTips = !selectedLocation || selectedLocation.includes('mumbai')
             ? (window.RoamitraMumbaiData?.places || []).filter((place) => place.local_tip)
             : [];

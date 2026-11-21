@@ -88,6 +88,7 @@ CREATE TABLE `host_applications` (
   `user_id` int(10) UNSIGNED NOT NULL,
   `listing_type` enum('host','vehicle') NOT NULL DEFAULT 'host',
   `city` varchar(120) NOT NULL,
+  `state` varchar(120) DEFAULT NULL,
   `country` varchar(120) NOT NULL DEFAULT 'India',
   `phone` varchar(40) NOT NULL,
   `bio` text NOT NULL,
@@ -104,8 +105,8 @@ CREATE TABLE `host_applications` (
 -- Dumping data for table `host_applications`
 --
 
-INSERT INTO `host_applications` (`id`, `user_id`, `listing_type`, `city`, `country`, `phone`, `bio`, `experience`, `vehicle_info`, `status`, `review_note`, `reviewed_by`, `created_at`, `updated_at`) VALUES
-(3, 7, 'host', 'nagpur', 'India', '1234567890', 'sadasdasdasdasdsaddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'new', NULL, 'pending', NULL, NULL, '2026-08-31 17:04:15', '2026-08-31 17:04:15');
+INSERT INTO `host_applications` (`id`, `user_id`, `listing_type`, `city`, `state`, `country`, `phone`, `bio`, `experience`, `vehicle_info`, `status`, `review_note`, `reviewed_by`, `created_at`, `updated_at`) VALUES
+(3, 7, 'host', 'nagpur', 'Maharashtra', 'India', '1234567890', 'sadasdasdasdasdsaddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'new', NULL, 'pending', NULL, NULL, '2026-08-31 17:04:15', '2026-08-31 17:04:15');
 
 -- --------------------------------------------------------
 

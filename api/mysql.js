@@ -113,6 +113,16 @@ async function updateUserProfile(userId, fields) {
     return findUserById(userId);
 }
 
+async function ensureHostStateColumn(p) {
+    const [rows] = await p.query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'host_applications' AND COLUMN_NAME = 'state'`
+    );
+    if (Number(rows[0].n) === 0) {
+        await p.query('ALTER TABLE host_applications ADD COLUMN state VARCHAR(120) NULL AFTER city');
+    }
+}
+
 async function ensureSchema(p) {
     await p.query(`
         CREATE TABLE IF NOT EXISTS users (
@@ -239,6 +249,21 @@ async function listPosts() {
         ORDER BY p.id DESC
         LIMIT 30
     `);
+    return rows;
+}
+
+async function listPostsForUser(userId) {
+    const p = await getPool();
+    if (!p) return null;
+    const [rows] = await p.query(`
+        SELECT p.id, p.user_id, p.title, p.body, p.created_at, u.full_name,
+            (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) AS reply_count
+        FROM community_posts p
+        LEFT JOIN users u ON u.id = p.user_id
+        WHERE p.user_id = ?
+        ORDER BY p.id DESC
+        LIMIT 30
+    `, [userId]);
     return rows;
 }
 
@@ -505,6 +530,7 @@ async function ensureOpsTables(p) {
             user_id INT UNSIGNED NOT NULL,
             listing_type VARCHAR(20) NOT NULL DEFAULT 'host',
             city VARCHAR(120) NOT NULL,
+            state VARCHAR(120) NULL,
             country VARCHAR(120) NOT NULL DEFAULT 'India',
             phone VARCHAR(40) NOT NULL,
             bio TEXT NOT NULL,
@@ -518,6 +544,7 @@ async function ensureOpsTables(p) {
             KEY idx_host_apps_user (user_id, status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await ensureHostStateColumn(p);
     await p.query(`
         CREATE TABLE IF NOT EXISTS vehicle_bookings (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -599,7 +626,7 @@ const BOOKING_SELECT = `
 `;
 
 const HOST_SELECT = `
-    SELECT a.id, a.user_id, a.listing_type, a.city, a.country, a.phone, a.bio,
+    SELECT a.id, a.user_id, a.listing_type, a.city, a.state, a.country, a.phone, a.bio,
            a.experience, a.vehicle_info, a.status, a.review_note, a.reviewed_by,
            DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
            DATE_FORMAT(a.updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at,
@@ -675,12 +702,13 @@ async function createHostApplication(fields) {
     }
     const [result] = await p.query(
         `INSERT INTO host_applications
-         (user_id, listing_type, city, country, phone, bio, experience, vehicle_info, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+         (user_id, listing_type, city, state, country, phone, bio, experience, vehicle_info, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
         [
             fields.user_id,
             fields.listing_type,
             fields.city,
+            fields.state,
             fields.country,
             fields.phone,
             fields.bio,
@@ -714,7 +742,7 @@ async function listHosts() {
     await ensureOpsTables(p);
     const [rows] = await p.query(`
         SELECT u.id, u.full_name, u.avatar_url, u.location, u.bio,
-               a.city, a.country, a.listing_type, a.created_at
+               a.city, a.state, a.country, a.listing_type, a.created_at
         FROM users u
         LEFT JOIN host_applications a ON a.id = (
             SELECT a2.id FROM host_applications a2
@@ -766,6 +794,7 @@ module.exports = {
     findUserById,
     createUser,
     listPosts,
+    listPostsForUser,
     communityStats,
     listPeople,
     createConnection,

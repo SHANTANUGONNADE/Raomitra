@@ -218,6 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const trips = data.trips || [];
         const bookings = data.bookings || [];
+        const questions = data.questions || [];
         const followers = document.getElementById('profileFollowers');
         const following = document.getElementById('profileFollowing');
         if (followers) followers.textContent = '0';
@@ -372,6 +373,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         extra.innerHTML = `
             <div class="profile-card mt-4">
                 <div class="profile-card-head">
+                    <h3>Your community questions</h3>
+                    <a class="profile-card-link" href="${RoamitraApi.page('community.html')}#ask-question">Ask a question</a>
+                </div>
+                ${questions.length ? questions.map((question) => `
+                    <a class="profile-trip-item" href="${RoamitraApi.page('community.html')}#question-${Number(question.id)}">
+                        <div class="profile-trip-mark">Q</div>
+                        <div class="profile-trip-info">
+                            <h4>${escapeHtml(question.title)}</h4>
+                            <p>Question #${Number(question.id)} · ${Number(question.reply_count) || 0} replies</p>
+                        </div>
+                        <i class="bi bi-chevron-right ms-auto"></i>
+                    </a>
+                `).join('') : '<div class="profile-empty">You have not asked a question yet. Ask the community and it will appear here.</div>'}
+            </div>
+            <div class="profile-card mt-4">
+                <div class="profile-card-head">
                     <h3>Vehicle bookings</h3>
                     <a class="profile-card-link" href="${RoamitraApi.page('rentals.html')}">Rent</a>
                 </div>
@@ -387,7 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
             <div class="profile-card mt-4 ${state.role === 'customer' ? 'profile-host-banner' : ''}">
                 <h3>Host status</h3>
-                <p>${state.role === 'host' ? 'You are a verified host.' : (hostApp ? `Application: ${escapeHtml(hostApp.status)} in ${escapeHtml(hostApp.city)}.` : 'Share your city, earn as a host, and help travelers feel local.')}</p>
+                <p>${state.role === 'host' ? 'You are a verified host.' : (hostApp ? `Application: ${escapeHtml(hostApp.status)} in ${escapeHtml([hostApp.city, hostApp.state].filter(Boolean).join(', '))}.` : 'Share your city, earn as a host, and help travelers feel local.')}</p>
                 ${state.role === 'customer' ? `<a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="${RoamitraApi.page('host.html')}">Become a host</a>` : ''}
                 ${['admin','co_admin'].includes(state.role) ? `<a class="btn-roamitra btn-roamitra-navy btn-roamitra-sm" href="${RoamitraApi.page('admin.html')}">Open admin</a>` : ''}
             </div>

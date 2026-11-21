@@ -79,6 +79,17 @@
     color: var(--color-text);
 }
 
+.host-state-filter-wrap {
+    margin-bottom: 1.25rem;
+    padding: 0.9rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+}
+
+.host-state-filter-wrap .form-label { margin-bottom: 0.4rem; }
+.host-state-filter-wrap small { display: block; margin-top: 0.4rem; color: var(--color-text-muted); }
+
 .host-feature-wrap {
     position: relative;
     margin-bottom: 1.6rem;

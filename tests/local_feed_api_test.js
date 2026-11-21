@@ -57,6 +57,45 @@ function request(method, route, body, cookie) {
         assert.equal(login.status, 200);
         const cookie = login.headers['set-cookie'].split(';')[0];
 
+        const profileBeforeQuestion = await request('GET', '/profile', null, cookie);
+        assert.equal(profileBeforeQuestion.status, 200);
+        const createdQuestion = await request('POST', '/community/posts', {
+            title: 'Where should I walk in Mumbai?',
+            body: 'Looking for a safe evening route.',
+        }, cookie);
+        assert.equal(createdQuestion.status, 201);
+        const questions = await request('GET', '/community/posts');
+        const ownQuestion = questions.data.posts.find((post) => post.id === createdQuestion.data.post_id);
+        assert(ownQuestion);
+        assert.equal(ownQuestion.user_id, profileBeforeQuestion.data.user.id);
+
+        const reply = await request('POST', '/community/posts/' + createdQuestion.data.post_id + '/replies', {
+            body: 'Try Marine Drive before sunset.',
+        }, cookie);
+        assert.equal(reply.status, 200);
+        const profileAfterReply = await request('GET', '/profile', null, cookie);
+        const profileQuestion = profileAfterReply.data.questions.find((post) => post.id === createdQuestion.data.post_id);
+        assert(profileQuestion);
+        assert.equal(profileQuestion.reply_count, 1);
+
+        const missingState = await request('POST', '/host/apply', {
+            listing_type: 'host',
+            city: 'Nagpur',
+            phone: '1234567890',
+            bio: 'A friendly local host for visiting travelers.',
+        }, cookie);
+        assert.equal(missingState.status, 400);
+        const hostApplication = await request('POST', '/host/apply', {
+            listing_type: 'host',
+            city: 'Nagpur',
+            state: 'Maharashtra',
+            country: 'India',
+            phone: '1234567890',
+            bio: 'A friendly local host for visiting travelers.',
+        }, cookie);
+        assert.equal(hostApplication.status, 200);
+        assert.equal(hostApplication.data.application.state, 'Maharashtra');
+
         const unauthorized = await request('POST', '/local/feeds', {
             category: 'food',
             title: 'Test tip',

@@ -46,12 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             list.innerHTML = posts.map(p => `
-                <article class="feed-post live-post" data-id="${p.id}">
+                <article class="feed-post live-post" id="question-${Number(p.id)}" data-id="${Number(p.id)}" data-author-id="${Number(p.user_id)}">
                     <div class="feed-post-header">
                         <div class="feed-post-avatar">${escapeHtml((p.full_name || '?').charAt(0))}</div>
                         <div class="feed-post-meta">
                             <div class="feed-post-name">${escapeHtml(p.full_name)}</div>
-                            <div class="feed-post-time">${escapeHtml(p.created_at)} · ${p.reply_count} replies</div>
+                            <div class="feed-post-time">Member #${Number(p.user_id)} · ${escapeHtml(p.created_at)} · ${Number(p.reply_count) || 0} replies</div>
                         </div>
                     </div>
                     <h3 class="h6 mb-1">${escapeHtml(p.title)}</h3>
@@ -97,6 +97,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    document.addEventListener('focusin', (event) => {
+        const field = event.target;
+        if (!(field instanceof HTMLElement) || !field.matches('#communityForm input, #communityForm textarea, #liveQuestions input')) return;
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+            window.setTimeout(() => {
+                const form = field.closest('form');
+                const nav = document.querySelector('.roamitra-tabbar');
+                if (!form || !nav) return;
+                const overlap = form.getBoundingClientRect().bottom - nav.getBoundingClientRect().top + 16;
+                if (overlap > 0) window.scrollBy({ top: overlap, behavior: 'smooth' });
+            }, 120);
+        }
+    });
+
     refresh();
     refreshStats();
 
@@ -104,7 +118,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const locals = document.getElementById('localsGrid');
         const hosts = document.getElementById('hostsGrid');
         const hostPanel = document.getElementById('commHostPanel');
-        if (!locals && !hosts) return;
+        const hostStateFilter = document.getElementById('communityHostStateFilter');
+        if (!locals && !hosts && !hostPanel) return;
         if (locals) locals.innerHTML = '<p class="text-muted">Loading registered travelers...</p>';
         if (hosts) hosts.innerHTML = '<p class="text-muted">Loading approved hosts...</p>';
         try {
@@ -115,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const people = peopleData.people || [];
             const hostsList = hostData.hosts || [];
             const renderLocal = (person) => {
-                const name = person.full_name || 'Verified host';
+                const name = person.full_name || 'Traveler';
                 const location = person.location || 'India';
                 const avatar = person.avatar_url ? RoamitraApi.mediaUrl(person.avatar_url) : '';
                 return `<div class="col-lg-3 col-md-6"><div class="local-card" data-person-id="${Number(person.id)}">
@@ -127,10 +142,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div></div>`;
             };
             const renderHost = (person) => {
-                const name = person.full_name || 'Verified host';
-                const location = [person.city || person.location, person.country].filter(Boolean).join(', ');
+                const name = person.full_name || 'Host';
+                const state = person.state || '';
+                const location = [person.city || person.location, state, person.country].filter(Boolean).join(', ');
                 const avatar = person.avatar_url ? RoamitraApi.mediaUrl(person.avatar_url) : '';
-                return `<div class="col-lg-4 col-md-6"><article class="host-person" data-person-id="${Number(person.id)}">
+                return `<div class="col-lg-4 col-md-6" data-state="${escapeHtml(state)}"><article class="host-person" data-person-id="${Number(person.id)}">
                     <div class="host-person-top"><div class="host-avatar-wrap">${avatar ? `<img src="${escapeHtml(avatar)}" alt="">` : `<span class="host-avatar-fallback">${escapeHtml(name.charAt(0))}</span>`}<span class="host-online"></span></div>
                     <div><h2>${escapeHtml(name)} <i class="bi bi-patch-check-fill"></i></h2><p class="host-loc"><i class="bi bi-geo-alt"></i> ${escapeHtml(location || 'India')}</p><p class="host-since">Verified host</p></div></div>
                     <p class="host-bio">${escapeHtml(person.bio || 'Approved Roamitra host.')}</p>
@@ -146,11 +162,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const live = document.createElement('div');
                 live.className = 'row g-3 mb-4 live-host-list';
                 live.innerHTML = hostsList.map(renderHost).join('') || '<p class="text-muted">No approved hosts registered yet.</p>';
-                if (heading) heading.after(live);
+                const filter = hostStateFilter?.closest('.mb-3');
+                if (filter) filter.after(live);
+                else if (heading) heading.after(live);
+                let empty = hostPanel.querySelector('.host-filter-empty');
+                if (!empty) {
+                    empty = document.createElement('p');
+                    empty.className = 'text-muted host-filter-empty';
+                    live.after(empty);
+                }
+                const applyHostFilter = () => {
+                    const selectedState = hostStateFilter?.value || '';
+                    let visible = 0;
+                    live.querySelectorAll('[data-state]').forEach((card) => {
+                        const matches = !selectedState || String(card.dataset.state || '').toLocaleLowerCase() === selectedState.toLocaleLowerCase();
+                        card.hidden = !matches;
+                        if (matches) visible += 1;
+                    });
+                    empty.hidden = visible > 0 || !selectedState || hostsList.length === 0;
+                    empty.textContent = 'No hosts are listed in this state yet.';
+                };
+                if (hostStateFilter) hostStateFilter.onchange = applyHostFilter;
+                applyHostFilter();
             }
             if (typeof initConnectRequests === 'function') initConnectRequests();
         } catch (error) {
-            [locals, hosts].filter(Boolean).forEach((target) => { target.innerHTML = '<p class="text-muted">Could not load verified hosts.</p>'; });
+            [locals, hosts].filter(Boolean).forEach((target) => { target.innerHTML = '<p class="text-muted">Could not load community members.</p>'; });
         }
     }
 

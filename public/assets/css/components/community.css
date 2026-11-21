@@ -991,34 +991,36 @@ body[data-page="community"] .vehicle-image {
 
     .comm-phone-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
-        margin-bottom: 0.9rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.4rem;
+        margin-bottom: 0.55rem;
     }
 
     .comm-phone-grid a {
         background: var(--color-surface);
         border: 1px solid var(--color-border);
-        border-radius: 18px;
-        min-height: 132px;
+        border-radius: 14px;
+        min-height: 76px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.55rem;
+        gap: 0.25rem;
         text-decoration: none;
         color: var(--color-text);
         font-weight: 700;
+        font-size: 0.7rem;
+        white-space: nowrap;
     }
 
     .comm-phone-grid span {
-        width: 54px;
-        height: 54px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: grid;
         place-items: center;
         color: #fff;
-        font-size: 1.25rem;
+        font-size: 0.95rem;
     }
 
     .comm-phone-grid .tone-blue { background: #3b82f6; }
@@ -1110,4 +1112,68 @@ body[data-page="community"] .vehicle-image {
     margin: 0 0 0.6rem;
     max-width: 16ch;
     color: #fff;
+}
+
+.reply-form {
+    display: flex;
+    align-items: stretch;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.reply-form input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    padding: 0.65rem 0.8rem;
+}
+
+.reply-form button { flex: 0 0 auto; }
+
+.state-filter {
+    width: auto;
+    min-width: min(230px, 100%);
+    margin-left: auto;
+}
+
+.vehicle-filter-empty { margin: 0.5rem 0; }
+
+@media (max-width: 767.98px) {
+    body[data-page="community"] .comm-ask-stage,
+    body[data-page="community"] .comm-feed-stage {
+        scroll-margin-bottom: 9rem;
+    }
+
+    body[data-page="community"] .comm-ask-stage .planner-card {
+        padding: 1rem;
+    }
+
+    body[data-page="community"] .comm-ask-stage input,
+    body[data-page="community"] .comm-ask-stage textarea,
+    body[data-page="community"] #liveQuestions input {
+        scroll-margin-bottom: 9rem;
+    }
+
+    body[data-page="community"] .reply-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="community"] .reply-form button {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .vehicle-filters .state-filter {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    body[data-page="community"]:focus-within .ai-assistant-fab,
+    body[data-page="community"]:focus-within .ai-lang-fab {
+        display: none !important;
+    }
 }

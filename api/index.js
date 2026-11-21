@@ -859,11 +859,21 @@ async function handle(req, res) {
             const wallet = ensureWallet(db, user.id);
             let bookings = db.vehicle_bookings.filter((b) => b.user_id === user.id).slice().reverse();
             let hostApplication = db.host_applications.filter((a) => a.user_id === user.id).sort((a, b) => b.id - a.id)[0] || null;
+            let questions = db.community_posts.filter((post) => Number(post.user_id) === Number(user.id))
+                .slice().reverse().slice(0, 30).map((post) => {
+                    const author = db.users.find((item) => item.id === post.user_id);
+                    return Object.assign({}, post, {
+                        full_name: author ? author.full_name : 'Traveler',
+                        reply_count: db.community_replies.filter((reply) => reply.post_id === post.id).length,
+                    });
+                });
             if (mysqlStore.isConfigured()) {
                 const liveBookings = await mysqlStore.listBookingsForUser(user.id);
                 const liveHost = await mysqlStore.latestHostForUser(user.id);
+                const liveQuestions = await mysqlStore.listPostsForUser(user.id);
                 if (liveBookings) bookings = liveBookings;
                 hostApplication = liveHost;
+                if (liveQuestions) questions = liveQuestions;
             }
             return send(res, 200, {
                 ok: true,
@@ -872,6 +882,7 @@ async function handle(req, res) {
                 transactions: db.wallet_transactions.filter((t) => t.wallet_id === wallet.id).slice().reverse().slice(0, 30),
                 trips: db.trips.filter((t) => t.user_id === user.id).sort((a, b) => String(b.start_date).localeCompare(String(a.start_date))),
                 bookings,
+                questions,
                 host_application: hostApplication,
             });
         }
@@ -1521,12 +1532,14 @@ async function handle(req, res) {
             let type = String(input.listing_type || 'host');
             if (!['host', 'vehicle'].includes(type)) type = 'host';
             const city = String(input.city || '').trim();
+            const state = String(input.state || '').trim();
             const country = String(input.country || 'India').trim() || 'India';
             const phone = String(input.phone || '').trim();
             const bio = String(input.bio || '').trim();
             const experience = String(input.experience || '').trim();
             const vehicleInfo = String(input.vehicle_info || '').trim();
             if (!city || city.length > 120) return fail(res, 'Enter the city you host or list from.');
+            if (!state || state.length > 120) return fail(res, 'Choose a state or union territory.');
             if (!phone || phone.length > 40) return fail(res, 'Enter a contact phone number.');
             if (bio.length < 20) return fail(res, 'Tell travelers a bit more about yourself (at least 20 characters).');
             if (type === 'vehicle' && !vehicleInfo) return fail(res, 'Describe the vehicle you want to list.');
@@ -1534,6 +1547,7 @@ async function handle(req, res) {
                 user_id: user.id,
                 listing_type: type,
                 city,
+                state,
                 country,
                 phone,
                 bio,
@@ -1579,6 +1593,7 @@ async function handle(req, res) {
                         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
                     return Object.assign({}, item, {
                         city: application ? application.city : item.location || '',
+                        state: application ? application.state : '',
                         country: application ? application.country : 'India',
                         listing_type: application ? application.listing_type : 'host',
                         bio: application ? application.bio : item.bio || '',
