@@ -207,6 +207,270 @@ async function ensureSchema(p) {
             KEY idx_messages_conversation (sender_id, recipient_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS trips (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            destination VARCHAR(180) NOT NULL,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            budget DECIMAL(12,2) NULL,
+            budget_currency VARCHAR(8) NOT NULL DEFAULT 'USD',
+            traveling_with ENUM('solo','couple','family','friends','group') NOT NULL DEFAULT 'solo',
+            group_size TINYINT UNSIGNED NULL,
+            arrival_time VARCHAR(5) NULL,
+            departure_time VARCHAR(5) NULL,
+            preferences LONGTEXT NULL,
+            pace ENUM('relaxed','moderate','packed') NOT NULL DEFAULT 'moderate',
+            status ENUM('draft','generated','saved') NOT NULL DEFAULT 'draft',
+            is_saved TINYINT(1) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_trips_user_updated (user_id, updated_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS itineraries (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            trip_id INT UNSIGNED NOT NULL,
+            version INT UNSIGNED NOT NULL DEFAULT 1,
+            is_current TINYINT(1) NOT NULL DEFAULT 1,
+            itinerary_json LONGTEXT NOT NULL,
+            summary TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_trip_version (trip_id, version),
+            KEY idx_itineraries_current (trip_id, is_current)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS itinerary_messages (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            trip_id INT UNSIGNED NOT NULL,
+            itinerary_id INT UNSIGNED NULL,
+            role ENUM('user','assistant') NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_itinerary_messages_trip (trip_id, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+}
+
+const TRIP_SELECT = `
+    SELECT t.id, t.user_id, t.destination,
+           DATE_FORMAT(t.start_date, '%Y-%m-%d') AS start_date,
+           DATE_FORMAT(t.end_date, '%Y-%m-%d') AS end_date,
+           t.budget, t.budget_currency, t.traveling_with, t.group_size,
+           t.arrival_time, t.departure_time, t.preferences, t.pace,
+           t.status, t.is_saved, t.created_at, t.updated_at,
+           (SELECT i.id FROM itineraries i
+            WHERE i.trip_id = t.id AND i.is_current = 1
+            ORDER BY i.version DESC LIMIT 1) AS current_itinerary_id
+    FROM trips t
+`;
+
+function parseTripRow(row) {
+    if (!row) return null;
+    const trip = Object.assign({}, row, {
+        id: Number(row.id),
+        user_id: Number(row.user_id),
+        is_saved: Number(row.is_saved || 0),
+    });
+    if (typeof trip.preferences === 'string') {
+        try {
+            trip.preferences = JSON.parse(trip.preferences);
+        } catch (error) {
+            throw new Error('Trip preferences are invalid JSON.');
+        }
+    }
+    if (!Array.isArray(trip.preferences)) trip.preferences = [];
+    return trip;
+}
+
+function parseItineraryRow(row) {
+    if (!row) return null;
+    let data;
+    try {
+        data = typeof row.itinerary_json === 'string' ? JSON.parse(row.itinerary_json) : row.itinerary_json;
+    } catch (error) {
+        throw new Error('The saved itinerary is invalid JSON.');
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('The saved itinerary has an invalid format.');
+    }
+    return Object.assign({}, data, {
+        id: Number(row.id),
+        version: Number(row.version),
+        summary: row.summary,
+        created_at: row.created_at,
+    });
+}
+
+async function findOwnedTrip(p, userId, tripId, lock = false) {
+    const [rows] = await p.query(
+        TRIP_SELECT + ' WHERE t.id = ? AND t.user_id = ? LIMIT 1' + (lock ? ' FOR UPDATE' : ''),
+        [tripId, userId]
+    );
+    if (!rows[0]) {
+        const error = new Error('Trip not found.');
+        error.status = 404;
+        throw error;
+    }
+    return parseTripRow(rows[0]);
+}
+
+async function listTrips(userId) {
+    const p = await getPool();
+    const [rows] = await p.query(`
+        ${TRIP_SELECT}
+        WHERE t.user_id = ?
+        ORDER BY t.updated_at DESC, t.id DESC
+    `, [userId]);
+    return rows.map((row) => Object.assign(parseTripRow(row), {
+        current_itinerary_id: row.current_itinerary_id == null ? null : Number(row.current_itinerary_id),
+    }));
+}
+
+async function createTrip(userId, trip) {
+    const p = await getPool();
+    const [result] = await p.query(
+        `INSERT INTO trips
+            (user_id, destination, start_date, end_date, budget, budget_currency,
+             traveling_with, group_size, arrival_time, departure_time, preferences, pace, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+        [
+            userId, trip.destination, trip.start_date, trip.end_date, trip.budget,
+            trip.budget_currency, trip.traveling_with, trip.group_size, trip.arrival_time,
+            trip.departure_time, JSON.stringify(trip.preferences || []), trip.pace,
+        ]
+    );
+    return findOwnedTrip(p, userId, result.insertId);
+}
+
+async function getTrip(userId, tripId) {
+    const p = await getPool();
+    const trip = await findOwnedTrip(p, userId, tripId);
+    const [itineraryRows] = await p.query(
+        `SELECT id, version, itinerary_json, summary, created_at
+         FROM itineraries WHERE trip_id = ? AND is_current = 1
+         ORDER BY version DESC LIMIT 1`,
+        [tripId]
+    );
+    const itinerary = parseItineraryRow(itineraryRows[0]);
+    if (itinerary) {
+        const [messageCount] = await p.query(
+            'SELECT COUNT(*) AS total FROM itinerary_messages WHERE trip_id = ?',
+            [tripId]
+        );
+        if (Number(messageCount[0].total) === 0) {
+            await p.query(
+                'INSERT INTO itinerary_messages (trip_id, itinerary_id, role, message) VALUES (?, ?, ?, ?)',
+                [tripId, itinerary.id, 'assistant', "Hi there! I'm Roamini. I've created this itinerary just for you. How does it look?"]
+            );
+        }
+    }
+    const [versions] = await p.query(
+        'SELECT id, version, is_current, summary, created_at FROM itineraries WHERE trip_id = ? ORDER BY version DESC',
+        [tripId]
+    );
+    const [messages] = await p.query(
+        'SELECT id, role, message, created_at FROM itinerary_messages WHERE trip_id = ? ORDER BY id ASC',
+        [tripId]
+    );
+    return {
+        trip,
+        itinerary,
+        versions: versions.map((row) => Object.assign({}, row, {
+            id: Number(row.id),
+            version: Number(row.version),
+            is_current: Number(row.is_current),
+        })),
+        messages,
+    };
+}
+
+async function updateTrip(userId, tripId, trip) {
+    const p = await getPool();
+    await findOwnedTrip(p, userId, tripId);
+    await p.query(
+        `UPDATE trips SET destination = ?, start_date = ?, end_date = ?, budget = ?,
+            budget_currency = ?, traveling_with = ?, group_size = ?, arrival_time = ?,
+            departure_time = ?, preferences = ?, pace = ?
+         WHERE id = ? AND user_id = ?`,
+        [
+            trip.destination, trip.start_date, trip.end_date, trip.budget, trip.budget_currency,
+            trip.traveling_with, trip.group_size, trip.arrival_time, trip.departure_time,
+            JSON.stringify(trip.preferences || []), trip.pace, tripId, userId,
+        ]
+    );
+    return findOwnedTrip(p, userId, tripId);
+}
+
+async function saveTrip(userId, tripId) {
+    const p = await getPool();
+    await findOwnedTrip(p, userId, tripId);
+    await p.query(
+        "UPDATE trips SET is_saved = 1, status = 'saved' WHERE id = ? AND user_id = ?",
+        [tripId, userId]
+    );
+    return findOwnedTrip(p, userId, tripId);
+}
+
+async function addItineraryVersion(userId, tripId, itinerary, summary, status) {
+    const p = await getPool();
+    const connection = await p.getConnection();
+    try {
+        await connection.beginTransaction();
+        const trip = await findOwnedTrip(connection, userId, tripId, true);
+        const [versionRows] = await connection.query(
+            'SELECT COALESCE(MAX(version), 0) AS version FROM itineraries WHERE trip_id = ?',
+            [tripId]
+        );
+        const version = Number(versionRows[0].version) + 1;
+        await connection.query('UPDATE itineraries SET is_current = 0 WHERE trip_id = ?', [tripId]);
+        const [result] = await connection.query(
+            'INSERT INTO itineraries (trip_id, version, is_current, itinerary_json, summary) VALUES (?, ?, 1, ?, ?)',
+            [tripId, version, JSON.stringify(itinerary), summary || null]
+        );
+        if (status) {
+            await connection.query('UPDATE trips SET status = ? WHERE id = ? AND user_id = ?', [status, tripId, userId]);
+        }
+        const [messages] = await connection.query(
+            'SELECT COUNT(*) AS total FROM itinerary_messages WHERE trip_id = ?',
+            [tripId]
+        );
+        if (Number(messages[0].total) === 0) {
+            await connection.query(
+                'INSERT INTO itinerary_messages (trip_id, itinerary_id, role, message) VALUES (?, ?, ?, ?)',
+                [tripId, result.insertId, 'assistant', "Hi there! I'm Roamini. I've created this itinerary just for you. How does it look?"]
+            );
+        }
+        await connection.commit();
+        return Object.assign({}, itinerary, {
+            id: Number(result.insertId),
+            version,
+            summary: summary || null,
+        });
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+async function addItineraryMessages(tripId, itineraryId, messages) {
+    const p = await getPool();
+    for (const item of messages) {
+        await p.query(
+            'INSERT INTO itinerary_messages (trip_id, itinerary_id, role, message) VALUES (?, ?, ?, ?)',
+            [tripId, itineraryId, item.role, item.message]
+        );
+    }
+    const [rows] = await p.query(
+        'SELECT id, role, message, created_at FROM itinerary_messages WHERE trip_id = ? ORDER BY id ASC',
+        [tripId]
+    );
+    return rows;
 }
 
 async function findUserByEmail(email) {
@@ -790,6 +1054,13 @@ module.exports = {
     databaseName,
     checkConnection,
     getPool,
+    listTrips,
+    createTrip,
+    getTrip,
+    updateTrip,
+    saveTrip,
+    addItineraryVersion,
+    addItineraryMessages,
     findUserByEmail,
     findUserById,
     createUser,

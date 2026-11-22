@@ -952,6 +952,9 @@ async function handle(req, res) {
 
         if (method === 'GET' && p === '/trips') {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                return send(res, 200, { ok: true, trips: await mysqlStore.listTrips(user.id) });
+            }
             const trips = db.trips.filter((t) => t.user_id === user.id).map((t) => {
                 const cur = db.itineraries.find((i) => i.trip_id === t.id && i.is_current);
                 return Object.assign({}, t, { current_itinerary_id: cur ? cur.id : null });
@@ -962,6 +965,9 @@ async function handle(req, res) {
         if (method === 'POST' && p === '/trips') {
             const user = await needUser();
             const trip = parseTripInput(input);
+            if (mysqlStore.isConfigured()) {
+                return send(res, 201, { ok: true, trip: await mysqlStore.createTrip(user.id, trip) });
+            }
             const row = addRow(db, 'trips', Object.assign({}, trip, {
                 user_id: user.id,
                 status: 'draft',
@@ -976,6 +982,9 @@ async function handle(req, res) {
         const tripShow = p.match(/^\/trips\/(\d+)$/);
         if (method === 'GET' && tripShow) {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                return send(res, 200, Object.assign({ ok: true }, await mysqlStore.getTrip(user.id, Number(tripShow[1]))));
+            }
             const trip = ownedTrip(db, Number(tripShow[1]), user.id);
             const itinerary = currentItinerary(db, trip.id);
             return send(res, 200, {
@@ -990,8 +999,14 @@ async function handle(req, res) {
         const tripUpdate = p.match(/^\/trips\/(\d+)\/update$/);
         if (method === 'POST' && tripUpdate) {
             const user = await needUser();
-            const trip = ownedTrip(db, Number(tripUpdate[1]), user.id);
             const next = parseTripInput(input);
+            if (mysqlStore.isConfigured()) {
+                return send(res, 200, {
+                    ok: true,
+                    trip: await mysqlStore.updateTrip(user.id, Number(tripUpdate[1]), next),
+                });
+            }
+            const trip = ownedTrip(db, Number(tripUpdate[1]), user.id);
             Object.assign(trip, next, { updated_at: nowIso() });
             saveDb(db);
             return send(res, 200, { ok: true, trip });
@@ -1000,6 +1015,22 @@ async function handle(req, res) {
         const tripGen = p.match(/^\/trips\/(\d+)\/generate$/);
         if (method === 'POST' && tripGen) {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                const id = Number(tripGen[1]);
+                const { trip } = await mysqlStore.getTrip(user.id, id);
+                const itinerary = generateItinerary(trip);
+                const saved = await mysqlStore.addItineraryVersion(
+                    user.id, id, itinerary, itinerary.summary, 'generated'
+                );
+                await mysqlStore.createNotification(
+                    user.id,
+                    'itinerary',
+                    'Itinerary generated',
+                    'Your ' + trip.destination + ' itinerary is ready.',
+                    'roamini.html?view=itinerary&trip=' + id
+                );
+                return send(res, 200, { ok: true, trip: Object.assign({}, trip, { status: 'generated' }), itinerary: saved });
+            }
             const trip = ownedTrip(db, Number(tripGen[1]), user.id);
             const data = generateItinerary(trip);
             db.itineraries.forEach((i) => {
@@ -1033,6 +1064,18 @@ async function handle(req, res) {
         const tripSave = p.match(/^\/trips\/(\d+)\/save$/);
         if (method === 'POST' && tripSave) {
             const user = await needUser();
+            if (mysqlStore.isConfigured()) {
+                const id = Number(tripSave[1]);
+                const trip = await mysqlStore.saveTrip(user.id, id);
+                await mysqlStore.createNotification(
+                    user.id,
+                    'saved_trip',
+                    'Trip saved',
+                    'Saved your ' + trip.destination + ' trip.',
+                    'itinerary.html?trip=' + id
+                );
+                return send(res, 200, { ok: true, trip });
+            }
             const trip = ownedTrip(db, Number(tripSave[1]), user.id);
             trip.is_saved = 1;
             trip.status = 'saved';
@@ -1045,9 +1088,24 @@ async function handle(req, res) {
         const tripAsst = p.match(/^\/trips\/(\d+)\/assistant$/);
         if (method === 'POST' && tripAsst) {
             const user = await needUser();
-            const trip = ownedTrip(db, Number(tripAsst[1]), user.id);
             const message = String(input.message || '').trim();
             if (!message) return fail(res, 'Enter a message for the travel assistant.');
+            if (mysqlStore.isConfigured()) {
+                const id = Number(tripAsst[1]);
+                const { trip, itinerary: current } = await mysqlStore.getTrip(user.id, id);
+                if (!current) return fail(res, 'Generate an itinerary first.', 409);
+                const data = Object.assign({}, current, {
+                    summary: (current.summary || '') + ' Updated: ' + message,
+                });
+                const reply = 'Updated your ' + trip.destination + ' plan for: ' + message;
+                const saved = await mysqlStore.addItineraryVersion(user.id, id, data, data.summary);
+                const messages = await mysqlStore.addItineraryMessages(id, saved.id, [
+                    { role: 'user', message },
+                    { role: 'assistant', message: reply },
+                ]);
+                return send(res, 200, { ok: true, reply, itinerary: saved, messages });
+            }
+            const trip = ownedTrip(db, Number(tripAsst[1]), user.id);
             const current = currentItinerary(db, trip.id);
             if (!current) return fail(res, 'Generate an itinerary first.', 409);
             const data = Object.assign({}, current, { summary: (current.summary || '') + ' Updated: ' + message });
