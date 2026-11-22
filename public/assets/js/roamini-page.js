@@ -135,6 +135,7 @@
     let dayIndex = 0;
     let fullOpen = false;
     let trips = [];
+    let tripsError = '';
     let customStyles = [];
     let paceTouched = false;
     let syncing = false;
@@ -288,15 +289,37 @@
         try {
             const data = await RoamitraApi.get('/trips');
             trips = data.trips || [];
+            tripsError = '';
         } catch (err) {
             trips = [];
+            tripsError = err.message || 'Could not load trip history.';
         }
         paintTrips();
     }
 
     function paintTrips() {
         if (!tripList) return;
-        tripList.innerHTML = '';
+        if (tripsError) {
+            tripList.innerHTML = `<p class="rai-trips-message">${escapeHtml(tripsError)}</p>`;
+            return;
+        }
+        if (!trips.length) {
+            tripList.innerHTML = '<p class="rai-trips-message">Your trips will appear here.</p>';
+            return;
+        }
+        tripList.innerHTML = trips.map((item) => {
+            const ready = item.current_itinerary_id || item.status === 'generated' || item.status === 'saved';
+            const dates = item.start_date && item.end_date
+                ? `${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)}`
+                : 'Dates not set';
+            return `
+                <button type="button" class="rai-trip" data-trip-id="${escapeHtml(item.id)}">
+                    <strong>${escapeHtml(item.destination || 'Trip')}</strong>
+                    <small>${dates}</small>
+                    <small>${ready ? 'Itinerary ready' : 'Continue planning'}</small>
+                </button>
+            `;
+        }).join('');
     }
 
     function prefsFromTrip(value) {
@@ -397,6 +420,7 @@
             await RoamitraApi.post('/trips/' + id + '/generate', {});
             tripId = String(id);
             editingId = id;
+            await loadTrips();
             setStatus('');
             const next = new URL(window.location.href);
             next.searchParams.set('view', 'itinerary');
@@ -486,19 +510,16 @@
     }
 
     async function openItinerary(id) {
-        let chosen = id || tripId;
+        let chosen = id || '';
         if (!chosen) {
-            try {
-                const data = await RoamitraApi.get('/trips');
-                const list = data.trips || [];
-                const ready = list.find((item) => item.current_itinerary_id || item.status === 'generated' || item.status === 'saved');
-                chosen = (ready || list[0] || {}).id;
-            } catch (err) {
-                chosen = '';
-            }
+            if (!trips.length && !tripsError) await loadTrips();
+            const active = trips.find((item) => String(item.id) === String(tripId)
+                && (item.current_itinerary_id || item.status === 'generated' || item.status === 'saved'));
+            const ready = trips.find((item) => item.current_itinerary_id || item.status === 'generated' || item.status === 'saved');
+            chosen = (active || ready || {}).id;
         }
         if (!chosen) {
-            setStatus('Generate an itinerary first, then choose Itineraries.', true);
+            setStatus(tripsError || 'Generate an itinerary first, then choose Itinerary.', true);
             showPlan();
             return;
         }
@@ -608,6 +629,29 @@
     document.getElementById('raiMenuItin').onclick = () => {
         openMenu(false);
         openItinerary('');
+    };
+    tripList.onclick = async (event) => {
+        const button = event.target.closest('[data-trip-id]');
+        if (!button) return;
+        const selected = trips.find((item) => String(item.id) === button.dataset.tripId);
+        if (!selected) return;
+        setMenu(false);
+        const ready = selected.current_itinerary_id || selected.status === 'generated' || selected.status === 'saved';
+        if (ready) {
+            await openItinerary(selected.id);
+            return;
+        }
+        try {
+            const data = await RoamitraApi.get('/trips/' + selected.id);
+            tripId = String(selected.id);
+            editingId = String(selected.id);
+            fillForm(data.trip);
+            setStatus('This trip has no itinerary yet. Finish planning below.');
+            showPlan();
+        } catch (err) {
+            setStatus(err.message || 'Could not open this trip.', true);
+            showPlan();
+        }
     };
     document.getElementById('raiStudioNew').onclick = () => {
         editingId = '';
