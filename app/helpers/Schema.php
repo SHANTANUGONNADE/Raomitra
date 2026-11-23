@@ -305,9 +305,15 @@ final class Schema
         );
         foreach (['arrival_time', 'departure_time'] as $column) {
             $stmt->execute(['trips', $column]);
-            if (strtolower((string) $stmt->fetchColumn()) !== 'enum') {
+            $definition = $stmt->fetch();
+            if (!is_array($definition)) {
                 continue;
             }
+            $type = strtolower((string) ($definition['DATA_TYPE'] ?? ''));
+            if ($type !== 'enum' && $type !== 'varchar') {
+                continue;
+            }
+
             $pdo->exec("ALTER TABLE trips MODIFY `$column` VARCHAR(16) NULL");
             $pdo->exec(
                 "UPDATE trips SET `$column` = CASE `$column`
@@ -315,6 +321,10 @@ final class Schema
                     WHEN 'afternoon' THEN '14:00'
                     WHEN 'evening' THEN '18:00'
                     WHEN 'late_night' THEN '22:00'
+                    WHEN 'morn' THEN '09:00'
+                    WHEN 'after' THEN '14:00'
+                    WHEN 'eveni' THEN '18:00'
+                    WHEN 'late_' THEN '22:00'
                     ELSE `$column`
                  END"
             );
