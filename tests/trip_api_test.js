@@ -67,11 +67,29 @@ function request(method, route, body, cookie) {
         assert.equal(created.status, 201);
 
         const tripId = created.data.trip.id;
+        const updated = await request('POST', '/trips/' + tripId + '/update', {
+            destination: 'Tokyo',
+            start_date: '2026-12-01',
+            end_date: '2026-12-03',
+            traveling_with: 'solo',
+            arrival_time: '11:30',
+            departure_time: '15:45',
+            preferences: ['food'],
+            pace: 'packed',
+        }, cookie);
+        assert.equal(updated.status, 200);
+        assert.equal(updated.data.trip.arrival_time, '11:30');
+        assert.equal(updated.data.trip.departure_time, '15:45');
+        assert.equal(updated.data.trip.pace, 'packed');
+
         const generated = await request('POST', '/trips/' + tripId + '/generate', {}, cookie);
         assert.equal(generated.status, 200);
 
         const beforeChat = await request('GET', '/trips/' + tripId, null, cookie);
         assert.equal(beforeChat.status, 200);
+        assert.equal(beforeChat.data.trip.arrival_time, '11:30');
+        assert.equal(beforeChat.data.trip.departure_time, '15:45');
+        assert.equal(beforeChat.data.trip.pace, 'packed');
         assert(beforeChat.data.itinerary);
 
         const chat = await request('POST', '/trips/' + tripId + '/assistant', {

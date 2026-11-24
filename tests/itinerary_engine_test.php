@@ -42,6 +42,12 @@ $clockLast = $clockItinerary['days'][count($clockItinerary['days']) - 1];
 assert_true(($clockItinerary['days'][0]['window']['start'] ?? '') === '19:15', 'arrival time controls first-day activity window');
 assert_true(($clockLast['window']['end'] ?? '') === '12:30', 'departure time controls last-day activity window');
 assert_true(str_contains($clockItinerary['summary'] ?? '', 'Arrival: 17:45 IST. Departure: 15:30 IST.'), 'summary reports exact IST times');
+$relaxedItinerary = ItineraryEngine::generate(array_merge($trip, ['pace' => 'relaxed']));
+$packedItinerary = ItineraryEngine::generate(array_merge($trip, ['pace' => 'packed']));
+assert_true(
+    count($packedItinerary['days'][1]['activities'] ?? []) > count($relaxedItinerary['days'][1]['activities'] ?? []),
+    'packed pace schedules more activities than relaxed pace'
+);
 $edgeTrip = array_merge($trip, ['arrival_time' => '23:30', 'departure_time' => '01:00']);
 $edgeItinerary = ItineraryEngine::generate($edgeTrip);
 $edgeArrival = $edgeItinerary['days'][0];

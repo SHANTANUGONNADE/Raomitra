@@ -123,6 +123,40 @@ async function ensureHostStateColumn(p) {
     }
 }
 
+async function ensureTripTimeColumns(p) {
+    for (const column of ['arrival_time', 'departure_time']) {
+        const [rows] = await p.query(
+            `SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'trips' AND COLUMN_NAME = ?`,
+            [column]
+        );
+        if (!rows[0]) {
+            await p.query(`ALTER TABLE trips ADD COLUMN \`${column}\` VARCHAR(16) NULL`);
+        } else {
+            const type = String(rows[0].DATA_TYPE || '').toLowerCase();
+            const length = Number(rows[0].CHARACTER_MAXIMUM_LENGTH || 0);
+            if (['char', 'enum', 'varchar'].includes(type) && (type !== 'varchar' || length < 16)) {
+                await p.query(`ALTER TABLE trips MODIFY \`${column}\` VARCHAR(16) NULL`);
+            }
+        }
+        await p.query(
+            `UPDATE trips SET \`${column}\` = CASE \`${column}\`
+                WHEN 'morning' THEN '09:00'
+                WHEN 'afternoon' THEN '14:00'
+                WHEN 'evening' THEN '18:00'
+                WHEN 'late_night' THEN '22:00'
+                WHEN 'morn' THEN '09:00'
+                WHEN 'after' THEN '14:00'
+                WHEN 'eveni' THEN '18:00'
+                WHEN 'late_' THEN '22:00'
+                ELSE \`${column}\`
+             END
+             WHERE \`${column}\` IN ('morning','afternoon','evening','late_night','morn','after','eveni','late_')`
+        );
+    }
+}
+
 async function ensureSchema(p) {
     await p.query(`
         CREATE TABLE IF NOT EXISTS users (
@@ -218,8 +252,8 @@ async function ensureSchema(p) {
             budget_currency VARCHAR(8) NOT NULL DEFAULT 'USD',
             traveling_with ENUM('solo','couple','family','friends','group') NOT NULL DEFAULT 'solo',
             group_size TINYINT UNSIGNED NULL,
-            arrival_time VARCHAR(5) NULL,
-            departure_time VARCHAR(5) NULL,
+            arrival_time VARCHAR(16) NULL,
+            departure_time VARCHAR(16) NULL,
             preferences LONGTEXT NULL,
             pace ENUM('relaxed','moderate','packed') NOT NULL DEFAULT 'moderate',
             status ENUM('draft','generated','saved') NOT NULL DEFAULT 'draft',
@@ -229,6 +263,7 @@ async function ensureSchema(p) {
             KEY idx_trips_user_updated (user_id, updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await ensureTripTimeColumns(p);
     await p.query(`
         CREATE TABLE IF NOT EXISTS itineraries (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
