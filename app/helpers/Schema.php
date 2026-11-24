@@ -41,6 +41,18 @@ final class Schema
         ");
 
         $pdo->exec("
+            CREATE TABLE IF NOT EXISTS profile_media (
+                user_id INT UNSIGNED NOT NULL,
+                kind ENUM('avatar','cover') NOT NULL,
+                mime_type VARCHAR(32) NOT NULL,
+                image_data MEDIUMBLOB NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, kind),
+                CONSTRAINT fk_profile_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
             CREATE TABLE IF NOT EXISTS trips (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NOT NULL,
@@ -289,12 +301,23 @@ final class Schema
         self::ensureColumn($pdo, 'users', 'location', 'ALTER TABLE users ADD COLUMN location VARCHAR(120) NULL AFTER bio');
         self::ensureColumn($pdo, 'host_applications', 'vehicle_category', "ALTER TABLE host_applications ADD COLUMN vehicle_category VARCHAR(20) NULL AFTER vehicle_info");
         self::ensureColumn($pdo, 'host_applications', 'daily_rate', 'ALTER TABLE host_applications ADD COLUMN daily_rate DECIMAL(10,2) NULL AFTER vehicle_category');
-        try {
-            $pdo->exec('ALTER TABLE users MODIFY avatar_url MEDIUMTEXT NULL');
-        } catch (Throwable $e) {
-            // already wide enough
-        }
+        self::widenProfileMediaColumns($pdo);
         self::widenRoleColumn($pdo);
+    }
+
+    private static function widenProfileMediaColumns(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT DATA_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        foreach (['avatar_url', 'cover_url'] as $column) {
+            $stmt->execute(['users', $column]);
+            $type = strtolower((string) ($stmt->fetchColumn() ?: ''));
+            if (!in_array($type, ['mediumtext', 'longtext'], true)) {
+                $pdo->exec("ALTER TABLE users MODIFY `$column` MEDIUMTEXT NULL");
+            }
+        }
     }
 
     private static function migrateTripTimeColumns(PDO $pdo): void
@@ -438,6 +461,17 @@ final class Schema
                 location TEXT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS profile_media (
+                user_id INTEGER NOT NULL,
+                kind TEXT NOT NULL CHECK(kind IN ('avatar','cover')),
+                mime_type TEXT NOT NULL,
+                image_data BLOB NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, kind),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ");
         $pdo->exec("

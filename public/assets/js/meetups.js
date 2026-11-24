@@ -1,8 +1,12 @@
 (function () {
+    if (window.RoamitraMeetupsInitialized) return;
+    window.RoamitraMeetupsInitialized = true;
+
     let items = [];
     async function load() {
         const data = await RoamitraApi.get('/meetups');
         items = data.meetups || [];
+        RoamitraNav.registerLocations(items.map((item) => item.place));
         return items;
     }
 
@@ -35,24 +39,13 @@
 
     function paint() {
         document.querySelectorAll('[data-meetup-root]').forEach((root) => {
-            const filter = root.dataset.view || 'upcoming';
-            const tag = root.dataset.activeTag || '';
+            const location = RoamitraNav.currentLocation();
             const visible = items.filter((item) => {
-                if (filter === 'week' && !item.week && !(
-                    new Date(item.date).getTime() >= Date.now() &&
-                    new Date(item.date).getTime() <= Date.now() + 7 * 86400000
-                )) return false;
-                if (tag && !(item.tags || []).includes(tag)) return false;
-                return true;
+                return !location || RoamitraNav.locationMatches(item.place);
             });
             const list = root.querySelector('[data-meetup-list]');
-            if (list) list.innerHTML = visible.map(card).join('') || '<p class="lm-empty">No meetups in this view yet.</p>';
-            root.querySelectorAll('[data-filter]').forEach((button) => {
-                button.classList.toggle('on', button.dataset.filter === filter);
-            });
-            root.querySelectorAll('[data-tag]').forEach((button) => {
-                button.classList.toggle('on', (button.dataset.tag || '') === tag);
-            });
+            if (list) list.innerHTML = visible.map(card).join('')
+                || `<p class="lm-empty">${location ? `No meetups found in ${escapeHtml(location)} yet.` : 'No meetups available yet.'}</p>`;
         });
     }
 
@@ -61,21 +54,6 @@
             <div class="lm-head">
                 ${page ? '<a class="lm-back" href="community.html" aria-label="Back to community"><i class="bi bi-chevron-left"></i></a>' : ''}
                 <h2>Local Meetups</h2>
-            </div>
-            <div class="lm-tools">
-                <div class="lm-pills">
-                    <button type="button" data-filter="upcoming" class="on">Upcoming</button>
-                    <button type="button" data-filter="week">This Week</button>
-                </div>
-                <button type="button" class="lm-filters" data-filters><i class="bi bi-sliders"></i> Filters</button>
-            </div>
-            <div class="lm-tagbar" data-tagbar hidden>
-                <button type="button" data-tag="" class="on">All</button>
-                <button type="button" data-tag="Wellness">Wellness</button>
-                <button type="button" data-tag="Social">Social</button>
-                <button type="button" data-tag="Food">Food</button>
-                <button type="button" data-tag="Beach">Beach</button>
-                <button type="button" data-tag="Culture">Culture</button>
             </div>
             <button type="button" class="lm-create" data-create>Create Meetup</button>
             <p class="lm-note" data-note hidden></p>
@@ -95,29 +73,11 @@
     }
 
     document.querySelectorAll('[data-meetup-root]').forEach((root) => {
-        root.dataset.view = 'upcoming';
-        root.dataset.activeTag = '';
         root.innerHTML = shell(root.hasAttribute('data-meetup-page'));
         root.addEventListener('click', (event) => {
-            const filter = event.target.closest('button[data-filter]');
-            if (filter) {
-                root.dataset.view = filter.dataset.filter;
-                paint();
-                return;
-            }
-            const tagBtn = event.target.closest('button[data-tag]');
-            if (tagBtn) {
-                root.dataset.activeTag = tagBtn.dataset.tag || '';
-                paint();
-                return;
-            }
-            if (event.target.closest('[data-filters]')) {
-                const bar = root.querySelector('[data-tagbar]');
-                if (bar) bar.hidden = !bar.hidden;
-                return;
-            }
             if (event.target.closest('[data-create]')) {
                 const form = root.querySelector('[data-create-form]');
+                if (!form.hidden) return;
                 form.hidden = false;
                 const note = root.querySelector('[data-note]');
                 if (note) note.hidden = true;
@@ -145,16 +105,29 @@
                 time: String(data.get('time') || '').trim(),
                 capacity: Math.max(2, parseInt(data.get('capacity'), 10) || 20)
             };
-            await RoamitraApi.post('/meetups', payload);
-            form.reset();
-            form.hidden = true;
             const note = root.querySelector('[data-note]');
-            if (note) {
-                note.hidden = false;
-                note.textContent = 'Meetup published. You are marked as going.';
+            const submit = form.querySelector('[type="submit"]');
+            if (form.dataset.submitting === 'true') return;
+            form.dataset.submitting = 'true';
+            if (submit) submit.disabled = true;
+            try {
+                await RoamitraApi.post('/meetups', payload);
+                form.reset();
+                form.hidden = true;
+                if (note) {
+                    note.hidden = false;
+                    note.textContent = 'Meetup published. You are marked as going.';
+                }
+                await refresh();
+            } catch (error) {
+                if (note) {
+                    note.hidden = false;
+                    note.textContent = error.message || 'Could not publish meetup.';
+                }
+            } finally {
+                form.dataset.submitting = 'false';
+                if (submit) submit.disabled = false;
             }
-            root.dataset.view = 'upcoming';
-            await refresh();
         });
     });
 
@@ -164,5 +137,6 @@
         }
     }
     refresh();
+    window.addEventListener('roamitra-location-updated', paint);
     setInterval(refresh, 30000);
 })();

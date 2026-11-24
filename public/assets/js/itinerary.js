@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const params = new URLSearchParams(window.location.search);
     const tripId = params.get('trip');
+    const requestedVersion = Number(params.get('version')) || null;
     const root = document.getElementById('itineraryRoot');
     const chatLog = document.getElementById('assistantLog');
     const chatForm = document.getElementById('assistantForm');
@@ -24,10 +25,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function load() {
-        const data = await RoamitraApi.get(`/trips/${tripId}`);
+        const versionQuery = requestedVersion ? `?version=${encodeURIComponent(requestedVersion)}` : '';
+        const data = await RoamitraApi.get(`/trips/${tripId}${versionQuery}`);
         renderItinerary(data.trip, data.itinerary, data.versions || []);
         renderMessages(data.messages || []);
         return data;
+    }
+
+    async function renderHistory() {
+        const history = document.getElementById('itineraryHistory');
+        if (!history) return;
+        try {
+            const data = await RoamitraApi.get('/trips');
+            const trips = (data.trips || []).filter((trip) =>
+                trip.current_itinerary_id || ['generated', 'saved'].includes(String(trip.status || '').toLowerCase())
+            );
+            history.innerHTML = trips.length
+                ? trips.map((trip) => `<a class="btn-roamitra btn-roamitra-outline btn-roamitra-sm" href="${RoamitraApi.page('itinerary.html')}?trip=${encodeURIComponent(trip.id)}">
+                    ${escapeHtml(trip.destination || 'Trip')} · ${escapeHtml(trip.start_date || '')}
+                </a>`).join('')
+                : '<span class="text-muted">No generated itineraries yet.</span>';
+        } catch (error) {
+            history.innerHTML = '<span class="text-muted">Could not load itinerary history.</span>';
+        }
     }
 
     function renderItinerary(trip, itinerary, versions) {
@@ -105,7 +125,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
             </div>
-            <p class="text-muted small mt-3">History: ${versions.map(v => 'v' + v.version).join(' · ') || 'v' + itinerary.version}</p>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-3" aria-label="Itinerary versions">
+                <span class="text-muted small">Versions:</span>
+                ${versions.length ? versions.map((version) => {
+                    const href = RoamitraApi.page('itinerary.html') + '?trip=' + encodeURIComponent(trip.id)
+                        + '&version=' + encodeURIComponent(version.version);
+                    const active = Number(version.version) === Number(itinerary.version);
+                    return `<a class="btn-roamitra ${active ? 'btn-roamitra-navy' : 'btn-roamitra-outline'} btn-roamitra-sm" href="${href}">v${Number(version.version)}</a>`;
+                }).join('') : `<span class="text-muted small">v${Number(itinerary.version)}</span>`}
+            </div>
         `;
         saveBtn.hidden = trip.is_saved == 1;
     }
@@ -184,6 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
+        renderHistory();
         await load();
     } catch (err) {
         root.innerHTML = `<div class="form-alert error">${escapeHtml(err.message)}</div>`;

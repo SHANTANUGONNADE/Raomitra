@@ -71,10 +71,37 @@ final class ProfileController
                 $userId,
             ]);
 
+        foreach (['avatar' => $avatar, 'cover' => $cover] as $kind => $value) {
+            if ($value !== false && !str_starts_with($value, 'api?r=')) {
+                $pdo->prepare('DELETE FROM profile_media WHERE user_id = ? AND kind = ?')
+                    ->execute([$userId, $kind]);
+            }
+        }
+
         Response::ok([
             'user' => Auth::user(),
             'message' => 'Profile saved.',
         ]);
+    }
+
+    public static function media(int $userId, string $kind): never
+    {
+        if ($userId < 1 || !in_array($kind, ['avatar', 'cover'], true)) {
+            Response::error('Profile image not found.', 404);
+        }
+        $stmt = Database::pdo()->prepare(
+            'SELECT mime_type, image_data FROM profile_media WHERE user_id = ? AND kind = ? LIMIT 1'
+        );
+        $stmt->execute([$userId, $kind]);
+        $media = $stmt->fetch();
+        if (!$media) {
+            Response::error('Profile image not found.', 404);
+        }
+        header('Content-Type: ' . $media['mime_type']);
+        header('Cache-Control: public, max-age=3600');
+        header('X-Content-Type-Options: nosniff');
+        echo $media['image_data'];
+        exit;
     }
 
     /**
@@ -122,27 +149,40 @@ final class ProfileController
         if (strlen($raw) > $maxLen) {
             Response::error('That photo is too large. Try a smaller image.');
         }
-        return self::storeImage($userId, $kind, $raw);
+        $comma = strpos($raw, ',');
+        $bin = $comma === false ? false : base64_decode(substr($raw, $comma + 1), true);
+        $image = $bin === false ? false : @getimagesizefromstring($bin);
+        $mime = is_array($image) ? (string) ($image['mime'] ?? '') : '';
+        if ($bin === false || strlen($bin) < 24 || !in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            Response::error('Could not read that photo.');
+        }
+        if (getenv('VERCEL') === '1') {
+            $upsert = Database::isSqlite()
+                ? 'INSERT INTO profile_media (user_id, kind, mime_type, image_data) VALUES (?, ?, ?, ?)
+                   ON CONFLICT(user_id, kind) DO UPDATE SET mime_type = excluded.mime_type, image_data = excluded.image_data'
+                : 'INSERT INTO profile_media (user_id, kind, mime_type, image_data) VALUES (?, ?, ?, ?)
+                   ON DUPLICATE KEY UPDATE mime_type = VALUES(mime_type), image_data = VALUES(image_data)';
+            $statement = Database::pdo()->prepare($upsert);
+            $statement->bindValue(1, $userId, PDO::PARAM_INT);
+            $statement->bindValue(2, $kind);
+            $statement->bindValue(3, $mime);
+            $statement->bindValue(4, $bin, PDO::PARAM_LOB);
+            $statement->execute();
+            $endpoint = 'api?r=';
+            return $endpoint . rawurlencode('/profile-media/' . $userId . '/' . $kind)
+                . '&v=' . bin2hex(random_bytes(4));
+        }
+        return self::storeImage($userId, $kind, $bin, $mime);
     }
 
-    private static function storeImage(int $userId, string $kind, string $dataUrl): string
+    private static function storeImage(int $userId, string $kind, string $bin, string $mime): string
     {
-        $comma = strpos($dataUrl, ',');
-        if ($comma === false) {
-            Response::error('Could not read that photo.');
-        }
-        $bin = base64_decode(substr($dataUrl, $comma + 1), true);
-        if ($bin === false || strlen($bin) < 24) {
-            Response::error('Could not read that photo.');
-        }
-        if (@getimagesizefromstring($bin) === false) {
-            Response::error('Use a JPEG, PNG, or WebP image.');
-        }
         $dir = dirname(__DIR__, 2) . '/public/uploads/profiles';
         if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
             Response::error('Could not save the photo on the server.');
         }
-        $name = $kind . '-' . $userId . '-' . bin2hex(random_bytes(4)) . '.jpg';
+        $extension = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'][$mime];
+        $name = $kind . '-' . $userId . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
         $path = $dir . DIRECTORY_SEPARATOR . $name;
         if (file_put_contents($path, $bin) === false) {
             Response::error('Could not save the photo on the server.');

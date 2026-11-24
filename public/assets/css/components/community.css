@@ -1133,6 +1133,22 @@ body[data-page="community"] .vehicle-image {
 
 .reply-form button { flex: 0 0 auto; }
 
+.live-replies:not(:empty) {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.live-reply {
+    padding: 0.7rem 0.85rem;
+    border-left: 3px solid var(--color-primary, #1a8a58);
+    border-radius: 0.5rem;
+    background: var(--color-bg-muted);
+}
+
+.live-reply p { margin: 0.2rem 0; white-space: pre-wrap; }
+.live-reply small { color: var(--color-text-muted); }
+
 .state-filter {
     width: auto;
     min-width: min(230px, 100%);

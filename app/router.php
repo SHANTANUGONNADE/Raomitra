@@ -48,10 +48,17 @@ try {
 
         $method === 'GET' && $path === '/profile' => ProfileController::show(),
         $method === 'POST' && $path === '/profile' => ProfileController::update($input),
+        $method === 'GET' && preg_match('#^/profile-media/(\d+)/(avatar|cover)$#', $path, $m) === 1 => ProfileController::media(
+            (int) $m[1],
+            $m[2]
+        ),
 
         $method === 'GET' && $path === '/trips' => TripController::list(),
         $method === 'POST' && $path === '/trips' => TripController::create($input),
-        $method === 'GET' && preg_match('#^/trips/(\d+)$#', $path, $m) === 1 => TripController::show((int) $m[1]),
+        $method === 'GET' && preg_match('#^/trips/(\d+)$#', $path, $m) === 1 => TripController::show(
+            (int) $m[1],
+            isset($_GET['version']) ? max(1, (int) $_GET['version']) : null
+        ),
         $method === 'POST' && preg_match('#^/trips/(\d+)/update$#', $path, $m) === 1 => TripController::update((int) $m[1], $input),
         $method === 'POST' && preg_match('#^/trips/(\d+)/generate$#', $path, $m) === 1 => TripController::generate((int) $m[1]),
         $method === 'POST' && preg_match('#^/trips/(\d+)/save$#', $path, $m) === 1 => TripController::save((int) $m[1]),

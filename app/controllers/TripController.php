@@ -49,16 +49,16 @@ final class TripController
         Response::ok(['trips' => $stmt->fetchAll()]);
     }
 
-    public static function show(int $id): void
+    public static function show(int $id, ?int $version = null): void
     {
         $userId = Auth::requireUser();
         $trip = self::getOwned($id, $userId);
-        $itinerary = self::currentItinerary($id);
+        $itinerary = self::currentItinerary($id, $version);
         $versions = Database::pdo()->prepare(
             'SELECT id, version, is_current, summary, created_at FROM itineraries WHERE trip_id = ? ORDER BY version DESC'
         );
         $versions->execute([$id]);
-        if ($itinerary) {
+        if ($itinerary && !empty($itinerary['is_current'])) {
             self::ensureGreeting($id, (int) ($itinerary['id'] ?? 0));
             self::storeActivityImages($id, $itinerary);
         }
@@ -277,12 +277,21 @@ final class TripController
         return $trip;
     }
 
-    private static function currentItinerary(int $tripId): ?array
+    private static function currentItinerary(int $tripId, ?int $version = null): ?array
     {
-        $stmt = Database::pdo()->prepare(
-            'SELECT id, version, itinerary_json, summary, created_at FROM itineraries WHERE trip_id = ? AND is_current = 1 ORDER BY version DESC LIMIT 1'
-        );
-        $stmt->execute([$tripId]);
+        if ($version !== null && $version > 0) {
+            $stmt = Database::pdo()->prepare(
+                'SELECT id, version, is_current, itinerary_json, summary, created_at
+                 FROM itineraries WHERE trip_id = ? AND version = ? LIMIT 1'
+            );
+            $stmt->execute([$tripId, $version]);
+        } else {
+            $stmt = Database::pdo()->prepare(
+                'SELECT id, version, is_current, itinerary_json, summary, created_at
+                 FROM itineraries WHERE trip_id = ? AND is_current = 1 ORDER BY version DESC LIMIT 1'
+            );
+            $stmt->execute([$tripId]);
+        }
         $row = $stmt->fetch();
         if (!$row) {
             return null;
@@ -293,6 +302,7 @@ final class TripController
         }
         $data['id'] = (int) $row['id'];
         $data['version'] = (int) $row['version'];
+        $data['is_current'] = (int) $row['is_current'];
         $data['summary'] = $row['summary'];
         $data['created_at'] = $row['created_at'];
         return $data;

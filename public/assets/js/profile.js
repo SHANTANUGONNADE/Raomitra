@@ -423,11 +423,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     });
-    document.getElementById('followBtn')?.addEventListener('click', () => {
-        const btn = document.getElementById('followBtn');
-        const on = btn.classList.toggle('is-on');
-        btn.textContent = on ? 'Following' : 'Follow';
-    });
     document.querySelectorAll('[data-cust-tab]').forEach((tab) => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('[data-cust-tab]').forEach((el) => el.classList.toggle('active', el === tab));

@@ -56,6 +56,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <h3 class="h6 mb-1">${escapeHtml(p.title)}</h3>
                     <p class="feed-post-content">${escapeHtml(p.body)}</p>
+                    <div class="live-replies" aria-label="Replies">
+                        ${(p.replies || []).map(reply => `
+                            <div class="live-reply">
+                                <strong>${escapeHtml(reply.full_name || 'Member')}</strong>
+                                <p>${escapeHtml(reply.body)}</p>
+                                <small>${escapeHtml(reply.created_at || '')}</small>
+                            </div>
+                        `).join('')}
+                    </div>
                     <form class="reply-form">
                         <label class="visually-hidden" for="reply-${p.id}">Reply</label>
                         <input id="reply-${p.id}" name="body" placeholder="Write a reply…" required>

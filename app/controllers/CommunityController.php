@@ -6,14 +6,36 @@ final class CommunityController
     public static function list(): void
     {
         $stmt = Database::pdo()->query(
-            'SELECT p.id, p.title, p.body, p.created_at, u.full_name,
+            'SELECT p.id, p.user_id, p.title, p.body, p.created_at, u.full_name,
                     (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) AS reply_count
              FROM community_posts p
              JOIN users u ON u.id = p.user_id
              ORDER BY p.created_at DESC
              LIMIT 30'
         );
-        Response::ok(['posts' => $stmt->fetchAll()]);
+        $posts = $stmt->fetchAll();
+        if (!$posts) {
+            Response::ok(['posts' => []]);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($posts), '?'));
+        $replyStmt = Database::pdo()->prepare(
+            "SELECT r.id, r.post_id, r.user_id, r.body, r.created_at, u.full_name
+             FROM community_replies r
+             JOIN users u ON u.id = r.user_id
+             WHERE r.post_id IN ($placeholders)
+             ORDER BY r.created_at ASC, r.id ASC"
+        );
+        $replyStmt->execute(array_column($posts, 'id'));
+        $repliesByPost = [];
+        foreach ($replyStmt->fetchAll() as $reply) {
+            $repliesByPost[(int) $reply['post_id']][] = $reply;
+        }
+        foreach ($posts as &$post) {
+            $post['replies'] = $repliesByPost[(int) $post['id']] ?? [];
+        }
+        unset($post);
+        Response::ok(['posts' => $posts]);
     }
 
     public static function stats(): void
