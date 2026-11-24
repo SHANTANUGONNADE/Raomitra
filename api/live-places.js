@@ -2,9 +2,9 @@
 
 const CACHE_MS = 60 * 60 * 1000;
 const OVERPASS_ENDPOINTS = [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter',
+    { url: 'https://overpass-api.de/api/interpreter', timeoutMs: 4000 },
+    { url: 'https://overpass.kumi.systems/api/interpreter', timeoutMs: 2500 },
+    { url: 'https://overpass.private.coffee/api/interpreter', timeoutMs: 2500 },
 ];
 const cache = new Map();
 let nominatimQueue = Promise.resolve();
@@ -124,7 +124,7 @@ function offlineGuide(destination) {
 
 async function fetchMappedPlaces(destination, lat, lon) {
     const overpassQuery = [
-        '[out:json][timeout:8];',
+        '[out:json][timeout:5];',
         '(',
         'nwr(around:12000,' + lat + ',' + lon + ')["tourism"~"attraction|museum|gallery|viewpoint|hotel|hostel|guest_house|motel|apartment|zoo|aquarium|artwork"];',
         'nwr(around:12000,' + lat + ',' + lon + ')["amenity"~"restaurant|cafe|food_court|marketplace|place_of_worship"];',
@@ -146,7 +146,7 @@ async function fetchMappedPlaces(destination, lat, lon) {
     for (const endpoint of OVERPASS_ENDPOINTS) {
         let result;
         try {
-            result = await fetchJson(endpoint, options, 8000);
+            result = await fetchJson(endpoint.url, options, endpoint.timeoutMs);
         } catch (error) {
             lastError = error;
             continue;
@@ -180,7 +180,7 @@ async function forDestination(destination) {
             return fetchJson(
                 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' + encodeURIComponent(query),
                 { headers: { 'User-Agent': 'RoamitraTravelPlanner/1.0', Accept: 'application/json' } },
-                5000
+                3500
             );
         });
         nominatimQueue = geocodeTask.then(() => undefined, () => undefined);

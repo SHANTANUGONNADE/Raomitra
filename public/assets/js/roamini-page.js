@@ -19,6 +19,9 @@
     let tripId = '';
     let trip = null;
     let itinerary = null;
+    let stopPhotoCacheKey = '';
+    let stopPhotoCache = new Map();
+    let stopPhotoOwners = new Map();
     let dayIndex = 0;
     let fullOpen = false;
     let trips = [];
@@ -78,6 +81,18 @@
 
     function escapeAttribute(text) {
         return escapeHtml(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function resetStopPhotoCache(key) {
+        if (stopPhotoCacheKey === key) return;
+        stopPhotoCacheKey = key;
+        stopPhotoCache = new Map();
+        stopPhotoOwners = new Map();
+    }
+
+    function stopPhotoKey(activity, destination, index) {
+        return String(destination || '').trim().toLowerCase() + '|'
+            + String(activity.title || activity.place || index).trim().toLowerCase();
     }
 
     function setStatus(text, error) {
@@ -296,7 +311,7 @@
             pace
         };
         generateBtn.disabled = true;
-        setStatus('Creating your itinerary…');
+        setStatus('Finding local places and creating your itinerary…');
         try {
             const saved = editingId
                 ? await RoamitraApi.post('/trips/' + editingId + '/update', body)
@@ -304,6 +319,7 @@
             const id = saved.trip?.id || saved.id || editingId;
             tripId = String(id);
             editingId = id;
+            resetStopPhotoCache(tripId + '|' + body.destination.trim().toLowerCase());
             await RoamitraApi.post('/trips/' + id + '/generate', {});
             await loadTrips();
             setStatus('');
@@ -356,7 +372,15 @@
         const activityHtml = (day.activities || []).map((act, index) => {
             const start = act.time || act.start || '';
             const category = act.category || 'default';
-            const photo = window.RoamitraPlaceImages.forActivity(act, trip.destination);
+            const photoKey = stopPhotoKey(act, trip.destination, index);
+            let photo = stopPhotoCache.get(photoKey)
+                || window.RoamitraPlaceImages.forActivity(act, trip.destination);
+            const photoOwner = photo && stopPhotoOwners.get(photo);
+            if (photo && photoOwner && photoOwner !== photoKey) photo = '';
+            if (photo) {
+                stopPhotoCache.set(photoKey, photo);
+                stopPhotoOwners.set(photo, photoKey);
+            }
             const label = act.title || act.place || 'Stop';
             return `
                 <article class="rai-stop">
@@ -415,8 +439,19 @@
         activities.forEach((activity, index) => {
             const image = timeline.querySelector(`.rai-stop-photo[data-photo-index="${index}"]`);
             if (!image) return;
+            const photoKey = stopPhotoKey(activity, destination, index);
+            const cachedPhoto = stopPhotoCache.get(photoKey);
+            if (cachedPhoto) {
+                image.src = cachedPhoto;
+                image.style.display = '';
+                return;
+            }
             window.RoamitraPlaceImages.resolve(activity, destination).then((photo) => {
                 if (!photo || !timeline.contains(image)) return;
+                const photoOwner = stopPhotoOwners.get(photo);
+                if (photoOwner && photoOwner !== photoKey) return;
+                stopPhotoCache.set(photoKey, photo);
+                stopPhotoOwners.set(photo, photoKey);
                 image.src = photo;
                 image.style.display = '';
             });
@@ -451,12 +486,14 @@
             return;
         }
         tripId = String(chosen);
+        resetStopPhotoCache(tripId + '|' + String(trip && trip.destination || '').trim().toLowerCase());
         showStudio();
         document.getElementById('raiTimeline').innerHTML = '<p>Loading itinerary…</p>';
         try {
             const data = await RoamitraApi.get('/trips/' + tripId);
             trip = data.trip;
             itinerary = data.itinerary;
+            resetStopPhotoCache(tripId + '|' + String(trip.destination || '').trim().toLowerCase());
             dayIndex = 0;
             fullOpen = false;
             renderStudio();

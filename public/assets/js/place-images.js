@@ -82,14 +82,11 @@
             ? catalog.findPlaceImage(title, destination)
             : '';
         if (catalogPlace) return Promise.resolve(catalogPlace);
+        if (title) return wikiThumbnail(placeQuery, title);
         const catalogCity = catalog && catalog.findCityImage
             ? catalog.findCityImage(destination)
             : '';
-        return (title ? wikiThumbnail(placeQuery, title) : Promise.resolve(''))
-            .then((placePhoto) => placePhoto
-                || catalogCity
-                || (city ? wikiThumbnail(city, city) : '')
-            );
+        return Promise.resolve(catalogCity || (city ? wikiThumbnail(city, city) : ''));
     }
 
     window.RoamitraPlaceImages = { forActivity, resolve };

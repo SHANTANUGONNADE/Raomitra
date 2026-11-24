@@ -23,14 +23,14 @@ final class LivePlacesProvider
             $geocoded = self::fetchJson(
                 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' . rawurlencode($destination),
                 ['User-Agent: RoamitraTravelPlanner/1.0', 'Accept: application/json'],
-                5
+                3
             );
             if (!isset($geocoded[0]['lat'], $geocoded[0]['lon'])) {
                 throw new RuntimeException('No mapped location was found for "' . $destination . '". Try a city or nearby landmark.', 422);
             }
             $lat = (float) $geocoded[0]['lat'];
             $lon = (float) $geocoded[0]['lon'];
-            $query = '[out:json][timeout:8];('
+            $query = '[out:json][timeout:5];('
                 . 'nwr(around:12000,' . $lat . ',' . $lon . ')["tourism"~"attraction|museum|gallery|viewpoint|hotel|hostel|guest_house|motel|apartment|zoo|aquarium|artwork"];'
                 . 'nwr(around:12000,' . $lat . ',' . $lon . ')["amenity"~"restaurant|cafe|food_court|marketplace|place_of_worship"];'
                 . 'nwr(around:12000,' . $lat . ',' . $lon . ')["historic"];'
@@ -39,15 +39,15 @@ final class LivePlacesProvider
             $result = null;
             $providerError = null;
             foreach ([
-                'https://overpass-api.de/api/interpreter',
-                'https://overpass.kumi.systems/api/interpreter',
-                'https://overpass.private.coffee/api/interpreter',
+                ['url' => 'https://overpass-api.de/api/interpreter', 'timeout' => 4],
+                ['url' => 'https://overpass.kumi.systems/api/interpreter', 'timeout' => 3],
+                ['url' => 'https://overpass.private.coffee/api/interpreter', 'timeout' => 3],
             ] as $endpoint) {
                 try {
                     $candidate = self::fetchJson(
-                        $endpoint,
+                        $endpoint['url'],
                         ['User-Agent: RoamitraTravelPlanner/1.0', 'Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'],
-                        8,
+                        $endpoint['timeout'],
                         'data=' . rawurlencode($query)
                     );
                 } catch (RuntimeException $error) {
@@ -150,7 +150,7 @@ final class LivePlacesProvider
         curl_setopt_array($curl, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_CONNECTTIMEOUT => 2,
             CURLOPT_TIMEOUT => $timeout,
         ]);
         if ($body !== null) {

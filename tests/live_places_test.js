@@ -45,6 +45,10 @@ global.fetch = async (url) => {
     assert.equal(data.stays[0].name, 'Test Guest House');
     assert(requests.some((url) => url.startsWith('https://overpass-api.de/')));
     assert(requests.some((url) => url.startsWith('https://overpass.kumi.systems/')));
+    const requestCount = requests.length;
+    const cachedData = await livePlaces.forDestination('Reykjavik, Iceland');
+    assert.equal(cachedData.source, 'OpenStreetMap');
+    assert.equal(requests.length, requestCount);
     console.log('Live place provider failover test passed.');
 })().catch((error) => {
     console.error(error);

@@ -67,6 +67,28 @@ async function run() {
                 query: {
                     pages: {
                         1: {
+                            title: 'Delhi',
+                            thumbnail: { source: 'https://upload.wikimedia.org/delhi.jpg' },
+                        },
+                    },
+                },
+            }),
+        };
+    };
+    assert.equal(
+        await placeImages.resolve({ title: 'Unlisted Heritage Pavilion' }, 'Delhi'),
+        ''
+    );
+    assert.match(requestedUrl, /Unlisted\+Heritage\+Pavilion\+Delhi/);
+
+    context.fetch = async (url) => {
+        requestedUrl = url;
+        return {
+            ok: true,
+            json: async () => ({
+                query: {
+                    pages: {
+                        1: {
                             title: 'Xylophonia Observatory',
                             thumbnail: { source: 'https://upload.wikimedia.org/xylophonia.jpg' },
                         },
