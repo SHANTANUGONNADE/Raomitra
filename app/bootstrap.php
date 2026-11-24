@@ -31,7 +31,7 @@ $config = require $root . '/app/config/config.php';
 
 $helpers = [
     'Database', 'Schema', 'SessionStore', 'Response', 'Auth',
-    'WalletService', 'NotificationService', 'ItineraryEngine',
+    'WalletService', 'NotificationService', 'LivePlacesProvider', 'ItineraryEngine',
     'PlacesCatalog', 'TranslatorService', 'RoaminiKnowledge', 'RoaminiEngine',
 ];
 $controllers = [

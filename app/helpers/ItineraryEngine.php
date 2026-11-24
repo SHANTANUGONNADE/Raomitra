@@ -19,7 +19,8 @@ final class ItineraryEngine
         $perDay = $pace === 'relaxed' ? 3 : ($pace === 'packed' ? 5 : 4);
         $budget = isset($trip['budget']) && $trip['budget'] !== null ? (float) $trip['budget'] : null;
 
-        $catalog = PlacesCatalog::forDestination((string) $trip['destination']);
+        $livePlaces = LivePlacesProvider::forDestination((string) $trip['destination']);
+        $catalog = $livePlaces['activities'] ?? PlacesCatalog::forDestination((string) $trip['destination']);
         $catalog = self::scoreAndSort($catalog, $prefs, $budget, $people);
         $used = [];
         $days = [];
@@ -69,7 +70,7 @@ final class ItineraryEngine
                     }
                     $cost = self::scaledCost((int) $place['cost'], $people, (string) $trip['traveling_with']);
                     $activityCost += $cost;
-                    $activities[] = self::activity(
+                    $activity = self::activity(
                         $place['name'],
                         $place['category'],
                         $slot['start'],
@@ -77,6 +78,12 @@ final class ItineraryEngine
                         $cost,
                         $place['notes'] !== '' ? $place['notes'] : ('Typical hours: ' . $place['hours'])
                     );
+                    foreach (['lat' => 'latitude', 'lon' => 'longitude', 'map_url' => 'map_url', 'osm_url' => 'source_url'] as $source => $target) {
+                        if (isset($place[$source])) {
+                            $activity[$target] = $place[$source];
+                        }
+                    }
+                    $activities[] = $activity;
                 }
             }
 
@@ -91,10 +98,44 @@ final class ItineraryEngine
 
         $accommodation = self::accommodation($trip, $people, $budget);
         $transport = self::transport($trip, $people);
-        $estStay = $accommodation['nightly'] * max(1, $dayCount - 1);
+        $nights = max(1, $dayCount - 1);
+        if ($livePlaces !== null) {
+            $stayTarget = $budget === null ? null : round($budget * 0.35);
+            $accommodation = [
+                'type' => !empty($livePlaces['stays']) ? 'Mapped local accommodation listings' : 'Search local accommodation listings',
+                'recommendation' => !empty($livePlaces['stays'])
+                    ? 'Compare these real nearby properties against your nightly budget target.'
+                    : 'No named accommodation was mapped nearby; search current listings for this destination.',
+                'target_nightly_budget' => $stayTarget === null ? null : round($stayTarget / $nights),
+                'currency' => $trip['budget_currency'] ?? 'INR',
+                'rates_verified' => false,
+                'stays' => array_slice($livePlaces['stays'], 0, 5),
+                'map_url' => 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode('hotels in ' . $trip['destination']),
+                'reason' => 'OpenStreetMap does not provide live room prices or availability. Confirm rates and dates with the property before booking.',
+            ];
+            $transport = [
+                'local' => 'Check local public transport and walking routes between the mapped places.',
+                'airport' => 'Choose an airport transfer after checking the current local fares.',
+                'note' => 'Current transport fares are not available in the place data.',
+            ];
+        }
+        $estStay = $livePlaces !== null ? 0 : $accommodation['nightly'] * $nights;
         $estFood = self::foodPerDay($trip, $people) * $dayCount;
         $estLocal = $transport['local_total'];
         $total = round($activityCost + $estStay + $estFood + $estLocal, 2);
+        $budgetBreakdown = $livePlaces !== null
+            ? ($budget !== null ? [
+                'accommodation' => round($budget * 0.35),
+                'food' => round($budget * 0.25),
+                'local_transport' => round($budget * 0.15),
+                'activities' => round($budget * 0.25),
+            ] : null)
+            : [
+                'accommodation' => round($estStay, 2),
+                'food' => round($estFood, 2),
+                'local_transport' => round($estLocal, 2),
+                'activities' => round($activityCost, 2),
+            ];
 
         $itinerary = [
             'destination' => $trip['destination'],
@@ -109,19 +150,20 @@ final class ItineraryEngine
             'days' => $days,
             'budget' => [
                 'user_budget' => $budget,
-                'currency' => $trip['budget_currency'] ?? 'USD',
-                'estimated_total' => $total,
-                'per_person' => round($total / max(1, $people), 2),
-                'breakdown' => [
-                    'activities' => round($activityCost, 2),
-                    'accommodation' => round($estStay, 2),
-                    'food' => round($estFood, 2),
-                    'local_transport' => round($estLocal, 2),
-                ],
-                'within_budget' => $budget === null ? null : $total <= $budget,
+                'currency' => $trip['budget_currency'] ?? 'INR',
+                'estimated_total' => $livePlaces !== null ? null : $total,
+                'per_person' => $livePlaces !== null
+                    ? ($budget === null ? null : round($budget / max(1, $people), 2))
+                    : round($total / max(1, $people), 2),
+                'breakdown' => $budgetBreakdown,
+                'breakdown_type' => $livePlaces !== null && $budget !== null ? 'budget_targets' : null,
+                'within_budget' => $livePlaces !== null ? null : ($budget === null ? null : $total <= $budget),
             ],
             'accommodation' => $accommodation,
             'transportation' => $transport,
+            'places_source' => $livePlaces['source'] ?? null,
+            'places_attribution_url' => $livePlaces['attribution_url'] ?? null,
+            'places_fetched_at' => $livePlaces['fetched_at'] ?? null,
             'weather_note' => 'If rain is expected, swap outdoor viewpoints for museums, markets, and cafés. Ask the assistant to adjust for weather.',
             'summary' => sprintf(
                 '%d-day plan for %s in %s (%s, party of %d). Arrival: %s. Departure: %s.',
@@ -154,7 +196,8 @@ final class ItineraryEngine
         }
 
         $intent = self::parseIntent($userMessage);
-        $catalog = PlacesCatalog::forDestination((string) $trip['destination']);
+        $livePlaces = LivePlacesProvider::forDestination((string) $trip['destination']);
+        $catalog = $livePlaces['activities'] ?? PlacesCatalog::forDestination((string) $trip['destination']);
 
         switch ($intent['action']) {
             case 'remove':

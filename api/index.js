@@ -7,6 +7,7 @@ const { URL } = require('url');
 const bcrypt = require('bcryptjs');
 const mysqlStore = require('./mysql');
 const roaminiKnowledge = require('./roamini-knowledge');
+const livePlaces = require('./live-places');
 
 const SECRET = process.env.RAOMITRA_SESSION_SECRET || 'raomitra-local-session-key';
 const COOKIE = 'raomitra_auth';
@@ -265,6 +266,45 @@ function fail(res, message, status) {
     send(res, status || 400, { ok: false, error: message });
 }
 
+function imageBufferFromDataUrl(value, maxLength) {
+    if (typeof value !== 'string' || value.length > maxLength) {
+        throw Object.assign(new Error('That photo is too large. Try a smaller image.'), { status: 400 });
+    }
+    const match = value.match(/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/i);
+    if (!match) {
+        throw Object.assign(new Error('Use a JPEG, PNG, or WebP image.'), { status: 400 });
+    }
+    const data = Buffer.from(match[2], 'base64');
+    let mimeType = '';
+    if (data.length >= 24 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+        mimeType = 'image/jpeg';
+    } else if (data.length >= 24 && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+        mimeType = 'image/png';
+    } else if (data.length >= 24 && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') {
+        mimeType = 'image/webp';
+    }
+    const declaredMime = match[1].toLowerCase() === 'jpg' ? 'image/jpeg' : 'image/' + match[1].toLowerCase();
+    if (!mimeType || mimeType !== declaredMime) {
+        throw Object.assign(new Error('Could not read that photo.'), { status: 400 });
+    }
+    return { mimeType, data };
+}
+
+async function persistProfileMedia(userId, kind, value, maxLength) {
+    if (typeof value === 'string' && /^data:image\//i.test(value)) {
+        const media = imageBufferFromDataUrl(value, maxLength);
+        await mysqlStore.saveProfileMedia(userId, kind, media.mimeType, media.data);
+        return 'api?r=%2Fprofile-media%2F' + userId + '%2F' + kind + '&v=' + crypto.randomBytes(4).toString('hex');
+    }
+    const existing = typeof value === 'string'
+        ? value.match(/^\/?api\?r=%2Fprofile-media%2F(\d+)%2F(avatar|cover)(?:&|$)/i)
+        : null;
+    if (!existing || Number(existing[1]) !== Number(userId) || existing[2].toLowerCase() !== kind) {
+        await mysqlStore.deleteProfileMedia(userId, kind);
+    }
+    return value;
+}
+
 async function readBody(req) {
     if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
         return req.body;
@@ -380,50 +420,117 @@ function activityImage(category, title) {
     return 'https://images.unsplash.com/' + list[hash % list.length] + '?auto=format&fit=crop&w=480&q=60';
 }
 
-function generateItinerary(trip) {
+async function generateItinerary(trip) {
+    const placeData = await livePlaces.forDestination(trip.destination);
     const count = Math.min(14, daysBetween(trip.start_date, trip.end_date));
+    const people = Math.max(1, Number(trip.group_size) || 1);
+    const nights = Math.max(1, count - 1);
+    const budget = trip.budget == null || trip.budget === '' ? null : Number(trip.budget);
+    const budgetTargets = budget == null ? null : {
+        accommodation: Math.round(budget * 0.35),
+        food: Math.round(budget * 0.25),
+        local_transport: Math.round(budget * 0.15),
+        activities: Math.round(budget * 0.25),
+    };
+    const activities = placeData.activities.slice();
+    if (budgetTargets && budgetTargets.activities < 1000) {
+        activities.sort((a, b) => Number(b.fee === 'no') - Number(a.fee === 'no'));
+    }
+    const seen = new Set();
+    const uniqueActivities = activities.filter((place) => {
+        const key = place.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
     const days = [];
+    let activityIndex = 0;
+    const perDay = trip.pace === 'relaxed' ? 2 : (trip.pace === 'packed' ? 4 : 3);
     for (let i = 0; i < count; i++) {
         const date = new Date(trip.start_date + 'T00:00:00');
         date.setDate(date.getDate() + i);
         const iso = date.toISOString().slice(0, 10);
+        const remainingDays = count - i;
+        const slotsToday = Math.min(perDay, Math.ceil((uniqueActivities.length - activityIndex) / remainingDays));
+        const scheduled = [];
+        for (let j = 0; j < slotsToday && activityIndex < uniqueActivities.length; j++, activityIndex++) {
+            const place = uniqueActivities[activityIndex];
+            const startHour = 9 + j * 3;
+            const time = String(startHour).padStart(2, '0') + ':00';
+            const endTime = String(startHour + 1).padStart(2, '0') + ':30';
+            const notes = [
+                place.address,
+                place.opening_hours ? 'Opening hours listed: ' + place.opening_hours : 'Check current opening hours before visiting.',
+                place.fee === 'no' ? 'OpenStreetMap lists no admission fee.' : 'Admission cost is not verified; check with the venue.',
+            ].filter(Boolean).join(' ');
+            scheduled.push({
+                title: place.name,
+                place: place.name,
+                category: place.category,
+                start: time,
+                end: endTime,
+                time,
+                end_time: endTime,
+                cost: null,
+                cost_estimate: null,
+                notes,
+                latitude: place.lat,
+                longitude: place.lon,
+                map_url: place.map_url,
+                source_url: place.osm_url,
+                image: activityImage(place.category, place.name),
+            });
+        }
         days.push({
             day: i + 1,
             date: iso,
-            theme: i === 0 ? 'Arrival in ' + trip.destination : 'Explore ' + trip.destination,
-            activities: [
-                {
-                    title: i === 0 ? 'Hotel check-in' : 'Local sightseeing',
-                    category: i === 0 ? 'accommodation' : 'culture',
-                    start: '09:00',
-                    end: '11:00',
-                    cost: i === 0 ? 0 : 25,
-                    notes: 'Planned for ' + trip.destination,
-                    image: activityImage(i === 0 ? 'accommodation' : 'culture', i === 0 ? 'Hotel check-in' : 'Local sightseeing'),
-                },
-                {
-                    title: 'Lunch & neighborhood walk',
-                    category: 'food',
-                    start: '12:30',
-                    end: '14:00',
-                    cost: 20,
-                    notes: 'Casual local meal',
-                    image: activityImage('food', 'Lunch & neighborhood walk'),
-                },
-            ],
+            theme: i === 0 ? 'Explore ' + trip.destination : 'Explore ' + trip.destination,
+            activities: scheduled,
         });
     }
+    const stays = placeData.stays.slice(0, 5).map((stay) => Object.assign({}, stay, {
+        target_nightly_budget: budgetTargets ? Math.round(budgetTargets.accommodation / nights) : null,
+    }));
+    const accommodationSearch = 'https://www.google.com/maps/search/?api=1&query='
+        + encodeURIComponent('hotels in ' + trip.destination);
+    const accommodation = {
+        type: stays.length ? 'Mapped local accommodation listings' : 'Search local accommodation listings',
+        recommendation: stays.length
+            ? 'Compare these real nearby properties against your nightly budget target.'
+            : 'No named accommodation was mapped nearby; search current listings for this destination.',
+        target_nightly_budget: budgetTargets ? Math.round(budgetTargets.accommodation / nights) : null,
+        currency: trip.budget_currency || 'INR',
+        rates_verified: false,
+        stays,
+        map_url: accommodationSearch,
+        reason: 'OpenStreetMap does not provide live room prices or availability. Confirm rates and dates with the property before booking.',
+    };
+    const transport = {
+        local: 'Check local public transport and walking routes between the mapped places.',
+        airport: 'Choose an airport transfer after checking the current local fares.',
+        note: 'Current transport fares are not available in the place data.',
+    };
     return {
         destination: trip.destination,
         version: 1,
         generated_at: new Date().toISOString(),
+        places_source: placeData.source,
+        places_attribution_url: placeData.attribution_url,
+        places_fetched_at: placeData.fetched_at,
         days,
-        summary: 'A ' + count + '-day plan for ' + trip.destination + '.',
+        accommodation,
+        transportation: transport,
         budget: {
-            user_budget: trip.budget,
-            currency: trip.budget_currency || 'USD',
-            estimated_total: count * 80,
+            user_budget: budget,
+            currency: trip.budget_currency || 'INR',
+            estimated_total: null,
+            per_person: budget == null ? null : Math.round(budget / people),
+            breakdown: budgetTargets,
+            breakdown_type: 'budget_targets',
+            within_budget: null,
         },
+        summary: count + '-day plan for ' + trip.destination + ' using current OpenStreetMap place data. '
+            + (budget == null ? 'Add a budget to set spending targets.' : 'Budget amounts are targets; live venue and hotel prices are not available.'),
     };
 }
 
@@ -652,7 +759,7 @@ function parseTripInput(input) {
         start_date: start,
         end_date: end,
         budget,
-        budget_currency: 'USD',
+        budget_currency: 'INR',
         traveling_with: withWho,
         group_size: groupSize,
         arrival_time: arrival,
@@ -854,6 +961,17 @@ async function handle(req, res) {
             return send(res, 200, { ok: true, user: publicUser(user) });
         }
 
+        const profileMediaMatch = p.match(/^\/profile-media\/(\d+)\/(avatar|cover)$/);
+        if (method === 'GET' && profileMediaMatch) {
+            const media = await mysqlStore.getProfileMedia(Number(profileMediaMatch[1]), profileMediaMatch[2]);
+            if (!media) return fail(res, 'Profile image not found.', 404);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', media.mime_type);
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            return res.end(media.image_data);
+        }
+
         if (method === 'GET' && p === '/profile') {
             const user = await needUser();
             const wallet = ensureWallet(db, user.id);
@@ -929,8 +1047,13 @@ async function handle(req, res) {
             try {
                 avatar = nextMedia(input.avatar_url, user.avatar_url, 900000, false);
                 cover = nextMedia(input.cover_url, user.cover_url, 1200000, true);
+                if (mysqlStore.isConfigured()) {
+                    avatar = await persistProfileMedia(user.id, 'avatar', avatar, 900000);
+                    cover = await persistProfileMedia(user.id, 'cover', cover, 1200000);
+                }
             } catch (err) {
-                return fail(res, err.message, err.status || 400);
+                if (err.status) return fail(res, err.message, err.status);
+                throw err;
             }
             user.full_name = name;
             user.bio = bio || null;
@@ -1018,7 +1141,7 @@ async function handle(req, res) {
             if (mysqlStore.isConfigured()) {
                 const id = Number(tripGen[1]);
                 const { trip } = await mysqlStore.getTrip(user.id, id);
-                const itinerary = generateItinerary(trip);
+                const itinerary = await generateItinerary(trip);
                 const saved = await mysqlStore.addItineraryVersion(
                     user.id, id, itinerary, itinerary.summary, 'generated'
                 );
@@ -1032,7 +1155,7 @@ async function handle(req, res) {
                 return send(res, 200, { ok: true, trip: Object.assign({}, trip, { status: 'generated' }), itinerary: saved });
             }
             const trip = ownedTrip(db, Number(tripGen[1]), user.id);
-            const data = generateItinerary(trip);
+            const data = await generateItinerary(trip);
             db.itineraries.forEach((i) => {
                 if (i.trip_id === trip.id) i.is_current = 0;
             });
@@ -1320,9 +1443,16 @@ async function handle(req, res) {
             }
             const posts = db.community_posts.slice().reverse().slice(0, 30).map((post) => {
                 const author = db.users.find((u) => u.id === post.user_id);
+                const replies = db.community_replies.filter((reply) => Number(reply.post_id) === Number(post.id))
+                    .slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)) || Number(a.id) - Number(b.id))
+                    .map((reply) => {
+                        const replyAuthor = db.users.find((u) => Number(u.id) === Number(reply.user_id));
+                        return Object.assign({}, reply, { full_name: replyAuthor ? replyAuthor.full_name : 'Traveler' });
+                    });
                 return Object.assign({}, post, {
                     full_name: author ? author.full_name : 'Traveler',
-                    reply_count: db.community_replies.filter((r) => r.post_id === post.id).length,
+                    reply_count: replies.length,
+                    replies,
                 });
             });
             return send(res, 200, { ok: true, posts });

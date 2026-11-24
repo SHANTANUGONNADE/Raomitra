@@ -2,7 +2,10 @@
 declare(strict_types=1);
 
 require dirname(__DIR__) . '/app/helpers/PlacesCatalog.php';
+require dirname(__DIR__) . '/app/helpers/LivePlacesProvider.php';
 require dirname(__DIR__) . '/app/helpers/ItineraryEngine.php';
+
+putenv('ROAMITRA_PLACES_MODE=offline');
 
 $failures = 0;
 function assert_true(bool $cond, string $msg): void

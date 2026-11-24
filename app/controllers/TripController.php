@@ -126,7 +126,7 @@ final class TripController
         try {
             $data = ItineraryEngine::generate($trip);
         } catch (Throwable $e) {
-            Response::error($e->getMessage(), 422);
+            Response::error($e->getMessage(), $e->getCode() === 503 ? 503 : 422);
         }
 
         $pdo = Database::pdo();
@@ -253,7 +253,7 @@ final class TripController
             'start_date' => $start,
             'end_date' => $end,
             'budget' => $budget,
-            'budget_currency' => 'USD',
+            'budget_currency' => 'INR',
             'traveling_with' => $with,
             'group_size' => $groupSize,
             'arrival_time' => $arrival,

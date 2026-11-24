@@ -5,6 +5,7 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
+      "maxDuration": 30,
       "includeFiles": "{app/data/roamini-examples.json,public/assets/js/mumbai-data.js,public/assets/js/india-cities.js}"
     }
   },

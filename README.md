@@ -12,6 +12,12 @@ Frontend-only development. Backend integration will begin after frontend approva
 2. Start Apache in XAMPP
 3. Open: `http://localhost/Roamitrawebsite/public/index.html`
 
+## Vercel deployment
+
+Set Vercel's **Root Directory** to the repository root, not `public`. The static site is emitted from `public`, while the Node API function lives at `api/index.js`. After deployment, `/api?r=%2Fhealth` should return JSON; if it returns an HTML page, the API function was not included in the deployment. Configure the database environment variables described in `.env.example`.
+
+Itinerary generation looks up real named places and accommodation listings from OpenStreetMap. The provider does not supply live hotel rates, availability, admission fees, or transport fares; the displayed budget breakdown is a spending target, not a quote. Check the linked listings before booking.
+
 **Admin Login**
 
 - Email: `admin@raomitra.com`

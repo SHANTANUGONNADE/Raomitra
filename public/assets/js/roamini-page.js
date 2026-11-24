@@ -462,10 +462,10 @@
         const day = days[dayIndex] || days[0];
         if (!day) return;
         const timeline = document.getElementById('raiTimeline');
-        timeline.innerHTML = (day.activities || []).map((act) => {
+        const activityHtml = (day.activities || []).map((act) => {
             const start = act.time || act.start || '';
             const category = act.category || 'default';
-            const photo = photoFor(act);
+            const photo = act.source_url ? '' : photoFor(act);
             const label = act.title || act.place || 'Stop';
             return `
                 <article class="rai-stop">
@@ -475,11 +475,36 @@
                     <div>
                         <h3>${escapeHtml(label)}</h3>
                         <p>${escapeHtml(act.notes || '')}</p>
+                        ${act.map_url ? `<a href="${escapeHtml(act.map_url)}" target="_blank" rel="noopener noreferrer">Open place map</a>` : ''}
                     </div>
-                    <img src="${photo}" alt="${escapeHtml(label)}" referrerpolicy="no-referrer">
+                    ${photo ? `<img src="${photo}" alt="" referrerpolicy="no-referrer">` : ''}
                 </article>
             `;
-        }).join('') || '<p>No activities on this day.</p>';
+        }).join('') || '<p>No mapped places were found for this day.</p>';
+        const budget = itinerary.budget || {};
+        const breakdown = budget.breakdown || {};
+        const accommodation = itinerary.accommodation || {};
+        const liveDetails = dayIndex === 0 && itinerary.places_source ? `
+            <section class="rai-live-data">
+                <h3>Stay and budget targets</h3>
+                ${budget.user_budget != null ? `
+                    <p>Total trip budget: ₹${Number(budget.user_budget).toLocaleString()} · These are targets, not current prices.</p>
+                    <ul>
+                        <li>Stay: ₹${Number(breakdown.accommodation || 0).toLocaleString()}</li>
+                        <li>Food: ₹${Number(breakdown.food || 0).toLocaleString()}</li>
+                        <li>Local transport: ₹${Number(breakdown.local_transport || 0).toLocaleString()}</li>
+                        <li>Activities: ₹${Number(breakdown.activities || 0).toLocaleString()}</li>
+                    </ul>
+                ` : '<p>Add a trip budget to see per-category spending targets.</p>'}
+                <p>${escapeHtml(accommodation.reason || 'Hotel prices and availability are not included in the live place data.')}</p>
+                ${accommodation.target_nightly_budget != null ? `<p>Stay target for all travelers: ₹${Number(accommodation.target_nightly_budget).toLocaleString()} per night.</p>` : ''}
+                ${Array.isArray(accommodation.stays) && accommodation.stays.length
+                    ? `<ul>${accommodation.stays.map((stay) => `<li><a href="${escapeHtml(stay.map_url || stay.osm_url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(stay.name)}</a></li>`).join('')}</ul>`
+                    : `<a href="${escapeHtml(accommodation.map_url || '#')}" target="_blank" rel="noopener noreferrer">Search current hotel listings</a>`}
+                <p class="rai-data-source">Places from <a href="${escapeHtml(itinerary.places_attribution_url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source)}</a>. Confirm hours, prices, and availability with venues.</p>
+            </section>
+        ` : '';
+        timeline.innerHTML = activityHtml + liveDetails;
         if (dayIndex === 0) {
             timeline.style.minHeight = '0px';
             const dayOneHeight = timeline.offsetHeight;

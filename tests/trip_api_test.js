@@ -18,6 +18,25 @@ if (os.tmpdir() !== temp) {
 }
 
 const storePath = path.join(temp, 'raomitra-store.json');
+global.fetch = async (url) => {
+    const target = String(url);
+    if (target.startsWith('https://nominatim.openstreetmap.org/')) {
+        return { ok: true, json: async () => [{ lat: '35.6762', lon: '139.6503' }] };
+    }
+    if (target.startsWith('https://overpass-api.de/')) {
+        return {
+            ok: true,
+            json: async () => ({
+                elements: [
+                    { type: 'node', id: 101, lat: 35.68, lon: 139.65, tags: { name: 'Test History Museum', tourism: 'museum', fee: 'no' } },
+                    { type: 'node', id: 102, lat: 35.681, lon: 139.651, tags: { name: 'Test Local Cafe', amenity: 'cafe' } },
+                    { type: 'node', id: 103, lat: 35.682, lon: 139.652, tags: { name: 'Test Guest House', tourism: 'guest_house' } },
+                ],
+            }),
+        };
+    }
+    throw new Error('Unexpected external request in itinerary API test: ' + target);
+};
 const handle = require('../api');
 
 function request(method, route, body, cookie) {
@@ -54,6 +73,31 @@ function request(method, route, body, cookie) {
         assert.equal(login.status, 200);
         const cookie = login.headers['set-cookie'].split(';')[0];
 
+        const avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/r3cAAAAASUVORK5CYII=';
+        const profile = await request('POST', '/profile', {
+            full_name: 'Trip API Test',
+            avatar_url: avatar,
+        }, cookie);
+        assert.equal(profile.status, 200);
+        assert.equal(profile.data.user.avatar_url, avatar);
+        const refreshedProfile = await request('GET', '/auth/me', null, cookie);
+        assert.equal(refreshedProfile.data.user.avatar_url, avatar);
+
+        const question = await request('POST', '/community/posts', {
+            title: 'Test community question',
+            body: 'How do I find the station?',
+        }, cookie);
+        assert.equal(question.status, 201);
+        const reply = await request('POST', '/community/posts/' + question.data.post_id + '/replies', {
+            body: 'Use the main entrance.',
+        }, cookie);
+        assert.equal(reply.status, 200);
+        const community = await request('GET', '/community/posts', null, cookie);
+        const listedQuestion = community.data.posts.find((post) => Number(post.id) === Number(question.data.post_id));
+        assert.equal(listedQuestion.reply_count, 1);
+        assert.equal(listedQuestion.replies[0].body, 'Use the main entrance.');
+        assert.equal(listedQuestion.replies[0].full_name, 'Trip API Test');
+
         const created = await request('POST', '/trips', {
             destination: 'Tokyo',
             start_date: '2026-12-01',
@@ -84,6 +128,21 @@ function request(method, route, body, cookie) {
 
         const generated = await request('POST', '/trips/' + tripId + '/generate', {}, cookie);
         assert.equal(generated.status, 200);
+        assert.equal(generated.data.itinerary.places_source, 'OpenStreetMap');
+        assert.equal(generated.data.itinerary.days[0].activities[0].title, 'Test History Museum');
+        assert.equal(generated.data.itinerary.accommodation.stays[0].name, 'Test Guest House');
+        assert.equal(generated.data.itinerary.budget.breakdown_type, 'budget_targets');
+        assert.equal(generated.data.itinerary.budget.estimated_total, null);
+
+        const meetup = await request('POST', '/meetups', {
+            title: 'Tokyo walk',
+            place: 'Shibuya',
+            date: '2026-12-02',
+            time: '10:00',
+            capacity: 12,
+        }, cookie);
+        assert.equal(meetup.status, 201);
+        assert.equal(meetup.data.meetup.title, 'Tokyo walk');
 
         const beforeChat = await request('GET', '/trips/' + tripId, null, cookie);
         assert.equal(beforeChat.status, 200);
@@ -104,7 +163,7 @@ function request(method, route, body, cookie) {
         assert(afterChat.data.messages.some((item) => item.role === 'user'));
         assert(afterChat.data.messages.some((item) => item.role === 'assistant' && item.message === chat.data.reply));
 
-        console.log('Trip API itinerary chat test passed.');
+        console.log('Trip API profile, community, and itinerary test passed.');
     } finally {
         if (fs.existsSync(storePath)) fs.unlinkSync(storePath);
         fs.rmdirSync(temp);

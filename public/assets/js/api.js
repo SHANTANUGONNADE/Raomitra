@@ -48,7 +48,7 @@ const RoamitraApi = {
             return data.error.message || JSON.stringify(data.error);
         }
         if (res && res.status === 405) {
-            return 'The live API is not running yet. Redeploy from the repo root and wait until the build finishes.';
+            return 'The API endpoint does not accept this request. Confirm the deployment includes the Node API function at api/index.js and redeploy from the repository root.';
         }
         if (text && text.length && text.length < 240 && !/^\s*</.test(text)) return text;
         return res && res.status ? `Request failed (${res.status}).` : 'Request failed.';
@@ -70,8 +70,8 @@ const RoamitraApi = {
             data = {
                 ok: false,
                 error: html
-                    ? 'The login API did not run. Redeploy from the project root (not the public folder) so PHP can start.'
-                    : 'Invalid server response.'
+                    ? `The API request to ${String(path)} returned a web page instead of JSON. Confirm the Vercel project Root Directory is the repository root (not public), then redeploy so api/index.js is included. Check /api?r=%2Fhealth for the API status.`
+                    : `The API request to ${String(path)} returned an invalid response. Check /api?r=%2Fhealth for the API status.`
             };
         }
         if (!res.ok || data.ok === false) {

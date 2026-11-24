@@ -113,6 +113,46 @@ async function updateUserProfile(userId, fields) {
     return findUserById(userId);
 }
 
+async function saveProfileMedia(userId, kind, mimeType, imageData) {
+    const p = await getPool();
+    if (!p) return false;
+    await p.query(
+        `INSERT INTO profile_media (user_id, kind, mime_type, image_data)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE mime_type = VALUES(mime_type), image_data = VALUES(image_data)`,
+        [userId, kind, mimeType, imageData]
+    );
+    return true;
+}
+
+async function getProfileMedia(userId, kind) {
+    const p = await getPool();
+    if (!p) return null;
+    const [rows] = await p.query(
+        'SELECT mime_type, image_data FROM profile_media WHERE user_id = ? AND kind = ? LIMIT 1',
+        [userId, kind]
+    );
+    return rows[0] || null;
+}
+
+async function deleteProfileMedia(userId, kind) {
+    const p = await getPool();
+    if (!p) return;
+    await p.query('DELETE FROM profile_media WHERE user_id = ? AND kind = ?', [userId, kind]);
+}
+
+async function ensureProfileMediaColumn(p, column) {
+    const [rows] = await p.query(
+        `SELECT DATA_TYPE FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+        [column]
+    );
+    const type = String(rows[0] && rows[0].DATA_TYPE || '').toLowerCase();
+    if (type && !['mediumtext', 'longtext'].includes(type)) {
+        await p.query(`ALTER TABLE users MODIFY \`${column}\` MEDIUMTEXT NULL`);
+    }
+}
+
 async function ensureHostStateColumn(p) {
     const [rows] = await p.query(
         `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
@@ -174,9 +214,22 @@ async function ensureSchema(p) {
             UNIQUE KEY uniq_users_email (email)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await ensureUserColumn(p, 'avatar_url', 'MEDIUMTEXT NULL');
     await ensureUserColumn(p, 'cover_url', 'MEDIUMTEXT NULL');
+    await ensureProfileMediaColumn(p, 'avatar_url');
+    await ensureProfileMediaColumn(p, 'cover_url');
     await ensureUserColumn(p, 'bio', 'VARCHAR(400) NULL');
     await ensureUserColumn(p, 'location', 'VARCHAR(120) NULL');
+    await p.query(`
+        CREATE TABLE IF NOT EXISTS profile_media (
+            user_id INT UNSIGNED NOT NULL,
+            kind ENUM('avatar','cover') NOT NULL,
+            mime_type VARCHAR(32) NOT NULL,
+            image_data MEDIUMBLOB NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, kind)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
     try {
         await p.query("ALTER TABLE users MODIFY role VARCHAR(32) NOT NULL DEFAULT 'customer'");
     } catch (e) { /* already varchar */ }
@@ -548,7 +601,25 @@ async function listPosts() {
         ORDER BY p.id DESC
         LIMIT 30
     `);
-    return rows;
+    if (!rows.length) return rows;
+    const ids = rows.map((post) => post.id);
+    const placeholders = ids.map(() => '?').join(',');
+    const [replies] = await p.query(`
+        SELECT r.id, r.post_id, r.user_id, r.body, r.created_at, u.full_name
+        FROM community_replies r
+        LEFT JOIN users u ON u.id = r.user_id
+        WHERE r.post_id IN (${placeholders})
+        ORDER BY r.created_at ASC, r.id ASC
+    `, ids);
+    const byPost = new Map();
+    replies.forEach((reply) => {
+        const key = Number(reply.post_id);
+        if (!byPost.has(key)) byPost.set(key, []);
+        byPost.get(key).push(reply);
+    });
+    return rows.map((post) => Object.assign({}, post, {
+        replies: byPost.get(Number(post.id)) || [],
+    }));
 }
 
 async function listPostsForUser(userId) {
@@ -1123,6 +1194,9 @@ module.exports = {
     listMeetups,
     createMeetup,
     updateUserProfile,
+    saveProfileMedia,
+    getProfileMedia,
+    deleteProfileMedia,
     createBooking,
     listBookingsForUser,
     listBookingsRecent,
