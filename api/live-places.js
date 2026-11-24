@@ -1,6 +1,11 @@
 'use strict';
 
 const CACHE_MS = 60 * 60 * 1000;
+const OVERPASS_ENDPOINTS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+];
 const cache = new Map();
 let nominatimQueue = Promise.resolve();
 let lastNominatimRequest = 0;
@@ -75,32 +80,89 @@ function mapElement(element, destination) {
 }
 
 function offlineGuide(destination) {
-    if (!/\bmumbai\b/i.test(String(destination || ''))) return null;
-    const places = [
-        ['Gateway of India', 'landmark'],
-        ['Marine Drive', 'city'],
-        ['Juhu Beach', 'beach'],
-        ['Chhatrapati Shivaji Terminus', 'landmark'],
-    ];
+    const city = String(destination || '').trim();
+    const isMumbai = /\bmumbai\b/i.test(city);
+    const places = isMumbai
+        ? [
+            ['Gateway of India', 'landmark'],
+            ['Marine Drive', 'city'],
+            ['Juhu Beach', 'beach'],
+            ['Chhatrapati Shivaji Terminus', 'landmark'],
+        ]
+        : [
+            ['Historic sites in ' + city, 'landmark'],
+            ['Museums and galleries in ' + city, 'museum'],
+            ['Markets in ' + city, 'market'],
+            ['Parks and gardens in ' + city, 'nature'],
+            ['Local cafes in ' + city, 'cafe'],
+            ['Local restaurants in ' + city, 'restaurant'],
+            ['Scenic viewpoints in ' + city, 'landmark'],
+            ['Cultural attractions in ' + city, 'culture'],
+        ];
     const activities = places.map(([name, category], index) => ({
-        id: 'guide/mumbai-' + (index + 1),
+        id: 'guide/' + (isMumbai ? 'mumbai-' : 'suggestion-' + index + '-') + (index + 1),
         name,
         category,
-        address: 'Mumbai, Maharashtra',
+        address: isMumbai ? 'Mumbai, Maharashtra' : 'Suggested map search for ' + city,
         opening_hours: '',
-        fee: 'no',
+        fee: isMumbai ? 'no' : '',
         charge: '',
-        notes: 'Public place with no admission fee listed in the Roamitra city guide. Confirm access and local conditions before visiting.',
-        map_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ', Mumbai, India'),
+        notes: isMumbai
+            ? 'Public place with no admission fee listed in the Roamitra city guide. Confirm access and local conditions before visiting.'
+            : 'Suggested map search, not a verified venue. Check current local listings, access, and opening hours before visiting.',
+        map_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ', ' + city),
         osm_url: '',
     }));
     return {
         activities,
         stays: [],
-        source: 'Roamitra curated Mumbai guide',
+        source: isMumbai ? 'Roamitra curated Mumbai guide' : 'Roamitra destination suggestions (unverified)',
         attribution_url: null,
         fetched_at: null,
     };
+}
+
+async function fetchMappedPlaces(destination, lat, lon) {
+    const overpassQuery = [
+        '[out:json][timeout:8];',
+        '(',
+        'nwr(around:12000,' + lat + ',' + lon + ')["tourism"~"attraction|museum|gallery|viewpoint|hotel|hostel|guest_house|motel|apartment|zoo|aquarium|artwork"];',
+        'nwr(around:12000,' + lat + ',' + lon + ')["amenity"~"restaurant|cafe|food_court|marketplace|place_of_worship"];',
+        'nwr(around:12000,' + lat + ',' + lon + ')["historic"];',
+        'nwr(around:12000,' + lat + ',' + lon + ')["leisure"~"park|nature_reserve"];',
+        ');out center tags 120;',
+    ].join('');
+    const options = {
+        method: 'POST',
+        headers: {
+            'User-Agent': 'RoamitraTravelPlanner/1.0',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json',
+        },
+        body: 'data=' + encodeURIComponent(overpassQuery),
+    };
+    let lastError = null;
+
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+        let result;
+        try {
+            result = await fetchJson(endpoint, options, 8000);
+        } catch (error) {
+            lastError = error;
+            continue;
+        }
+
+        const places = (Array.isArray(result.elements) ? result.elements : [])
+            .map((element) => mapElement(element, destination))
+            .filter(Boolean);
+        const unique = [...new Map(places.map((place) => [place.name.toLowerCase(), place])).values()];
+        const activities = unique.filter((place) => place.category !== 'accommodation');
+        const stays = unique.filter((place) => place.category === 'accommodation');
+        if (activities.length) return { activities, stays };
+        lastError = providerError('No mapped attractions or businesses were found near "' + destination + '".');
+    }
+
+    throw lastError || providerError('No mapped attractions or businesses were found near "' + destination + '".');
 }
 
 async function forDestination(destination) {
@@ -132,38 +194,7 @@ async function forDestination(destination) {
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
             throw providerError('The destination could not be located. Try a more specific city name.');
         }
-        const overpassQuery = [
-            '[out:json][timeout:8];',
-            '(',
-            'nwr(around:12000,' + lat + ',' + lon + ')["tourism"~"attraction|museum|gallery|viewpoint|hotel|hostel|guest_house|motel|apartment|zoo|aquarium|artwork"];',
-            'nwr(around:12000,' + lat + ',' + lon + ')["amenity"~"restaurant|cafe|food_court|marketplace|place_of_worship"];',
-            'nwr(around:12000,' + lat + ',' + lon + ')["historic"];',
-            'nwr(around:12000,' + lat + ',' + lon + ')["leisure"~"park|nature_reserve"];',
-            ');out center tags 120;',
-        ].join('');
-        const result = await fetchJson(
-            'https://overpass-api.de/api/interpreter',
-            {
-                method: 'POST',
-                headers: {
-                    'User-Agent': 'RoamitraTravelPlanner/1.0',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Accept: 'application/json',
-                },
-                body: 'data=' + encodeURIComponent(overpassQuery),
-            },
-            10000
-        );
-
-        const places = (Array.isArray(result.elements) ? result.elements : [])
-            .map((element) => mapElement(element, query))
-            .filter(Boolean);
-        const unique = [...new Map(places.map((place) => [place.name.toLowerCase(), place])).values()];
-        const activities = unique.filter((place) => place.category !== 'accommodation');
-        const stays = unique.filter((place) => place.category === 'accommodation');
-        if (!activities.length) {
-            throw providerError('No mapped attractions or businesses were found near "' + query + '". Try a larger nearby city.');
-        }
+        const { activities, stays } = await fetchMappedPlaces(query, lat, lon);
 
         const data = {
             activities,
@@ -182,9 +213,11 @@ async function forDestination(destination) {
             });
         }
         const guide = offlineGuide(query);
-        if (guide) return guide;
-        if (error.status) throw error;
-        throw providerError('Live place data is temporarily unavailable. Please try generating the itinerary again.', error);
+        console.warn(
+            'Live place lookup failed for "' + query + '"; using the local itinerary guide.',
+            error instanceof Error ? error.message : String(error)
+        );
+        return guide;
     }
 }
 

@@ -189,6 +189,33 @@ function request(method, route, body, cookie) {
         assert.notEqual(fallbackItinerary.data.itinerary.days[0].theme, fallbackItinerary.data.itinerary.days[1].theme);
         assert(fallbackItinerary.data.itinerary.accommodation.map_url.includes('hotels'));
 
+        const unknownCityTrip = await request('POST', '/trips', {
+            destination: 'Lisbon',
+            start_date: '2026-12-10',
+            end_date: '2026-12-12',
+            traveling_with: 'solo',
+            arrival_time: '10:00',
+            departure_time: '14:00',
+            preferences: ['culture'],
+            pace: 'moderate',
+        }, cookie);
+        assert.equal(unknownCityTrip.status, 201);
+        const unknownCityItinerary = await request(
+            'POST',
+            '/trips/' + unknownCityTrip.data.trip.id + '/generate',
+            {},
+            cookie
+        );
+        assert.equal(unknownCityItinerary.status, 200);
+        assert.equal(
+            unknownCityItinerary.data.itinerary.places_source,
+            'Roamitra destination suggestions (unverified)'
+        );
+        const suggestedPlaces = unknownCityItinerary.data.itinerary.days.flatMap((day) => day.activities);
+        assert(suggestedPlaces.length > 0);
+        assert(suggestedPlaces.every((place) => place.title.includes('Lisbon')));
+        assert(suggestedPlaces.every((place) => place.notes.includes('not a verified venue')));
+
         console.log('Trip API profile, community, and itinerary test passed.');
     } finally {
         if (fs.existsSync(storePath)) fs.unlinkSync(storePath);

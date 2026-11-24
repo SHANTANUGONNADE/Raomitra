@@ -482,11 +482,12 @@ async function generateItinerary(trip) {
             const endTime = String(startHour + 1).padStart(2, '0') + ':30';
             const notes = [
                 place.address,
+                place.notes,
                 place.opening_hours ? 'Opening hours listed: ' + place.opening_hours : 'Check current opening hours before visiting.',
                 place.fee === 'no'
-                    ? (place.notes || (placeData.attribution_url
+                    ? (placeData.attribution_url
                         ? 'OpenStreetMap lists no admission fee.'
-                        : 'No admission fee is listed in this guide; confirm access before visiting.'))
+                        : (place.notes ? '' : 'No admission fee is listed in this guide; confirm access before visiting.'))
                     : 'Admission cost is not verified; check with the venue.',
             ].filter(Boolean).join(' ');
             scheduled.push({

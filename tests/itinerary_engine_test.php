@@ -37,6 +37,24 @@ $it = ItineraryEngine::generate($trip);
 assert_true(PlacesCatalog::hasDestination('Mumbai'), 'recognizes a curated city guide');
 assert_true(!PlacesCatalog::hasDestination('Atlantis'), 'does not claim unknown cities have curated guides');
 assert_true(!empty($it['days']), 'generates days');
+$unknownCityItinerary = ItineraryEngine::generate(array_merge($trip, [
+    'destination' => 'Porto',
+    'arrival_time' => '10:00',
+    'departure_time' => '14:00',
+]));
+assert_true(
+    ($unknownCityItinerary['places_source'] ?? '') === 'Roamitra destination suggestions (unverified)',
+    'unknown destinations receive clearly labeled suggestions when live lookup is offline'
+);
+$unknownCityActivities = array_merge(...array_map(
+    static fn(array $day): array => $day['activities'],
+    $unknownCityItinerary['days']
+));
+assert_true(
+    count($unknownCityActivities) > 0
+        && str_contains($unknownCityActivities[0]['notes'] ?? '', 'not been verified'),
+    'unknown destination suggestions state that venue details are unverified'
+);
 assert_true(($it['days'][0]['window']['kind'] ?? '') === 'arrival_late', 'late-night arrival shortens day 1');
 $last = $it['days'][count($it['days']) - 1];
 assert_true(($last['window']['kind'] ?? '') === 'depart_early', 'morning departure shortens last day');

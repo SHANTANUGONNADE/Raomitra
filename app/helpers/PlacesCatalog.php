@@ -179,17 +179,18 @@ final class PlacesCatalog
     private static function generic(string $destination): array
     {
         $city = $destination !== '' ? $destination : 'the city';
+        $notes = 'Suggested search only: venue names, opening hours, admission, and availability have not been verified.';
         return [
-            self::place($city . ' Old Town Walking Tour', 'culture', '09:00-17:00', 12, ['culture', 'city']),
-            self::place($city . ' Central Market', 'market', '08:00-18:00', 10, ['food', 'shopping', 'budget']),
-            self::place($city . ' Landmark Viewpoint', 'landmark', '08:00-19:00', 8, ['city', 'nature']),
-            self::place($city . ' Museum of Local History', 'museum', '10:00-17:00', 12, ['culture', 'indoor', 'art']),
-            self::place($city . ' Riverside / Park Stroll', 'nature', '07:00-19:00', 0, ['nature', 'relaxed', 'family']),
-            self::place($city . ' Neighborhood Cafe', 'cafe', '08:00-18:00', 7, ['cafe', 'food']),
-            self::place($city . ' Signature Local Restaurant', 'restaurant', '12:00-22:00', 22, ['food']),
-            self::place($city . ' Night Food Street', 'food', '17:00-22:00', 15, ['food', 'nightlife']),
-            self::place($city . ' Day Trip Outlook', 'adventure', '08:00-16:00', 25, ['adventure', 'nature']),
-            self::place($city . ' Shopping District', 'shopping', '11:00-21:00', 18, ['shopping']),
+            self::place($city . ' Old Town Walking Tour', 'culture', '09:00-17:00', 0, ['culture', 'city'], $notes),
+            self::place($city . ' Central Market', 'market', '08:00-18:00', 0, ['food', 'shopping', 'budget'], $notes),
+            self::place($city . ' Landmark Viewpoint', 'landmark', '08:00-19:00', 0, ['city', 'nature'], $notes),
+            self::place($city . ' Museum of Local History', 'museum', '10:00-17:00', 0, ['culture', 'indoor', 'art'], $notes),
+            self::place($city . ' Riverside / Park Stroll', 'nature', '07:00-19:00', 0, ['nature', 'relaxed', 'family'], $notes),
+            self::place($city . ' Neighborhood Cafe', 'cafe', '08:00-18:00', 0, ['cafe', 'food'], $notes),
+            self::place($city . ' Signature Local Restaurant', 'restaurant', '12:00-22:00', 0, ['food'], $notes),
+            self::place($city . ' Night Food Street', 'food', '17:00-22:00', 0, ['food', 'nightlife'], $notes),
+            self::place($city . ' Day Trip Outlook', 'adventure', '08:00-16:00', 0, ['adventure', 'nature'], $notes),
+            self::place($city . ' Shopping District', 'shopping', '11:00-21:00', 0, ['shopping'], $notes),
         ];
     }
 }

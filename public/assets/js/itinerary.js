@@ -114,7 +114,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
             </div>
-            ${itinerary.places_attribution_url ? `<p class="text-muted small mt-3">Place names and map locations from <a href="${escapeHtml(itinerary.places_attribution_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source || 'OpenStreetMap')}</a>. Confirm opening hours and availability with each venue.</p>` : ''}
+            ${itinerary.places_source ? `
+                <p class="text-muted small mt-3">Place suggestions: ${itinerary.places_attribution_url
+                    ? `<a href="${escapeHtml(itinerary.places_attribution_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source)}</a>`
+                    : `<strong>${escapeHtml(itinerary.places_source)}</strong>`}. Confirm current venue details before visiting.</p>
+            ` : ''}
             <div class="d-flex flex-wrap align-items-center gap-2 mt-3" aria-label="Itinerary versions">
                 <span class="text-muted small">Versions:</span>
                 ${versions.length ? versions.map((version) => {

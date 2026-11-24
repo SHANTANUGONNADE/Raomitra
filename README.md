@@ -16,7 +16,7 @@ Frontend-only development. Backend integration will begin after frontend approva
 
 Set Vercel's **Root Directory** to the repository root, not `public`. The static site is emitted from `public`, while the Node API function lives at `api/index.js`. After deployment, `/api?r=%2Fhealth` should return JSON; if it returns an HTML page, the API function was not included in the deployment. Configure the database environment variables described in `.env.example`.
 
-Itinerary generation looks up real named places and accommodation listings from OpenStreetMap. The provider does not supply live hotel rates, availability, admission fees, or transport fares; the displayed budget breakdown is a spending target, not a quote. Check the linked listings before booking.
+Itinerary generation looks up real named places and accommodation listings from OpenStreetMap when available. If live place data is unavailable, the planner still creates a destination guide and labels its suggestions as unverified; check current local listings before visiting. OpenStreetMap does not supply live hotel rates, availability, admission fees, or transport fares, and budget breakdowns are planning targets rather than quotes.
 
 **Admin Login**
 

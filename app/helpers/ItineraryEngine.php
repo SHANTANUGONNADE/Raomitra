@@ -20,7 +20,9 @@ final class ItineraryEngine
         $budget = isset($trip['budget']) && $trip['budget'] !== null ? (float) $trip['budget'] : null;
 
         $livePlaces = LivePlacesProvider::forDestination((string) $trip['destination']);
-        $curatedGuide = $livePlaces === null && PlacesCatalog::hasDestination((string) $trip['destination']);
+        $usingGuide = $livePlaces === null;
+        $curatedGuide = $usingGuide && PlacesCatalog::hasDestination((string) $trip['destination']);
+        $generalGuide = $usingGuide && !$curatedGuide;
         $catalog = $livePlaces['activities'] ?? PlacesCatalog::forDestination((string) $trip['destination']);
         foreach ($catalog as &$place) {
             if (empty($place['map_url'])) {
@@ -124,6 +126,14 @@ final class ItineraryEngine
             $accommodation['rates_verified'] = false;
             $accommodation['reason'] = 'Hotel prices and availability are not included in the curated place guide. Confirm rates and dates with the property before booking.';
         }
+        if ($generalGuide) {
+            $accommodation['type'] = 'Search current local accommodation listings';
+            $accommodation['recommendation'] = 'Live place data is unavailable. Check current hotel listings and rates for this destination.';
+            $accommodation['map_url'] = 'https://www.google.com/maps/search/?api=1&query='
+                . rawurlencode('hotels in ' . $trip['destination']);
+            $accommodation['rates_verified'] = false;
+            $accommodation['reason'] = 'Hotel prices and availability have not been verified for this destination.';
+        }
         $transport = self::transport($trip, $people);
         $nights = max(1, $dayCount - 1);
         if ($livePlaces !== null) {
@@ -192,7 +202,9 @@ final class ItineraryEngine
             ],
             'accommodation' => $accommodation,
             'transportation' => $transport,
-            'places_source' => $livePlaces['source'] ?? ($curatedGuide ? 'Roamitra curated destination guide' : null),
+            'places_source' => $livePlaces['source'] ?? ($curatedGuide
+                ? 'Roamitra curated destination guide'
+                : ($generalGuide ? 'Roamitra destination suggestions (unverified)' : null)),
             'places_attribution_url' => $livePlaces['attribution_url'] ?? null,
             'places_fetched_at' => $livePlaces['fetched_at'] ?? null,
             'weather_note' => 'If rain is expected, swap outdoor viewpoints for museums, markets, and cafés. Ask the assistant to adjust for weather.',

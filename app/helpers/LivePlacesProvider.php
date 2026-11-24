@@ -26,7 +26,7 @@ final class LivePlacesProvider
                 5
             );
             if (!isset($geocoded[0]['lat'], $geocoded[0]['lon'])) {
-                throw new RuntimeException('No mapped location was found for "' . $destination . '". Try a city or nearby landmark.', 503);
+                throw new RuntimeException('No mapped location was found for "' . $destination . '". Try a city or nearby landmark.', 422);
             }
             $lat = (float) $geocoded[0]['lat'];
             $lon = (float) $geocoded[0]['lon'];
@@ -36,20 +36,41 @@ final class LivePlacesProvider
                 . 'nwr(around:12000,' . $lat . ',' . $lon . ')["historic"];'
                 . 'nwr(around:12000,' . $lat . ',' . $lon . ')["leisure"~"park|nature_reserve"];'
                 . ');out center tags 120;';
-            $result = self::fetchJson(
+            $result = null;
+            $providerError = null;
+            foreach ([
                 'https://overpass-api.de/api/interpreter',
-                ['User-Agent: RoamitraTravelPlanner/1.0', 'Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'],
-                10,
-                'data=' . rawurlencode($query)
-            );
-        } catch (Throwable $error) {
-            if (PlacesCatalog::hasDestination($destination)) {
-                return null;
+                'https://overpass.kumi.systems/api/interpreter',
+                'https://overpass.private.coffee/api/interpreter',
+            ] as $endpoint) {
+                try {
+                    $candidate = self::fetchJson(
+                        $endpoint,
+                        ['User-Agent: RoamitraTravelPlanner/1.0', 'Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'],
+                        8,
+                        'data=' . rawurlencode($query)
+                    );
+                } catch (RuntimeException $error) {
+                    $providerError = $error;
+                    continue;
+                }
+                $result = $candidate;
+                if (!empty($candidate['elements'])) {
+                    break;
+                }
             }
-            if ($error->getCode() === 503) {
+            if ($result === null) {
+                throw $providerError ?? new RuntimeException('All OpenStreetMap query servers are unavailable.');
+            }
+        } catch (RuntimeException $error) {
+            if ($error->getCode() === 422) {
                 throw $error;
             }
-            throw new RuntimeException('Live place data is temporarily unavailable. Please try generating the itinerary again.', 503, $error);
+            error_log(
+                'Live place lookup failed for "' . $destination . '"; using the local itinerary guide. '
+                . $error->getMessage()
+            );
+            return null;
         }
 
         $activities = [];
@@ -104,7 +125,10 @@ final class LivePlacesProvider
             ]);
         }
         if (!$activities) {
-            throw new RuntimeException('No mapped attractions or businesses were found near "' . $destination . '". Try a larger nearby city.', 503);
+            error_log(
+                'No mapped attractions or businesses were found near "' . $destination . '"; using the local itinerary guide.'
+            );
+            return null;
         }
         $data = [
             'activities' => $activities,

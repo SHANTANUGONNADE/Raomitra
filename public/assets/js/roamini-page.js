@@ -302,9 +302,9 @@
                 ? await RoamitraApi.post('/trips/' + editingId + '/update', body)
                 : await RoamitraApi.post('/trips', body);
             const id = saved.trip?.id || saved.id || editingId;
-            await RoamitraApi.post('/trips/' + id + '/generate', {});
             tripId = String(id);
             editingId = id;
+            await RoamitraApi.post('/trips/' + id + '/generate', {});
             await loadTrips();
             setStatus('');
             const next = new URL(window.location.href);
