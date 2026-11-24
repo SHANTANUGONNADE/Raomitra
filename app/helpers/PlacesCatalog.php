@@ -18,6 +18,21 @@ final class PlacesCatalog
         return self::generic($destination);
     }
 
+    public static function hasDestination(string $destination): bool
+    {
+        $key = self::normalize($destination);
+        if ($key === '') {
+            return false;
+        }
+        foreach (array_keys(self::all()) as $name) {
+            $candidate = self::normalize($name);
+            if ($candidate === $key || str_contains($candidate, $key) || str_contains($key, $candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function normalize(string $value): string
     {
         return trim(mb_strtolower($value));

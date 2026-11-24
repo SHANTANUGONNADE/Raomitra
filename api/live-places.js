@@ -74,6 +74,35 @@ function mapElement(element, destination) {
     };
 }
 
+function offlineGuide(destination) {
+    if (!/\bmumbai\b/i.test(String(destination || ''))) return null;
+    const places = [
+        ['Gateway of India', 'landmark'],
+        ['Marine Drive', 'city'],
+        ['Juhu Beach', 'beach'],
+        ['Chhatrapati Shivaji Terminus', 'landmark'],
+    ];
+    const activities = places.map(([name, category], index) => ({
+        id: 'guide/mumbai-' + (index + 1),
+        name,
+        category,
+        address: 'Mumbai, Maharashtra',
+        opening_hours: '',
+        fee: 'no',
+        charge: '',
+        notes: 'Public place with no admission fee listed in the Roamitra city guide. Confirm access and local conditions before visiting.',
+        map_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(name + ', Mumbai, India'),
+        osm_url: '',
+    }));
+    return {
+        activities,
+        stays: [],
+        source: 'Roamitra curated Mumbai guide',
+        attribution_url: null,
+        fetched_at: null,
+    };
+}
+
 async function forDestination(destination) {
     const query = String(destination || '').trim();
     if (!query) throw providerError('Enter a destination to find real places.');
@@ -146,6 +175,14 @@ async function forDestination(destination) {
         cache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_MS });
         return data;
     } catch (error) {
+        if (cached) {
+            return Object.assign({}, cached.data, {
+                source: 'OpenStreetMap (cached)',
+                is_stale: true,
+            });
+        }
+        const guide = offlineGuide(query);
+        if (guide) return guide;
         if (error.status) throw error;
         throw providerError('Live place data is temporarily unavailable. Please try generating the itinerary again.', error);
     }

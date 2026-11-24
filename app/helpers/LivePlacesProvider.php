@@ -43,6 +43,9 @@ final class LivePlacesProvider
                 'data=' . rawurlencode($query)
             );
         } catch (Throwable $error) {
+            if (PlacesCatalog::hasDestination($destination)) {
+                return null;
+            }
             if ($error->getCode() === 503) {
                 throw $error;
             }

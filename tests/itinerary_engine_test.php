@@ -34,6 +34,8 @@ $trip = [
 ];
 
 $it = ItineraryEngine::generate($trip);
+assert_true(PlacesCatalog::hasDestination('Mumbai'), 'recognizes a curated city guide');
+assert_true(!PlacesCatalog::hasDestination('Atlantis'), 'does not claim unknown cities have curated guides');
 assert_true(!empty($it['days']), 'generates days');
 assert_true(($it['days'][0]['window']['kind'] ?? '') === 'arrival_late', 'late-night arrival shortens day 1');
 $last = $it['days'][count($it['days']) - 1];
@@ -69,6 +71,25 @@ foreach ($it['days'] as $day) {
     }
 }
 assert_true(!$dup, 'no duplicate place names on generate');
+
+$lowBudgetTrip = array_merge($trip, [
+    'destination' => 'Mumbai',
+    'start_date' => '2026-11-24',
+    'end_date' => '2026-11-26',
+    'budget' => 319,
+    'budget_currency' => 'INR',
+    'traveling_with' => 'solo',
+    'group_size' => 1,
+    'arrival_time' => '10:00',
+    'departure_time' => '14:00',
+]);
+$lowBudgetItinerary = ItineraryEngine::generate($lowBudgetTrip);
+$lowBudgetActivities = array_merge(...array_map(static fn(array $day): array => $day['activities'], $lowBudgetItinerary['days']));
+assert_true(($lowBudgetItinerary['budget']['feasibility'] ?? '') === 'tight', 'flags a very tight total trip budget');
+assert_true(
+    count($lowBudgetActivities) > 0 && array_reduce($lowBudgetActivities, static fn(bool $free, array $activity): bool => $free && (float) $activity['cost_estimate'] === 0.0, true),
+    'prioritizes free catalog places when the INR budget is tight'
+);
 
 $removed = ItineraryEngine::modify($it, $trip, 'Remove Uluwatu Temple');
 assert_true(is_string($removed['reply']) && $removed['reply'] !== '', 'remove returns a reply');

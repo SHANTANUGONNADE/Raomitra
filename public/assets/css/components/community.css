@@ -1133,21 +1133,60 @@ body[data-page="community"] .vehicle-image {
 
 .reply-form button { flex: 0 0 auto; }
 
-.live-replies:not(:empty) {
-    display: grid;
-    gap: 0.6rem;
-    margin-top: 1rem;
-}
-
-.live-reply {
-    padding: 0.7rem 0.85rem;
-    border-left: 3px solid var(--color-primary, #1a8a58);
-    border-radius: 0.5rem;
+.live-replies {
+    margin-top: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
     background: var(--color-bg-muted);
 }
 
-.live-reply p { margin: 0.2rem 0; white-space: pre-wrap; }
-.live-reply small { color: var(--color-text-muted); }
+.live-replies summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    font-weight: 650;
+    cursor: pointer;
+    list-style: none;
+}
+
+.live-replies summary::-webkit-details-marker { display: none; }
+.live-replies[open] summary { border-bottom: 1px solid var(--color-border); }
+.live-replies[open] summary i { transform: rotate(180deg); }
+.live-replies summary i { transition: transform 0.18s ease; }
+
+.live-reply-list {
+    display: grid;
+    gap: 0.65rem;
+    max-height: 20rem;
+    overflow: auto;
+    padding: 0.75rem;
+}
+
+.live-reply {
+    padding: 0.1rem 0 0.1rem 0.75rem;
+    border-left: 2px solid var(--color-primary, #1a8a58);
+}
+
+.live-reply-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+}
+
+.live-reply-meta strong { font-size: 0.88rem; }
+.live-reply-meta time { color: var(--color-text-muted); font-size: 0.75rem; }
+.live-reply p { margin: 0.2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.live-replies-empty {
+    margin: 0.75rem 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.84rem;
+}
 
 .state-filter {
     width: auto;
@@ -1175,11 +1214,11 @@ body[data-page="community"] .vehicle-image {
 
     body[data-page="community"] .reply-form {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto;
     }
 
     body[data-page="community"] .reply-form button {
-        width: 100%;
+        width: auto;
         min-height: 44px;
     }
 

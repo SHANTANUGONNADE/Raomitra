@@ -426,16 +426,38 @@ async function generateItinerary(trip) {
     const people = Math.max(1, Number(trip.group_size) || 1);
     const nights = Math.max(1, count - 1);
     const budget = trip.budget == null || trip.budget === '' ? null : Number(trip.budget);
+    const preferences = Array.isArray(trip.preferences) ? trip.preferences.map((item) => String(item).toLowerCase()) : [];
     const budgetTargets = budget == null ? null : {
         accommodation: Math.round(budget * 0.35),
         food: Math.round(budget * 0.25),
         local_transport: Math.round(budget * 0.15),
         activities: Math.round(budget * 0.25),
     };
-    const activities = placeData.activities.slice();
-    if (budgetTargets && budgetTargets.activities < 1000) {
-        activities.sort((a, b) => Number(b.fee === 'no') - Number(a.fee === 'no'));
+    const lowBudgetMode = budget != null && budget / Math.max(1, count * people) < 500;
+    const preferenceCategories = {
+        adventure: ['adventure', 'nature', 'beach'],
+        art: ['art', 'museum', 'culture'],
+        beach: ['beach'],
+        culture: ['culture', 'landmark', 'temple', 'museum'],
+        food: ['food', 'cafe', 'restaurant', 'market'],
+        nature: ['nature', 'beach'],
+        nightlife: ['nightlife', 'restaurant', 'city'],
+        shopping: ['shopping', 'market'],
+    };
+    const preferenceScore = (place) => {
+        const category = String(place.category || '').toLowerCase();
+        const tags = Array.isArray(place.tags) ? place.tags.map((tag) => String(tag).toLowerCase()) : [];
+        return preferences.reduce((score, preference) => {
+            const matches = preferenceCategories[preference] || [preference];
+            return score + (matches.includes(category) || tags.includes(preference) ? 1 : 0);
+        }, 0);
+    };
+    let activities = placeData.activities.slice();
+    if (lowBudgetMode) {
+        const noAdmissionPlaces = activities.filter((place) => place.fee === 'no');
+        if (noAdmissionPlaces.length) activities = noAdmissionPlaces;
     }
+    activities.sort((a, b) => Number(b.fee === 'no') - Number(a.fee === 'no') || preferenceScore(b) - preferenceScore(a));
     const seen = new Set();
     const uniqueActivities = activities.filter((place) => {
         const key = place.name.toLowerCase();
@@ -461,12 +483,17 @@ async function generateItinerary(trip) {
             const notes = [
                 place.address,
                 place.opening_hours ? 'Opening hours listed: ' + place.opening_hours : 'Check current opening hours before visiting.',
-                place.fee === 'no' ? 'OpenStreetMap lists no admission fee.' : 'Admission cost is not verified; check with the venue.',
+                place.fee === 'no'
+                    ? (place.notes || (placeData.attribution_url
+                        ? 'OpenStreetMap lists no admission fee.'
+                        : 'No admission fee is listed in this guide; confirm access before visiting.'))
+                    : 'Admission cost is not verified; check with the venue.',
             ].filter(Boolean).join(' ');
             scheduled.push({
                 title: place.name,
                 place: place.name,
                 category: place.category,
+                fee: place.fee || '',
                 start: time,
                 end: endTime,
                 time,
@@ -481,10 +508,28 @@ async function generateItinerary(trip) {
                 image: activityImage(place.category, place.name),
             });
         }
+        const categoryNames = {
+            beach: 'Waterfront & outdoors',
+            cafe: 'Local cafés',
+            city: 'City highlights',
+            culture: 'Culture & heritage',
+            food: 'Local food',
+            landmark: 'Landmarks',
+            market: 'Markets & local life',
+            museum: 'Art & museums',
+            nature: 'Nature & open spaces',
+            restaurant: 'Local food',
+            temple: 'Culture & heritage',
+        };
+        const topCategory = scheduled.reduce((top, item) => {
+            if (!top || (scheduled.filter((candidate) => candidate.category === item.category).length >
+                scheduled.filter((candidate) => candidate.category === top.category).length)) return item;
+            return top;
+        }, null);
         days.push({
             day: i + 1,
             date: iso,
-            theme: i === 0 ? 'Explore ' + trip.destination : 'Explore ' + trip.destination,
+            theme: topCategory ? (categoryNames[topCategory.category] || 'Local highlights') + ' in ' + trip.destination : 'Explore ' + trip.destination,
             activities: scheduled,
         });
     }
@@ -496,14 +541,14 @@ async function generateItinerary(trip) {
     const accommodation = {
         type: stays.length ? 'Mapped local accommodation listings' : 'Search local accommodation listings',
         recommendation: stays.length
-            ? 'Compare these real nearby properties against your nightly budget target.'
+            ? 'Nearby properties are mapped, but room rates and availability are not verified.'
             : 'No named accommodation was mapped nearby; search current listings for this destination.',
         target_nightly_budget: budgetTargets ? Math.round(budgetTargets.accommodation / nights) : null,
         currency: trip.budget_currency || 'INR',
         rates_verified: false,
         stays,
         map_url: accommodationSearch,
-        reason: 'OpenStreetMap does not provide live room prices or availability. Confirm rates and dates with the property before booking.',
+        reason: 'Hotel prices and availability are not included in the place data. Confirm rates and dates with the property before booking.',
     };
     const transport = {
         local: 'Check local public transport and walking routes between the mapped places.',
@@ -525,11 +570,17 @@ async function generateItinerary(trip) {
             currency: trip.budget_currency || 'INR',
             estimated_total: null,
             per_person: budget == null ? null : Math.round(budget / people),
+            per_day: budget == null ? null : Math.round(budget / count),
+            per_person_per_day: budget == null ? null : Math.round(budget / Math.max(1, count * people)),
             breakdown: budgetTargets,
             breakdown_type: 'budget_targets',
             within_budget: null,
+            feasibility: lowBudgetMode ? 'tight' : 'unverified',
+            note: lowBudgetMode
+                ? 'Your total budget averages about ₹' + Math.round(budget / Math.max(1, count * people)) + ' per traveler per day. The plan prioritizes places listing no admission fee when available; lodging, meals, and local transport are not verified to fit this amount.'
+                : 'These are planning targets, not live prices. Confirm food, transport, admission, and hotel rates before booking.',
         },
-        summary: count + '-day plan for ' + trip.destination + ' using current OpenStreetMap place data. '
+        summary: count + '-day plan for ' + trip.destination + ' using ' + placeData.source + '. '
             + (budget == null ? 'Add a budget to set spending targets.' : 'Budget amounts are targets; live venue and hotel prices are not available.'),
     };
 }

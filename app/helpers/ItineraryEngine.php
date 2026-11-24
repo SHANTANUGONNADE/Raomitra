@@ -20,8 +20,29 @@ final class ItineraryEngine
         $budget = isset($trip['budget']) && $trip['budget'] !== null ? (float) $trip['budget'] : null;
 
         $livePlaces = LivePlacesProvider::forDestination((string) $trip['destination']);
+        $curatedGuide = $livePlaces === null && PlacesCatalog::hasDestination((string) $trip['destination']);
         $catalog = $livePlaces['activities'] ?? PlacesCatalog::forDestination((string) $trip['destination']);
+        foreach ($catalog as &$place) {
+            if (empty($place['map_url'])) {
+                $place['map_url'] = 'https://www.google.com/maps/search/?api=1&query='
+                    . rawurlencode((string) $place['name'] . ', ' . $trip['destination']);
+            }
+        }
+        unset($place);
         $catalog = self::scoreAndSort($catalog, $prefs, $budget, $people);
+        $lowBudget = $budget !== null
+            && ($trip['budget_currency'] ?? 'INR') === 'INR'
+            && $budget / max(1, $dayCount * $people) < 500;
+        if ($lowBudget) {
+            $freePlaces = array_values(array_filter($catalog, static function (array $place) use ($livePlaces): bool {
+                return $livePlaces !== null
+                    ? strtolower((string) ($place['fee'] ?? '')) === 'no'
+                    : (float) ($place['cost'] ?? 0) <= 0;
+            }));
+            if ($freePlaces) {
+                $catalog = $freePlaces;
+            }
+        }
         $used = [];
         $days = [];
         $activityCost = 0.0;
@@ -97,6 +118,12 @@ final class ItineraryEngine
         }
 
         $accommodation = self::accommodation($trip, $people, $budget);
+        if ($curatedGuide) {
+            $accommodation['map_url'] = 'https://www.google.com/maps/search/?api=1&query='
+                . rawurlencode('hotels in ' . $trip['destination']);
+            $accommodation['rates_verified'] = false;
+            $accommodation['reason'] = 'Hotel prices and availability are not included in the curated place guide. Confirm rates and dates with the property before booking.';
+        }
         $transport = self::transport($trip, $people);
         $nights = max(1, $dayCount - 1);
         if ($livePlaces !== null) {
@@ -158,10 +185,14 @@ final class ItineraryEngine
                 'breakdown' => $budgetBreakdown,
                 'breakdown_type' => $livePlaces !== null && $budget !== null ? 'budget_targets' : null,
                 'within_budget' => $livePlaces !== null ? null : ($budget === null ? null : $total <= $budget),
+                'feasibility' => $lowBudget ? 'tight' : 'unverified',
+                'note' => $lowBudget
+                    ? 'Your total budget averages about ₹' . round($budget / max(1, $dayCount * $people)) . ' per traveler per day. The plan prioritizes no-admission places when available; lodging, meals, and local transport are not verified to fit this amount.'
+                    : null,
             ],
             'accommodation' => $accommodation,
             'transportation' => $transport,
-            'places_source' => $livePlaces['source'] ?? null,
+            'places_source' => $livePlaces['source'] ?? ($curatedGuide ? 'Roamitra curated destination guide' : null),
             'places_attribution_url' => $livePlaces['attribution_url'] ?? null,
             'places_fetched_at' => $livePlaces['fetched_at'] ?? null,
             'weather_note' => 'If rain is expected, swap outdoor viewpoints for museums, markets, and cafés. Ask the assistant to adjust for weather.',

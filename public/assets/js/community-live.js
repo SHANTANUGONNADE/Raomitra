@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const list = document.getElementById('liveQuestions');
     const form = document.getElementById('communityForm');
+    const expandedReplyThreads = new Set();
 
     document.querySelectorAll('.comm-ask-stage > .feed-post').forEach((post) => post.remove());
 
@@ -8,6 +9,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const d = document.createElement('div');
         d.textContent = text == null ? '' : String(text);
         return d.innerHTML;
+    }
+
+    function formatDate(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+        const timestamp = /(?:Z|[+-]\d{2}:\d{2})$/i.test(normalized) ? normalized : normalized + 'Z';
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return raw;
+        return new Intl.DateTimeFormat(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        }).format(date);
     }
 
     // Moved to top-level scope so it can be called independently of refresh()
@@ -45,34 +61,53 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            list.innerHTML = posts.map(p => `
-                <article class="feed-post live-post" id="question-${Number(p.id)}" data-id="${Number(p.id)}" data-author-id="${Number(p.user_id)}">
+            list.innerHTML = posts.map(p => {
+                const replies = Array.isArray(p.replies) ? p.replies : [];
+                const replyCount = Math.max(Number(p.reply_count) || 0, replies.length);
+                const postId = Number(p.id);
+                return `
+                <article class="feed-post live-post" id="question-${postId}" data-id="${postId}" data-author-id="${Number(p.user_id)}">
                     <div class="feed-post-header">
                         <div class="feed-post-avatar">${escapeHtml((p.full_name || '?').charAt(0))}</div>
                         <div class="feed-post-meta">
                             <div class="feed-post-name">${escapeHtml(p.full_name)}</div>
-                            <div class="feed-post-time">Member #${Number(p.user_id)} · ${escapeHtml(p.created_at)} · ${Number(p.reply_count) || 0} replies</div>
+                            <div class="feed-post-time">Member #${Number(p.user_id)} · <time datetime="${escapeHtml(p.created_at || '')}">${escapeHtml(formatDate(p.created_at))}</time></div>
                         </div>
                     </div>
                     <h3 class="h6 mb-1">${escapeHtml(p.title)}</h3>
                     <p class="feed-post-content">${escapeHtml(p.body)}</p>
-                    <div class="live-replies" aria-label="Replies">
-                        ${(p.replies || []).map(reply => `
-                            <div class="live-reply">
-                                <strong>${escapeHtml(reply.full_name || 'Member')}</strong>
-                                <p>${escapeHtml(reply.body)}</p>
-                                <small>${escapeHtml(reply.created_at || '')}</small>
+                    ${replyCount
+                        ? `<details class="live-replies" data-post-id="${postId}" ${expandedReplyThreads.has(postId) ? 'open' : ''}>
+                            <summary><span>${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                            <div class="live-reply-list">
+                                ${replies.map(reply => `
+                                    <div class="live-reply">
+                                        <div class="live-reply-meta">
+                                            <strong>${escapeHtml(reply.full_name || 'Member')}</strong>
+                                            <time datetime="${escapeHtml(reply.created_at || '')}">${escapeHtml(formatDate(reply.created_at))}</time>
+                                        </div>
+                                        <p>${escapeHtml(reply.body)}</p>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
-                    </div>
+                        </details>`
+                        : '<p class="live-replies-empty">No replies yet. Start the conversation.</p>'}
                     <form class="reply-form">
-                        <label class="visually-hidden" for="reply-${p.id}">Reply</label>
-                        <input id="reply-${p.id}" name="body" placeholder="Write a reply…" required>
+                        <label class="visually-hidden" for="reply-${postId}">Reply</label>
+                        <input id="reply-${postId}" name="body" placeholder="Write a reply…" required>
                         <button type="submit" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm">Reply</button>
                     </form>
                 </article>
-            `).join('');
+            `;
+            }).join('');
 
+            list.querySelectorAll('.live-replies').forEach((thread) => {
+                thread.addEventListener('toggle', () => {
+                    const postId = Number(thread.dataset.postId);
+                    if (thread.open) expandedReplyThreads.add(postId);
+                    else expandedReplyThreads.delete(postId);
+                });
+            });
             list.querySelectorAll('.reply-form').forEach(rf => {
                 rf.addEventListener('submit', async (e) => {
                     e.preventDefault();

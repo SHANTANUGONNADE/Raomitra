@@ -163,6 +163,32 @@ function request(method, route, body, cookie) {
         assert(afterChat.data.messages.some((item) => item.role === 'user'));
         assert(afterChat.data.messages.some((item) => item.role === 'assistant' && item.message === chat.data.reply));
 
+        global.fetch = async () => { throw new Error('Simulated live-place provider outage'); };
+        const fallbackTrip = await request('POST', '/trips', {
+            destination: 'Mumbai',
+            start_date: '2026-11-24',
+            end_date: '2026-11-26',
+            budget: 319,
+            traveling_with: 'solo',
+            arrival_time: '10:00',
+            departure_time: '14:00',
+            preferences: ['nature', 'food'],
+            pace: 'moderate',
+        }, cookie);
+        assert.equal(fallbackTrip.status, 201);
+        const fallbackItinerary = await request('POST', '/trips/' + fallbackTrip.data.trip.id + '/generate', {}, cookie);
+        assert.equal(fallbackItinerary.status, 200);
+        assert.equal(fallbackItinerary.data.itinerary.places_source, 'Roamitra curated Mumbai guide');
+        assert.equal(fallbackItinerary.data.itinerary.days.length, 3);
+        assert.equal(fallbackItinerary.data.itinerary.budget.feasibility, 'tight');
+        assert(fallbackItinerary.data.itinerary.budget.note.includes('per traveler per day'));
+        const plannedPlaces = fallbackItinerary.data.itinerary.days.flatMap((day) => day.activities);
+        assert(plannedPlaces.some((place) => place.title === 'Gateway of India'));
+        assert.equal(plannedPlaces[0].title, 'Juhu Beach');
+        assert(plannedPlaces.every((place) => place.fee === 'no'));
+        assert.notEqual(fallbackItinerary.data.itinerary.days[0].theme, fallbackItinerary.data.itinerary.days[1].theme);
+        assert(fallbackItinerary.data.itinerary.accommodation.map_url.includes('hotels'));
+
         console.log('Trip API profile, community, and itinerary test passed.');
     } finally {
         if (fs.existsSync(storePath)) fs.unlinkSync(storePath);
