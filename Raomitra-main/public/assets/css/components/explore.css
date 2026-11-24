@@ -283,7 +283,7 @@
     bottom: 1.25rem;
     left: auto;
     top: auto;
-    z-index: 1050;
+    z-index: 1060;
     width: min(100% - 2rem, 390px);
 }
 
