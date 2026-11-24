@@ -29444,13 +29444,61 @@ function bindImageFallback(place, img, onExhausted) {
     });
 }
 
+function normalizePhotoName(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
+function normalizePhotoCity(value) {
+    const city = normalizePhotoName(String(value || '').split(',')[0]);
+    const aliases = { delhi: 'new delhi', bombay: 'mumbai', bangalore: 'bengaluru', calcutta: 'kolkata', madras: 'chennai' };
+    return aliases[city] || city;
+}
+
+function findPlaceImage(title, planner) {
+    const query = normalizePhotoName(title);
+    if (!query) return '';
+    const compactQuery = query.replace(/\s/g, '');
+    const city = normalizePhotoCity(planner);
+    const matches = Object.entries(DESTINATIONS).filter(([key, item]) => {
+        const candidate = normalizePhotoName(item && item.title);
+        const candidateKey = normalizePhotoName(key).replace(/\s/g, '');
+        return candidate === query || candidateKey === compactQuery;
+    });
+    const cityMatch = matches.find(([, item]) => item
+        && normalizePhotoCity(item.planner) === city
+        && item.image
+    );
+    const match = cityMatch ? cityMatch[1] : (matches.length === 1 ? matches[0][1] : null);
+    return match && match.image ? match.image : '';
+}
+
+function findCityImage(planner) {
+    const city = normalizePhotoCity(planner);
+    if (!city) return '';
+    const match = Object.values(DESTINATIONS).find((item) => {
+        const title = normalizePhotoName(item && item.title);
+        return item && item.image
+            && normalizePhotoCity(item.planner) === city
+            && (title === city || title.indexOf(city + ' ') === 0);
+    });
+    return match ? match.image : '';
+}
+
 window.RoamitraDestinations = {
     DESTINATIONS,
     FEATURED_DESTINATION_KEYS,
     renderDestination,
     findDestinations,
     resolveDestinationKey,
-    bindImageFallback
+    bindImageFallback,
+    findPlaceImage,
+    findCityImage
 };
 
 document.addEventListener('DOMContentLoaded', () => {

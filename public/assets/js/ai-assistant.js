@@ -572,7 +572,7 @@ const RoamitraAI = {
                 </div>
                 <div class="roamini-field">
                     <label for="romiDest"><i class="bi bi-geo-alt"></i> Where are you going?</label>
-                    <input id="romiDest" required placeholder="Bali, Indonesia">
+                    <input id="romiDest" required placeholder="Add your location">
                 </div>
                 <div class="roamini-field">
                     <label for="romiDays"><i class="bi bi-calendar3"></i> How many days?</label>

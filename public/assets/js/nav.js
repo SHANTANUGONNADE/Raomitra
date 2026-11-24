@@ -31,6 +31,12 @@ const RoamitraNav = {
     async init() {
         this.renderShell();
         this.applyBranding();
+        window.addEventListener('roamitra-location-updated', (event) => {
+            const location = event.detail && typeof event.detail.location === 'string'
+                ? event.detail.location
+                : this.currentLocation();
+            this.syncLocationFilters(location);
+        });
         this.user = await RoamitraApi.me();
         if (!this.allowPage()) {
             return;
@@ -85,6 +91,7 @@ const RoamitraNav = {
             </div>
             <div class="roamitra-tabbar" role="navigation" aria-label="Primary">
                 <div class="tab-account"></div>
+                <div class="tab-tools" role="group" aria-label="Display and location controls"></div>
                 <div class="tab-main">
                     <a href="${base}explore.html" class="tab-item" data-nav="explore"><span class="tab-icon"><i class="bi bi-compass"></i></span><span class="tab-label">Explore</span></a>
                     <a href="${base}community.html" class="tab-item" data-nav="community"><span class="tab-icon"><i class="bi bi-people"></i></span><span class="tab-label">Community</span></a>
@@ -167,6 +174,10 @@ const RoamitraNav = {
                     <a href="${RoamitraApi.page('signup.html')}"><i class="bi bi-person-plus"></i><span>Sign up</span></a>
                 `;
             }
+        }
+        const tabTools = document.querySelector('.tab-tools');
+        if (tabTools) {
+            tabTools.replaceChildren(this.themeButton(), this.locationFilter());
         }
         if (mobileRow) {
             if (this.user) {
@@ -267,6 +278,19 @@ const RoamitraNav = {
         }));
     },
 
+    syncLocationFilters(location) {
+        const selected = location == null ? this.currentLocation() : String(location);
+        document.querySelectorAll('.nav-location-filter').forEach((select) => {
+            if (selected && !Array.from(select.options).some((option) => this.normalizeLocation(option.value) === this.normalizeLocation(selected))) {
+                const option = document.createElement('option');
+                option.value = selected;
+                option.textContent = selected;
+                select.appendChild(option);
+            }
+            select.value = selected;
+        });
+    },
+
     registerLocations(values) {
         const cities = Array.from(new Set(values
             .map((value) => this.locationCity(value))
@@ -328,22 +352,9 @@ const RoamitraNav = {
                 if (select.value) sessionStorage.setItem('roamitra-location', select.value);
                 else sessionStorage.removeItem('roamitra-location');
             } catch (e) { /* location remains available until this page is closed */ }
-            document.querySelectorAll('.nav-location-filter').forEach((filter) => {
-                filter.value = select.value;
-            });
             window.dispatchEvent(new CustomEvent('roamitra-location-updated', {
                 detail: { location: select.value }
             }));
-        });
-        window.addEventListener('roamitra-location-updated', () => {
-            const current = this.currentLocation();
-            if (!Array.from(select.options).some((option) => this.normalizeLocation(option.value) === this.normalizeLocation(current))) {
-                const option = document.createElement('option');
-                option.value = current;
-                option.textContent = current;
-                select.appendChild(option);
-            }
-            select.value = current;
         });
         return select;
     },

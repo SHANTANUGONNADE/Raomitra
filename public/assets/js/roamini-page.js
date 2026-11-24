@@ -1,117 +1,4 @@
 (function () {
-    const GENERIC_PHOTO = '1488646953014';
-    const PLACE_PHOTOS = {
-        'uluwatu temple': 'photo-1537996194471-e657df975ab4',
-        'tegallalang rice terraces': 'photo-1518548419970-58e3b4079ab2',
-        'ubud sacred monkey forest': 'photo-1540573133985-87b6da6d54a9',
-        'seminyak beach walk': 'photo-1539367628448-4bc5c82d8e8a',
-        'ubud art market': 'photo-1555400038-63f5ba517a47',
-        'tirta empul temple': 'photo-1559628233-100c798642d4',
-        'nusa penida day trip': 'photo-1570789210967-2cac24afeb00',
-        'canggu cafe hopping': 'photo-1495474472287-4d71bcdd2085',
-        'jimbaran seafood dinner': 'photo-1559339352-11d035aa65de',
-        'tanah lot sunset': 'photo-1573790387438-4da905039392',
-        'warung babi guling ibu oka': 'photo-1569050467447-ce54b3bbc37d',
-        'revolver espresso': 'photo-1501339847302-ac426a4a7cbb',
-        'senso-ji temple': 'photo-1493976040374-85c8e12f0c0e',
-        'shibuya crossing & hachiko': 'photo-1542051841857-5f90071e7989',
-        'tsukiji outer market': 'photo-1579871494447-9811cf80d66c',
-        'meiji jingu shrine': 'photo-1528164344705-47542687000d',
-        'teamlab planets': 'photo-1561214115-f2f134cc4912',
-        'akihabara electric town': 'photo-1554797589-7241bb691973',
-        'shinjuku gyoen': 'photo-1490806843957-4378d406b619',
-        'tokyo skytree': 'photo-1540959733332-eab4deabeeaf',
-        'ichiran ramen shibuya': 'photo-1569718212165-3a8278d5f624',
-        '% arabica omotesando': 'photo-1442512595331-e89e73853f31',
-        'omoide yokocho': 'photo-1553621042-f6e147245754',
-        'ghibli museum': 'photo-1579783902614-a3fb3927b6a5',
-        'eiffel tower': 'photo-1502602898657-3e91760cbb34',
-        'louvre museum': 'photo-1566127444979-b3d2b654e3d7',
-        'montmartre & sacré-cœur': 'photo-1499856871958-5b9627545d1a',
-        'amber fort': 'photo-1477587458883-47145ed94245',
-        'hawa mahal': 'photo-1477587458883-47145ed94245',
-        'city palace': 'photo-1599661046289-e31897846e41',
-        'india gate & rajpath': 'photo-1587474260584-136574528ed5',
-        'gateway of india': 'photo-1570168007204-dfb528c6958f',
-        'burj khalifa at the top': 'photo-1512453979798-5ea266f8880c',
-        'baga & calangute beach': 'photo-1512343879784-a960bf40e7f2',
-        'palolem sunset': 'photo-1507525428034-b723cf961d3e'
-    };
-    const CATEGORY_PHOTOS = {
-        food: ['photo-1414235077428-338989a2e8c0', 'photo-1504674900247-0877df9cc836', 'photo-1476224203421-9ac39bcb3327', 'photo-1565299624946-b28f40a0ae38'],
-        restaurant: ['photo-1414235077428-338989a2e8c0', 'photo-1559339352-11d035aa65de', 'photo-1567620905732-2d1ec7ab7445', 'photo-1540189549336-e6e99c3679fe'],
-        cafe: ['photo-1495474472287-4d71bcdd2085', 'photo-1501339847302-ac426a4a7cbb', 'photo-1442512595331-e89e73853f31', 'photo-1498804103079-a6351b050096'],
-        nature: ['photo-1501785888041-af3ef285b470', 'photo-1432405972618-c60b0225b8f9', 'photo-1441974231531-c6227db76b6e', 'photo-1500530855697-b586d89ba3ee'],
-        adventure: ['photo-1464822759023-fed622ff2c3b', 'photo-1551632811-561732d1e306', 'photo-1500534314209-a25ddb2bd429', 'photo-1469474968028-56623f02e42e'],
-        culture: ['photo-1524492412937-b28074a5d7da', 'photo-1555881400-74d7acaacd8b', 'photo-1548013146-72479768bada', 'photo-1528164344705-47542687000d'],
-        temple: ['photo-1537996194471-e657df975ab4', 'photo-1573790387438-4da905039392', 'photo-1493976040374-85c8e12f0c0e', 'photo-1548013146-72479768bada'],
-        landmark: ['photo-1502602898657-3e91760cbb34', 'photo-1477587458883-47145ed94245', 'photo-1587474260584-136574528ed5', 'photo-1512453979798-5ea266f8880c'],
-        city: ['photo-1540959733332-eab4deabeeaf', 'photo-1513635269975-59663e0ac1ad', 'photo-1480714378408-67cf0d13bc1b', 'photo-1449824913935-59a10b8d2000'],
-        museum: ['photo-1577083552431-6e5fd01988ec', 'photo-1566127444979-b3d2b654e3d7', 'photo-1554907984-15263bfd63bd', 'photo-1572947650440-e8a97ef053b2'],
-        market: ['photo-1555400038-63f5ba517a47', 'photo-1555529669-e69e7aa0ba9a', 'photo-1488459716781-31db52582fe9', 'photo-1578916171728-46686eac8d58'],
-        shopping: ['photo-1555529669-e69e7aa0ba9a', 'photo-1441986300917-64674bd600d8', 'photo-1472851294608-062f824d29cc', 'photo-1483985988355-763728e1935b'],
-        nightlife: ['photo-1470229722913-7c0e2dbbafd3', 'photo-1514525253161-7a46d19cd819', 'photo-1492684223066-81342ee5ff30', 'photo-1566737236500-c8ac43014a67'],
-        beach: ['photo-1507525428034-b723cf961d3e', 'photo-1512343879784-a960bf40e7f2', 'photo-1500375592092-40eb2168fd21', 'photo-1473496169904-658ba7c44d8a'],
-        accommodation: ['photo-1566073771259-6a8506099945', 'photo-1522708323590-d24dbb6b0267', 'photo-1551882547-ff40c63fe5fa', 'photo-1611892440504-42a792e24d32'],
-        art: ['photo-1577083552431-6e5fd01988ec', 'photo-1579783902614-a3fb3927b6a5', 'photo-1460661419201-fd4cecdf8a8b', 'photo-1513364776144-60967b0f800f'],
-        logistics: ['photo-1436491865332-7a61a109cc05', 'photo-1544620341-11cb2cd7c626', 'photo-1464037864426-26c8a1e2d1c1', 'photo-1474487548417-781cb71495f3'],
-        default: ['photo-1467269204594-9661b134dd2b', 'photo-1476514525535-07fb3b4ae5f1', 'photo-1500530855697-b586d89ba3ee', 'photo-1488646953014-85cb44e25828']
-    };
-
-    function unsplash(photo) {
-        return 'https://images.unsplash.com/' + photo + '?auto=format&fit=crop&w=480&q=60';
-    }
-
-    function hashText(text) {
-        let hash = 0;
-        const value = String(text || '');
-        for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-        return hash;
-    }
-
-    const PHOTO_HINTS = [
-        ['ubud art', 'photo-1555400038-63f5ba517a47'],
-        ['art market', 'photo-1555400038-63f5ba517a47'],
-        ['canggu', 'photo-1495474472287-4d71bcdd2085'],
-        ['cafe hop', 'photo-1501339847302-ac426a4a7cbb'],
-        ['babi guling', 'photo-1569050467447-ce54b3bbc37d'],
-        ['revolver', 'photo-1442512595331-e89e73853f31'],
-        ['espresso', 'photo-1495474472287-4d71bcdd2085'],
-        ['tanah lot', 'photo-1573790387438-4da905039392'],
-        ['uluwatu', 'photo-1537996194471-e657df975ab4'],
-        ['rice terrace', 'photo-1518548419970-58e3b4079ab2'],
-        ['monkey forest', 'photo-1540573133985-87b6da6d54a9'],
-        ['seminyak', 'photo-1539367628448-4bc5c82d8e8a'],
-        ['tirta empul', 'photo-1559628233-100c798642d4'],
-        ['nusa penida', 'photo-1570789210967-2cac24afeb00'],
-        ['jimbaran', 'photo-1559339352-11d035aa65de'],
-        ['eiffel', 'photo-1502602898657-3e91760cbb34'],
-        ['louvre', 'photo-1566127444979-b3d2b654e3d7'],
-        ['senso-ji', 'photo-1493976040374-85c8e12f0c0e'],
-        ['shibuya', 'photo-1542051841857-5f90071e7989'],
-        ['amber fort', 'photo-1477587458883-47145ed94245'],
-        ['hawa mahal', 'photo-1477587458883-47145ed94245'],
-        ['gateway of india', 'photo-1570168007204-dfb528c6958f'],
-        ['india gate', 'photo-1587474260584-136574528ed5'],
-        ['burj', 'photo-1512453979798-5ea266f8880c']
-    ];
-
-    function photoFor(act) {
-        const title = String(act.title || act.place || '').trim().toLowerCase();
-        for (let i = 0; i < PHOTO_HINTS.length; i++) {
-            if (title.indexOf(PHOTO_HINTS[i][0]) !== -1) return unsplash(PHOTO_HINTS[i][1]);
-        }
-        if (PLACE_PHOTOS[title]) return unsplash(PLACE_PHOTOS[title]);
-        const names = Object.keys(PLACE_PHOTOS);
-        for (let i = 0; i < names.length; i++) {
-            if (names[i] && title.indexOf(names[i]) !== -1) return unsplash(PLACE_PHOTOS[names[i]]);
-        }
-        const stored = act.image || '';
-        if (stored && stored.indexOf(GENERIC_PHOTO) === -1) return stored;
-        const pool = CATEGORY_PHOTOS[act.category] || CATEGORY_PHOTOS.default;
-        return unsplash(pool[hashText(title + '|' + (act.category || '')) % pool.length]);
-    }
-
     const dest = document.getElementById('raiDest');
     const daysInput = document.getElementById('raiDays');
     const startInput = document.getElementById('raiStart');
@@ -189,6 +76,10 @@
         return div.innerHTML;
     }
 
+    function escapeAttribute(text) {
+        return escapeHtml(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function setStatus(text, error) {
         statusEl.textContent = text || '';
         statusEl.classList.toggle('error', !!error);
@@ -214,21 +105,6 @@
         if (withWhom === 'family') return 'Family';
         if (withWhom === 'friends') return 'Friends';
         return '1 Person';
-    }
-
-    function budgetChip(sourceTrip, sourceItinerary) {
-        const budget = (sourceItinerary && sourceItinerary.budget) || {};
-        const raw = sourceTrip && sourceTrip.budget != null && sourceTrip.budget !== ''
-            ? sourceTrip.budget
-            : budget.user_budget;
-        let label = '';
-        if (raw != null && raw !== '' && !Number.isNaN(Number(raw))) {
-            label = '₹' + Number(raw).toLocaleString() + ' budget';
-        } else if (budget.estimated_total != null) {
-            label = 'Est. ₹' + Number(budget.estimated_total).toLocaleString();
-        }
-        if (!label) return '';
-        return `<span><i class="bi bi-wallet2"></i> ${escapeHtml(label)}</span>`;
     }
 
     function clock(value) {
@@ -456,7 +332,6 @@
             <span><i class="bi bi-geo-alt"></i> ${escapeHtml(trip.destination)}</span>
             <span><i class="bi bi-calendar3"></i> ${count} Days · ${nights} Nights</span>
             <span><i class="bi bi-people"></i> ${escapeHtml(peopleLabel(trip.traveling_with, trip.group_size))}</span>
-            ${budgetChip(trip, itinerary)}
             <button type="button" class="rai-edit" id="raiEdit"><i class="bi bi-pencil"></i> Edit</button>
         `;
         document.getElementById('raiEdit').onclick = () => {
@@ -478,10 +353,10 @@
                 <p>${escapeHtml(formatDayDate(day.date))}</p>
             </header>
         `;
-        const activityHtml = (day.activities || []).map((act) => {
+        const activityHtml = (day.activities || []).map((act, index) => {
             const start = act.time || act.start || '';
             const category = act.category || 'default';
-            const photo = act.source_url ? '' : photoFor(act);
+            const photo = window.RoamitraPlaceImages.forActivity(act, trip.destination);
             const label = act.title || act.place || 'Stop';
             return `
                 <article class="rai-stop">
@@ -493,37 +368,33 @@
                         <p>${escapeHtml(act.notes || '')}</p>
                         ${act.map_url ? `<a href="${escapeHtml(act.map_url)}" target="_blank" rel="noopener noreferrer">Open place map</a>` : ''}
                     </div>
-                    ${photo ? `<img src="${photo}" alt="" referrerpolicy="no-referrer">` : ''}
+                    <img class="rai-stop-photo" ${photo
+                        ? `src="${escapeAttribute(photo)}"`
+                        : `data-photo-index="${index}" style="display:none"`
+                    } alt="${escapeAttribute(label)}" loading="lazy" referrerpolicy="no-referrer">
                 </article>
             `;
         }).join('') || '<p>No mapped places were found for this day.</p>';
-        const budget = itinerary.budget || {};
-        const breakdown = budget.breakdown || {};
         const accommodation = itinerary.accommodation || {};
         const liveDetails = dayIndex === 0 && itinerary.places_source ? `
             <section class="rai-live-data">
-                <h3>Stay and budget targets</h3>
-                ${budget.user_budget != null ? `
-                    <p>Total trip budget: ₹${Number(budget.user_budget).toLocaleString()} · These are targets, not current prices.</p>
-                    ${budget.note ? `<p class="rai-budget-note ${budget.feasibility === 'tight' ? 'is-tight' : ''}">${escapeHtml(budget.note)}</p>` : ''}
-                    <ul>
-                        <li>Stay: ₹${Number(breakdown.accommodation || 0).toLocaleString()}</li>
-                        <li>Food: ₹${Number(breakdown.food || 0).toLocaleString()}</li>
-                        <li>Local transport: ₹${Number(breakdown.local_transport || 0).toLocaleString()}</li>
-                        <li>Activities: ₹${Number(breakdown.activities || 0).toLocaleString()}</li>
-                    </ul>
-                ` : '<p>Add a trip budget to see per-category spending targets.</p>'}
-                <p>${escapeHtml(accommodation.reason || 'Hotel prices and availability are not included in the live place data.')}</p>
-                ${accommodation.target_nightly_budget != null ? `<p>Stay target for all travelers: ₹${Number(accommodation.target_nightly_budget).toLocaleString()} per night.</p>` : ''}
+                <h3>Stay suggestions</h3>
+                <p>Hotel rates and availability are not displayed here.</p>
                 ${Array.isArray(accommodation.stays) && accommodation.stays.length
                     ? `<h4>Nearby stay listings</h4><ul>${accommodation.stays.map((stay) => `<li><a href="${escapeHtml(stay.map_url || stay.osm_url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(stay.name)}</a></li>`).join('')}</ul>`
                     : `<a href="${escapeHtml(accommodation.map_url || '#')}" target="_blank" rel="noopener noreferrer">Search hotels in ${escapeHtml(trip.destination)}</a>`}
                 <p class="rai-data-source">Place suggestions: ${itinerary.places_attribution_url
                     ? `<a href="${escapeHtml(itinerary.places_attribution_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source)}</a>`
-                    : `<strong>${escapeHtml(itinerary.places_source)}</strong>`}. Confirm hours, prices, and availability before visiting or booking.</p>
+                    : `<strong>${escapeHtml(itinerary.places_source)}</strong>`}. Check opening hours and availability before visiting or booking.</p>
             </section>
         ` : '';
         timeline.innerHTML = dayHeading + activityHtml + liveDetails;
+        timeline.querySelectorAll('.rai-stop-photo').forEach((image) => {
+            image.addEventListener('error', () => {
+                image.style.display = 'none';
+            }, { once: true });
+        });
+        hydrateStopPhotos(day.activities || [], trip.destination, timeline);
         if (dayIndex === 0) {
             timeline.style.minHeight = '0px';
             const dayOneHeight = timeline.offsetHeight;
@@ -538,6 +409,18 @@
             `<p><strong>${escapeHtml(clock(act.time || act.start))} ${escapeHtml(act.title || '')}</strong><br>${escapeHtml(act.notes || '')}</p>`
         ).join('') : '';
         document.getElementById('raiFullBtn').textContent = fullOpen ? 'Hide full day plan' : 'View full day plan →';
+    }
+
+    function hydrateStopPhotos(activities, destination, timeline) {
+        activities.forEach((activity, index) => {
+            const image = timeline.querySelector(`.rai-stop-photo[data-photo-index="${index}"]`);
+            if (!image) return;
+            window.RoamitraPlaceImages.resolve(activity, destination).then((photo) => {
+                if (!photo || !timeline.contains(image)) return;
+                image.src = photo;
+                image.style.display = '';
+            });
+        });
     }
 
     function renderChat(messages) {

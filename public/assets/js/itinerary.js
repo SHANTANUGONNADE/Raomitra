@@ -80,14 +80,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <p>${escapeHtml(a.notes || '')}</p>
                                 ${a.map_url ? `<a href="${escapeHtml(a.map_url)}" target="_blank" rel="noopener noreferrer">Open place map</a>` : ''}
                             </div>
-                            <div class="itin-cost">${a.cost_estimate ? '₹' + a.cost_estimate : ''}</div>
                         </li>
                     `).join('') || '<li class="itin-empty">No activities in this window.</li>'}
                 </ul>
             </article>
         `).join('');
 
-        const b = itinerary.budget || {};
         const acc = itinerary.accommodation || {};
         const tr = itinerary.transportation || {};
 
@@ -95,27 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p class="itin-summary">${escapeHtml(itinerary.summary || '')}</p>
             <div class="itin-grid">${daysHtml}</div>
             <div class="row g-3 mt-1">
-                <div class="col-md-4">
-                    <div class="itin-side-card">
-                        <h4>${b.breakdown_type === 'budget_targets' ? 'Budget targets' : 'Budget estimate'}</h4>
-                        <p class="itin-big">${b.estimated_total == null ? '—' : '₹' + b.estimated_total} <small>${escapeHtml(b.currency || 'INR')}</small></p>
-                        ${b.estimated_total == null ? '<p>Live prices are not available; allocations below are spending targets, not quotes.</p>' : ''}
-                        <p>Per person: ₹${b.per_person ?? '—'}</p>
-                        ${b.user_budget != null ? `<p>Your budget: ₹${b.user_budget}${b.within_budget == null ? ' · spending target' : (b.within_budget ? ' · within budget' : ' · over budget')}</p>` : ''}
-                        <ul class="itin-breakdown">
-                            <li>${b.breakdown_type === 'budget_targets' ? 'Activities target' : 'Activities'}: ${b.breakdown?.activities == null ? '—' : '₹' + b.breakdown.activities}</li>
-                            <li>${b.breakdown_type === 'budget_targets' ? 'Stay target' : 'Stay'}: ${b.breakdown?.accommodation == null ? '—' : '₹' + b.breakdown.accommodation}</li>
-                            <li>${b.breakdown_type === 'budget_targets' ? 'Food target' : 'Food'}: ${b.breakdown?.food == null ? '—' : '₹' + b.breakdown.food}</li>
-                            <li>${b.breakdown_type === 'budget_targets' ? 'Transport target' : 'Transport'}: ${b.breakdown?.local_transport == null ? '—' : '₹' + b.breakdown.local_transport}</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="itin-side-card">
                         <h4>Accommodation</h4>
                         <p><strong>${escapeHtml(acc.type || '')}</strong></p>
                         <p>${escapeHtml(acc.recommendation || '')}</p>
-                        ${acc.target_nightly_budget != null ? `<p>Target for all travelers: ₹${Number(acc.target_nightly_budget).toLocaleString()} per night</p>` : ''}
                         <p>${escapeHtml(acc.reason || '')}</p>
                         ${Array.isArray(acc.stays) && acc.stays.length ? `<ul>${acc.stays.map((stay) =>
                             `<li><a href="${escapeHtml(stay.map_url || stay.osm_url || acc.map_url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(stay.name)}</a></li>`
@@ -123,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ${acc.map_url ? `<a href="${escapeHtml(acc.map_url)}" target="_blank" rel="noopener noreferrer">Search current hotel listings</a>` : ''}
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="itin-side-card">
                         <h4>Transportation</h4>
                         <p>${escapeHtml(tr.local || '')}</p>
@@ -132,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
             </div>
-            ${itinerary.places_attribution_url ? `<p class="text-muted small mt-3">Place names and map locations from <a href="${escapeHtml(itinerary.places_attribution_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source || 'OpenStreetMap')}</a>. Confirm opening hours, prices, and availability with each venue.</p>` : ''}
+            ${itinerary.places_attribution_url ? `<p class="text-muted small mt-3">Place names and map locations from <a href="${escapeHtml(itinerary.places_attribution_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(itinerary.places_source || 'OpenStreetMap')}</a>. Confirm opening hours and availability with each venue.</p>` : ''}
             <div class="d-flex flex-wrap align-items-center gap-2 mt-3" aria-label="Itinerary versions">
                 <span class="text-muted small">Versions:</span>
                 ${versions.length ? versions.map((version) => {

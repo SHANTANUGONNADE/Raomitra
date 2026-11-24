@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             roleEl.dataset.role = state.role;
         }
         const meta = document.getElementById('profileMeta');
-        if (meta) meta.innerHTML = `<i class="bi bi-geo-alt"></i> ${escapeHtml(state.location || 'Add your city')}`;
+        if (meta) meta.innerHTML = `<i class="bi bi-geo-alt"></i> <button type="button" class="cust-loc-edit" aria-label="Change profile location">${escapeHtml(state.location || 'Add your city')} <i class="bi bi-pencil" aria-hidden="true"></i></button>`;
         document.getElementById('profileBio').textContent = state.bio || 'Digital nomad & explorer';
         const loc = document.getElementById('aboutLocation');
         const mail = document.getElementById('aboutEmail');
@@ -414,6 +414,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderHeader();
     }
 
+    function openProfileEditor() {
+        const panel = document.getElementById('profileSettingsPanel');
+        if (!panel) return;
+        panel.hidden = false;
+        form.hidden = false;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('userLocation').focus();
+    }
+
+    document.getElementById('profileMeta')?.addEventListener('click', (event) => {
+        if (!event.target.closest('.cust-loc-edit')) return;
+        openProfileEditor();
+    });
     document.getElementById('profileSettings')?.addEventListener('click', () => {
         const panel = document.getElementById('profileSettingsPanel');
         if (!panel) return;

@@ -796,6 +796,19 @@ img.nav-profile-avatar {
 .cust-avatar.has-photo { color: transparent; }
 .cust-head h2 { margin: 0 0 0.15rem; font-size: 1.35rem; }
 .cust-bio, .cust-loc, .cust-social { margin: 0.1rem 0; color: #5d6d82; }
+.cust-loc-edit {
+    display: inline;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.cust-loc-edit:hover { text-decoration: underline; }
+.cust-loc-edit:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.cust-loc-edit .bi-pencil { margin-left: 0.2rem; font-size: 0.75em; }
 .cust-social strong { color: inherit; color: var(--color-text); }
 
 .cust-follow {

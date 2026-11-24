@@ -434,7 +434,7 @@
 .rai-data-source { font-size: 0.78rem !important; }
 .rai-stop {
     display: grid;
-    grid-template-columns: 18px 78px 36px minmax(0, 1fr) 116px;
+    grid-template-columns: 18px 78px 36px minmax(0, 1fr) auto;
     gap: 10px;
     align-items: start;
     padding: 8px 0 14px;
