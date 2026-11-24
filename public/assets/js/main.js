@@ -269,41 +269,27 @@ function initHostLinks() {
 }
 
 function initVehicleFilters() {
-    document.querySelectorAll('.vehicle-filters').forEach((filters) => {
-        const section = filters.closest('section') || filters.parentElement;
-        const cards = section.querySelectorAll('.vehicle-card[data-category]');
-        const pills = filters.querySelectorAll('.filter-pill');
-        const stateFilter = filters.querySelector('[data-state-filter]');
-        const empty = section.querySelector('.vehicle-filter-empty');
-
-        const apply = () => {
-            const category = filters.querySelector('.filter-pill.active')?.dataset.filter || 'all';
-            const state = (stateFilter?.value || '').toLocaleLowerCase();
-            let visible = 0;
-            cards.forEach((card) => {
-                const wrap = card.closest('[class*="col-"]') || card.parentElement;
-                if (!wrap) return;
-                const matches = (category === 'all' || card.dataset.category === category)
-                    && (!state || String(card.dataset.state || '').toLocaleLowerCase() === state);
-                wrap.hidden = !matches;
-                if (matches) {
-                    visible += 1;
-                    card.classList.remove('in');
-                    card.classList.add('reveal');
-                    requestAnimationFrame(() => card.classList.add('in'));
-                }
-            });
-            if (empty) empty.hidden = visible > 0;
-        };
-
-        pills.forEach((pill) => {
-            pill.addEventListener('click', () => {
-                pills.forEach((item) => item.classList.toggle('active', item === pill));
-                apply();
-            });
+    const apply = () => {
+        let visible = 0;
+        const selectedLocation = typeof RoamitraNav === 'undefined' ? '' : RoamitraNav.currentLocation();
+        document.querySelectorAll('.vehicle-card[data-category]').forEach((card) => {
+            const wrap = card.closest('[class*="col-"]') || card.parentElement;
+            if (!wrap) return;
+            const location = card.dataset.location || card.querySelector('.vehicle-location')?.textContent || '';
+            const matches = typeof RoamitraNav === 'undefined' || RoamitraNav.locationMatches(location);
+            wrap.hidden = !matches;
+            if (matches) visible += 1;
         });
-        stateFilter?.addEventListener('change', apply);
-    });
+        document.querySelectorAll('.vehicle-filter-empty').forEach((empty) => {
+            empty.hidden = visible > 0;
+            empty.textContent = selectedLocation
+                ? 'No rentals found in ' + selectedLocation + '.'
+                : 'No rentals available yet.';
+        });
+    };
+    apply();
+    window.addEventListener('roamitra-location-updated', apply);
+    window.addEventListener('roamitra-content-updated', apply);
 }
 
 function closestHideTarget(el) {

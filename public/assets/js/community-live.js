@@ -118,7 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const locals = document.getElementById('localsGrid');
         const hosts = document.getElementById('hostsGrid');
         const hostPanel = document.getElementById('commHostPanel');
-        const hostStateFilter = document.getElementById('communityHostStateFilter');
         if (!locals && !hosts && !hostPanel) return;
         if (locals) locals.innerHTML = '<p class="text-muted">Loading registered travelers...</p>';
         if (hosts) hosts.innerHTML = '<p class="text-muted">Loading approved hosts...</p>';
@@ -127,8 +126,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 RoamitraApi.get('/community/people'),
                 RoamitraApi.get('/hosts')
             ]);
-            const people = peopleData.people || [];
-            const hostsList = hostData.hosts || [];
+            const allPeople = peopleData.people || [];
+            const allHosts = hostData.hosts || [];
+            RoamitraNav.registerLocations([
+                ...allPeople.flatMap((person) => [person.location, person.traveling_to]),
+                ...allHosts.map((person) => person.city || person.location)
+            ]);
+            const people = allPeople.filter((person) =>
+                RoamitraNav.locationMatches(person.location, person.traveling_to)
+            );
+            const hostsList = allHosts.filter((person) => RoamitraNav.locationMatches(person.city || person.location));
             const renderLocal = (person) => {
                 const name = person.full_name || 'Traveler';
                 const location = person.location || 'India';
@@ -162,28 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const live = document.createElement('div');
                 live.className = 'row g-3 mb-4 live-host-list';
                 live.innerHTML = hostsList.map(renderHost).join('') || '<p class="text-muted">No approved hosts registered yet.</p>';
-                const filter = hostStateFilter?.closest('.mb-3');
-                if (filter) filter.after(live);
-                else if (heading) heading.after(live);
-                let empty = hostPanel.querySelector('.host-filter-empty');
-                if (!empty) {
-                    empty = document.createElement('p');
-                    empty.className = 'text-muted host-filter-empty';
-                    live.after(empty);
-                }
-                const applyHostFilter = () => {
-                    const selectedState = hostStateFilter?.value || '';
-                    let visible = 0;
-                    live.querySelectorAll('[data-state]').forEach((card) => {
-                        const matches = !selectedState || String(card.dataset.state || '').toLocaleLowerCase() === selectedState.toLocaleLowerCase();
-                        card.hidden = !matches;
-                        if (matches) visible += 1;
-                    });
-                    empty.hidden = visible > 0 || !selectedState || hostsList.length === 0;
-                    empty.textContent = 'No hosts are listed in this state yet.';
-                };
-                if (hostStateFilter) hostStateFilter.onchange = applyHostFilter;
-                applyHostFilter();
+                if (heading) heading.after(live);
             }
             if (typeof initConnectRequests === 'function') initConnectRequests();
         } catch (error) {
@@ -192,6 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     refreshHosts();
+    window.addEventListener('roamitra-location-updated', refreshHosts);
     setInterval(refresh, 30000);
     setInterval(refreshStats, 30000);
     setInterval(refreshHosts, 30000);

@@ -211,6 +211,24 @@
     gap: 0.5rem;
 }
 
+.nav-location-filter {
+    width: 140px;
+    min-width: 0;
+    height: 40px;
+    padding: 0 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 0.78rem;
+}
+
+.nav-location-filter:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .roamitra-lang-select {
     display: none;
     align-items: center;
@@ -592,6 +610,13 @@
         height: 34px;
         min-width: 34px;
         padding: 0;
+    }
+
+    .roamitra-navbar .nav-location-filter {
+        width: 102px;
+        height: 34px;
+        padding: 0 0.4rem;
+        font-size: 0.65rem;
     }
 
     .roamitra-navbar .roamitra-navbar-toggler {

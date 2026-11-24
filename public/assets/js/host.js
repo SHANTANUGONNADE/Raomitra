@@ -29,22 +29,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusBox = document.getElementById('hostStatus');
     const existing = document.getElementById('hostExisting');
     const form = document.getElementById('hostForm');
+    let renderHostsForLocation = null;
+    window.addEventListener('roamitra-location-updated', () => renderHostsForLocation?.());
 
     async function loadHosts() {
         const featured = document.getElementById('hostFeatured');
         const all = document.getElementById('hostAll');
-        const stateFilter = document.getElementById('hostStateFilter');
         if (!featured || !all) return;
         try {
             const data = await RoamitraApi.get('/hosts');
             const hosts = data.hosts || [];
+            if (typeof RoamitraNav !== 'undefined') {
+                RoamitraNav.registerLocations(hosts.map((host) => host.city || host.location));
+            }
             document.querySelectorAll('.host-person').forEach((card) => card.remove());
             const card = (host) => {
                 const name = host.full_name || 'Verified host';
                 const location = [host.city || host.location, host.state, host.country].filter(Boolean).join(', ');
                 const avatar = host.avatar_url ? RoamitraApi.mediaUrl(host.avatar_url) : '';
-                const state = host.state || '';
-                return `<article class="host-person" data-state="${escapeHtml(state)}">
+                return `<article class="host-person">
                     <div class="host-person-top">
                         <div class="host-avatar-wrap">${avatar ? `<img src="${escapeHtml(avatar)}" alt="">` : `<span class="host-avatar-fallback">${escapeHtml(name.charAt(0))}</span>`}<span class="host-online"></span></div>
                         <div><h2>${escapeHtml(name)} <i class="bi bi-patch-check-fill"></i></h2><p class="host-loc"><i class="bi bi-geo-alt"></i> ${escapeHtml(location || 'India')}</p><p class="host-since">Verified host</p></div>
@@ -54,16 +57,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </article>`;
             };
             const renderHosts = () => {
-                const selectedState = stateFilter?.value || '';
                 const visibleHosts = hosts.filter((host) =>
-                    !selectedState || String(host.state || '').toLocaleLowerCase() === selectedState.toLocaleLowerCase()
+                    typeof RoamitraNav === 'undefined' || RoamitraNav.locationMatches(host.city || host.location)
                 );
-                featured.innerHTML = visibleHosts.slice(0, 8).map((host) => `<article class="host-feature-card" data-state="${escapeHtml(host.state || '')}"><div class="host-avatar-fallback">${escapeHtml((host.full_name || 'H').charAt(0))}</div><div><strong>${escapeHtml(host.full_name || 'Verified host')} <i class="bi bi-patch-check-fill"></i></strong><p><i class="bi bi-geo-alt"></i> ${escapeHtml([host.city || host.location, host.state].filter(Boolean).join(', ') || 'India')}</p><small><span class="host-live"><i class="bi bi-circle-fill"></i> Verified</span></small></div></article>`).join('');
+                featured.innerHTML = visibleHosts.slice(0, 8).map((host) => `<article class="host-feature-card"><div class="host-avatar-fallback">${escapeHtml((host.full_name || 'H').charAt(0))}</div><div><strong>${escapeHtml(host.full_name || 'Verified host')} <i class="bi bi-patch-check-fill"></i></strong><p><i class="bi bi-geo-alt"></i> ${escapeHtml([host.city || host.location, host.state].filter(Boolean).join(', ') || 'India')}</p><small><span class="host-live"><i class="bi bi-circle-fill"></i> Verified</span></small></div></article>`).join('');
                 all.innerHTML = visibleHosts.map(card).join('')
-                    || `<p class="form-alert">${hosts.length ? 'No hosts are listed in this state yet.' : 'No approved hosts are registered yet.'}</p>`;
+                    || `<p class="form-alert">${hosts.length ? 'No hosts are listed in this location yet.' : 'No approved hosts are registered yet.'}</p>`;
             };
+            renderHostsForLocation = renderHosts;
             renderHosts();
-            stateFilter?.addEventListener('change', renderHosts);
         } catch (error) {
             all.innerHTML = `<p class="form-alert error">${escapeHtml(error.message || 'Could not load hosts.')}</p>`;
         }

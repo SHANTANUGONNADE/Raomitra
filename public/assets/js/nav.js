@@ -5,6 +5,7 @@ const RoamitraNav = {
     user: null,
     chatTimer: null,
     previousMessageUnread: null,
+    knownLocations: [],
     protectedPages: ['translator', 'profile', 'itinerary', 'booking', 'roamini', 'activity'],
 
     applyBranding() {
@@ -129,6 +130,7 @@ const RoamitraNav = {
         if (desktop) {
             desktop.innerHTML = '';
             desktop.appendChild(this.themeButton());
+            desktop.appendChild(this.locationFilter());
             if (this.user) {
                 if (['admin', 'co_admin'].includes(this.user.role)) {
                     desktop.insertAdjacentHTML('beforeend', `<a href="${RoamitraApi.page('admin.html')}" class="btn-roamitra btn-roamitra-navy btn-roamitra-sm nav-keep nav-admin" aria-label="Admin"><i class="bi bi-shield-lock"></i><span>Admin</span></a>`);
@@ -181,6 +183,7 @@ const RoamitraNav = {
                     <a href="${RoamitraApi.page('signup.html')}" class="btn-roamitra btn-roamitra-primary flex-fill">Sign up</a>
                 `;
             }
+            mobileRow.prepend(this.locationFilter());
             mobileRow.prepend(this.themeButton());
         }
         this.syncYouTab();
@@ -239,6 +242,110 @@ const RoamitraNav = {
             sync();
         });
         return btn;
+    },
+
+    currentLocation() {
+        try { return sessionStorage.getItem('roamitra-location') || ''; } catch (e) { return ''; }
+    },
+
+    locationCity(value) {
+        return String(value || '').split(',')[0].trim();
+    },
+
+    normalizeLocation(value) {
+        const normalized = String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+        const aliases = { bangalore: 'bengaluru', bombay: 'mumbai', calcutta: 'kolkata', madras: 'chennai' };
+        return aliases[normalized] || normalized;
+    },
+
+    locationMatches(...values) {
+        const selected = this.normalizeLocation(this.currentLocation());
+        if (!selected) return true;
+        return values.some((value) => String(value || '').split(/[,/|]/).some((part) => {
+            const candidate = this.normalizeLocation(part);
+            return candidate === selected || candidate.startsWith(selected + ' ');
+        }));
+    },
+
+    registerLocations(values) {
+        const cities = Array.from(new Set(values
+            .map((value) => this.locationCity(value))
+            .filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b));
+        const known = new Set(this.knownLocations.map((city) => this.normalizeLocation(city)));
+        cities.forEach((city) => {
+            if (known.has(this.normalizeLocation(city))) return;
+            this.knownLocations.push(city);
+            known.add(this.normalizeLocation(city));
+        });
+        document.querySelectorAll('.nav-location-filter').forEach((select) => {
+            const existing = new Set(Array.from(select.options, (option) => this.normalizeLocation(option.value)));
+            cities.forEach((city) => {
+                const normalized = this.normalizeLocation(city);
+                if (!normalized || existing.has(normalized)) return;
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                select.appendChild(option);
+                existing.add(normalized);
+            });
+        });
+    },
+
+    locationFilter() {
+        const select = document.createElement('select');
+        select.className = 'nav-location-filter';
+        select.setAttribute('aria-label', 'Filter content by location');
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'All locations';
+        select.appendChild(all);
+
+        const cities = ['Agra', 'Ahmedabad', 'Bengaluru', 'Bhopal', 'Chennai', 'Delhi', 'Goa', 'Hyderabad', 'Jaipur', 'Kolkata', 'Mumbai', 'Pune', 'Varanasi'];
+        const destinations = window.RoamitraDestinations && window.RoamitraDestinations.DESTINATIONS;
+        if (destinations) {
+            Object.values(destinations).forEach((destination) => cities.push(destination.planner));
+        }
+        cities.push(...this.knownLocations);
+        Array.from(new Set(cities.map((city) => this.locationCity(city)).filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b))
+            .forEach((city) => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                select.appendChild(option);
+            });
+        const location = this.currentLocation();
+        if (location && !Array.from(select.options).some((option) => this.normalizeLocation(option.value) === this.normalizeLocation(location))) {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            select.appendChild(option);
+        }
+        select.value = location;
+        select.addEventListener('change', () => {
+            try {
+                if (select.value) sessionStorage.setItem('roamitra-location', select.value);
+                else sessionStorage.removeItem('roamitra-location');
+            } catch (e) { /* location remains available until this page is closed */ }
+            document.querySelectorAll('.nav-location-filter').forEach((filter) => {
+                filter.value = select.value;
+            });
+            window.dispatchEvent(new CustomEvent('roamitra-location-updated', {
+                detail: { location: select.value }
+            }));
+        });
+        window.addEventListener('roamitra-location-updated', () => {
+            const current = this.currentLocation();
+            if (!Array.from(select.options).some((option) => this.normalizeLocation(option.value) === this.normalizeLocation(current))) {
+                const option = document.createElement('option');
+                option.value = current;
+                option.textContent = current;
+                select.appendChild(option);
+            }
+            select.value = current;
+        });
+        return select;
     },
 
     bellButton() {

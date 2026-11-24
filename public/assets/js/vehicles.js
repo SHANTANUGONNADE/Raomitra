@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     cars: 'assets/images/vehicles/marutiswift.webp'
                 }[category] || 'assets/images/vehicles/activa6g.webp';
                 return `<div class="col-lg-4 col-md-6">
-                    <div class="vehicle-card" data-category="${category}">
+                    <div class="vehicle-card" data-category="${category}" data-location="${escapeHtml(location)}">
                         <div class="vehicle-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(name)}"><span class="vehicle-category">${escapeHtml(label)}</span></div>
                         <div class="vehicle-body">
                             <h2 class="vehicle-title">${escapeHtml(name)}</h2>
@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }).join('');
             grid.appendChild(fragment);
         }
+        if (typeof RoamitraNav !== 'undefined') {
+            RoamitraNav.registerLocations(vehicles.map((vehicle) => vehicle.location));
+        }
+        window.dispatchEvent(new Event('roamitra-content-updated'));
     } catch (error) {
         // Static catalog remains usable if the API is unavailable.
     }

@@ -22,7 +22,6 @@ const MUMBAI_LOCAL_TIPS = [
 
 document.addEventListener('DOMContentLoaded', () => {
     initExploreTabs();
-    initFeedFilters();
     initLocalFeed();
     initDestinationOpen();
     initDestCylinder();
@@ -37,23 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function initNearbyPeople() {
     const list = document.getElementById('explorePeopleList');
     const status = document.getElementById('explorePeopleStatus');
-    const filter = document.getElementById('explorePeopleFilter');
     if (!list || typeof RoamitraApi === 'undefined') return;
-    populateNearbyLocationFilter(filter);
-    if (filter) {
-        let currentLocation = '';
-        try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
-        setNearbyPeopleLocation(filter, currentLocation);
-    }
-
     const load = () => {
-        let currentLocation = filter ? filter.value : '';
-        if (!filter) {
-            try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
-        }
-        const query = currentLocation ? '?location=' + encodeURIComponent(currentLocation) : '';
-        return RoamitraApi.get('/community/people' + query).then((data) => {
-            const people = Array.isArray(data.people) ? data.people : [];
+        const currentLocation = RoamitraNav.currentLocation();
+        return RoamitraApi.get('/community/people').then((data) => {
+            const allPeople = Array.isArray(data.people) ? data.people : [];
+            RoamitraNav.registerLocations(allPeople.flatMap((person) => [person.location, person.traveling_to]));
+            const people = allPeople.filter((person) =>
+                !currentLocation || RoamitraNav.locationMatches(person.location, person.traveling_to)
+            );
             if (!people.length) {
                 list.innerHTML = '<p class="text-muted mb-0">No registered travelers have shared this location yet.</p>';
                 return;
@@ -95,32 +86,23 @@ function initNearbyPeople() {
             if (status) status.textContent = 'Could not load registered travelers right now.';
         });
     };
-    filter?.addEventListener('change', load);
     load();
-    window.addEventListener('roamitra-location-updated', () => {
-        if (filter) {
-            let currentLocation = '';
-            try { currentLocation = localStorage.getItem('roamitra-local-place') || ''; } catch (e) { /* use all locations */ }
-            setNearbyPeopleLocation(filter, currentLocation);
-        }
-        load();
-    });
+    window.addEventListener('roamitra-location-updated', load);
     window.setInterval(load, 30000);
 }
 
 function initNearbyPlaces() {
     const list = document.getElementById('explorePlacesList');
     if (!list) return;
-    const filter = document.getElementById('explorePlacesFilter');
     const api = window.RoamitraDestinations;
     const keys = api && Array.isArray(api.FEATURED_DESTINATION_KEYS)
         ? api.FEATURED_DESTINATION_KEYS
         : [];
-    populateNearbyLocationFilter(filter);
+    RoamitraNav.registerLocations(keys.map((key) => (api.DESTINATIONS[key] || {}).planner));
     const render = () => {
-        const city = filter ? filter.value.toLowerCase() : '';
+        const city = RoamitraNav.currentLocation();
         const matches = city
-            ? keys.filter((key) => String(api.DESTINATIONS[key].planner || '').toLowerCase() === city)
+            ? keys.filter((key) => RoamitraNav.locationMatches(api.DESTINATIONS[key].planner))
             : keys.slice(0, 8);
         if (!matches.length) {
             list.innerHTML = '<p class="text-muted mb-0">No places found for this city.</p>';
@@ -140,40 +122,8 @@ function initNearbyPlaces() {
         list.innerHTML = '<p class="text-muted mb-0">No destinations available.</p>';
         return;
     }
-    if (filter) filter.addEventListener('change', render);
+    window.addEventListener('roamitra-location-updated', render);
     render();
-}
-
-function getExploreCities() {
-    const api = window.RoamitraDestinations;
-    if (!api || !Array.isArray(api.FEATURED_DESTINATION_KEYS)) return [];
-    return Array.from(new Set(api.FEATURED_DESTINATION_KEYS
-        .map((key) => String((api.DESTINATIONS[key] || {}).planner || '').trim())
-        .filter(Boolean)))
-        .sort((a, b) => a.localeCompare(b));
-}
-
-function populateNearbyLocationFilter(filter) {
-    if (!filter || filter.dataset.ready) return;
-    const cities = getExploreCities();
-    filter.innerHTML = '<option value="">All cities</option>' + cities.map((city) =>
-        '<option value="' + escapeHtml(city) + '">' + escapeHtml(city) + '</option>'
-    ).join('');
-    filter.dataset.ready = 'true';
-}
-
-function setNearbyPeopleLocation(filter, location) {
-    if (!filter || !location) return;
-    const normalizedLocation = location.toLowerCase();
-    const matchingCity = getExploreCities().find((city) => normalizedLocation.includes(city.toLowerCase()));
-    const value = matchingCity || location;
-    if (!Array.from(filter.options).some((option) => option.value.toLowerCase() === value.toLowerCase())) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        filter.appendChild(option);
-    }
-    filter.value = value;
 }
 
 function initPeopleChat() {
@@ -342,27 +292,23 @@ function initExploreTabs() {
 
 function applyFeedFilter() {
     const empty = document.getElementById('feedFilterEmpty');
-    const active = document.querySelector('.feed-filters .filter-pill.active');
-    const filter = active?.dataset.filter || 'all';
     const location = currentLocalFeedLocation();
     let shown = 0;
     document.querySelectorAll('#panel-local .feed-post[data-feed-category]').forEach((post) => {
-        const categoryMatch = filter === 'all' || post.dataset.feedCategory === filter;
         const locationMatch = localFeedLocationMatches(post, location);
-        const match = categoryMatch && locationMatch;
-        post.hidden = !match;
-        if (match) shown += 1;
+        post.hidden = !locationMatch;
+        if (locationMatch) shown += 1;
     });
     if (empty) {
         empty.hidden = shown !== 0;
         empty.textContent = location
-            ? 'No local tips for ' + location + ' in this category yet. Be the first to share one.'
-            : 'No local tips in this category yet.';
+            ? 'No local tips found for ' + location + ' yet. Be the first to share one.'
+            : 'No local tips available yet.';
     }
 }
 
 function currentLocalFeedLocation() {
-    try { return localStorage.getItem('roamitra-local-place') || ''; } catch (e) { return ''; }
+    return typeof RoamitraNav !== 'undefined' ? RoamitraNav.currentLocation() : '';
 }
 
 function normalizeLocalFeedLocation(value) {
@@ -373,14 +319,12 @@ function normalizeLocalFeedLocation(value) {
 }
 
 function localFeedLocationMatches(post, location) {
-    if (post.dataset.mumbaiOnly === 'true' && !normalizeLocalFeedLocation(location).includes('mumbai')) return false;
     if (!location) return true;
-    const selected = normalizeLocalFeedLocation(location);
-    const city = normalizeLocalFeedLocation(post.dataset.feedCity);
-    const place = normalizeLocalFeedLocation(post.dataset.feedLocation);
-    const area = normalizeLocalFeedLocation(post.dataset.feedArea);
-    if (city && (selected === city || selected.includes(city))) return true;
-    return [place, area].some((value) => value && (value === selected || value.includes(selected) || selected.includes(value)));
+    return typeof RoamitraNav === 'undefined' || RoamitraNav.locationMatches(
+        post.dataset.feedCity,
+        post.dataset.feedLocation,
+        post.dataset.feedArea
+    );
 }
 
 function escapeFeedAttribute(value) {
@@ -391,16 +335,6 @@ function escapeFeedAttribute(value) {
         '<': '&lt;',
         '>': '&gt;'
     })[character]);
-}
-
-function initFeedFilters() {
-    document.querySelectorAll('.feed-filters .filter-pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-            document.querySelectorAll('.feed-filters .filter-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            applyFeedFilter();
-        });
-    });
 }
 
 function localFeedCard(feed) {
@@ -426,9 +360,8 @@ function localFeedCard(feed) {
         ? '<button type="button" class="feed-action" data-feed-act="delete" aria-label="Delete"><i class="bi bi-trash"></i></button>'
         : '';
     const dbId = feed.mine ? ' data-feed-db="' + Number(feed.id) + '"' : '';
-    const mumbaiOnly = feed.mumbaiOnly ? ' data-mumbai-only="true"' : '';
     const title = feed.curatedTip ? '' : '<p class="feed-post-title">' + escapeHtml(feed.title) + '</p>';
-    return '<div class="feed-post" data-feed-id="' + escapeHtml(id) + '"' + dbId + city + area + feedPlace + mumbaiOnly + ' data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
+    return '<div class="feed-post" data-feed-id="' + escapeHtml(id) + '"' + dbId + city + area + feedPlace + ' data-feed-category="' + escapeHtml(category) + '" data-likes="0" data-comments="0" data-feed-title="' + escapeHtml(feed.title) + '">'
         + '<div class="feed-post-header">'
         + '<div class="feed-post-avatar">' + escapeHtml(initials) + '</div>'
         + '<div class="feed-post-meta">'
@@ -467,7 +400,6 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
     const list = document.getElementById('localFeedList');
     const form = document.getElementById('localFeedForm');
     const addBtn = document.getElementById('localFeedAdd');
-    const clearLocationBtn = document.getElementById('localFeedClearLocation');
     const loginForFeed = () => {
         location.href = RoamitraApi.page('login.html') + '?next=' + encodeURIComponent('explore.html#panel-local');
     };
@@ -509,15 +441,12 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
         const title = String(data.get('title') || '').trim();
         const body = String(data.get('body') || '').trim();
         const category = String(data.get('category') || '').trim();
-        const place = document.querySelector('#panel-local .js-location-label')?.textContent?.trim() || '';
+        const place = RoamitraNav.currentLocation();
         if (!title || !body) return;
         const submit = form.querySelector('[type="submit"]');
         if (submit) submit.disabled = true;
         try {
             const res = await RoamitraApi.post('/local/feeds', { title, body, category, place });
-            document.querySelectorAll('.feed-filters .filter-pill').forEach((pill) => {
-                pill.classList.toggle('active', (pill.dataset.filter || '') === 'all');
-            });
             const post = mount(res.feed, true);
             form.reset();
             form.hidden = true;
@@ -538,25 +467,20 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
         if (!list) return;
         list.replaceChildren();
         const selectedLocation = normalizeLocalFeedLocation(currentLocalFeedLocation());
-        if (selectedLocation.includes('mumbai')) {
-            MUMBAI_LOCAL_TIPS.forEach((tip, index) => {
-                mount({
-                    id: 'mumbai-sheet-' + index,
-                    guide: true,
-                    city: 'Mumbai',
-                    place: 'Mumbai',
-                    category: tip.category,
-                    title: tip.tip,
-                    body: tip.tip,
-                    full_name: 'Roamitra City Guide',
-                    curatedTip: true,
-                    mumbaiOnly: true
-                }, false);
-            });
-        }
-        const mumbaiTips = !selectedLocation || selectedLocation.includes('mumbai')
-            ? (window.RoamitraMumbaiData?.places || []).filter((place) => place.local_tip)
-            : [];
+        MUMBAI_LOCAL_TIPS.forEach((tip, index) => {
+            mount({
+                id: 'mumbai-sheet-' + index,
+                guide: true,
+                city: 'Mumbai',
+                place: 'Mumbai',
+                category: tip.category,
+                title: tip.tip,
+                body: tip.tip,
+                full_name: 'Roamitra City Guide',
+                curatedTip: true
+            }, false);
+        });
+        const mumbaiTips = (window.RoamitraMumbaiData?.places || []).filter((place) => place.local_tip);
         mumbaiTips.forEach((place) => {
             const category = /food|restaurant|cafe|street food/i.test(place.category || '') ? 'food' : 'gems';
             mount({
@@ -575,6 +499,7 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
         try {
             const res = await RoamitraApi.get('/local/feeds');
             if (selectedLocation !== normalizeLocalFeedLocation(currentLocalFeedLocation())) return;
+            RoamitraNav.registerLocations((res.feeds || []).map((feed) => feed.city || feed.place));
             [...(res.feeds || [])].reverse().forEach((feed) => mount(feed, true));
             applyFeedFilter();
             if (openHash && typeof openSavedTip === 'function') openSavedTip();
@@ -582,21 +507,8 @@ function initLocalFeedComposer(bindPost, persist, toast, openSavedTip) {
             if (openHash && typeof openSavedTip === 'function') openSavedTip();
         }
     };
-    const updateClearLocationButton = () => {
-        if (clearLocationBtn) clearLocationBtn.hidden = !currentLocalFeedLocation().trim();
-    };
-    clearLocationBtn?.addEventListener('click', () => {
-        try { localStorage.removeItem('roamitra-local-place'); } catch (e) { /* location stays cleared for this page */ }
-        document.querySelectorAll('.js-location-label').forEach((label) => {
-            label.textContent = 'Set your location';
-        });
-        updateClearLocationButton();
-        window.dispatchEvent(new CustomEvent('roamitra-location-updated'));
-    });
-    updateClearLocationButton();
     refresh(true);
     window.addEventListener('roamitra-location-updated', () => {
-        updateClearLocationButton();
         refresh(false);
     });
     setInterval(() => {
@@ -784,6 +696,12 @@ function destKeys() {
         return featured.filter((key) => catalog[key]);
     }
     return Object.keys(catalog);
+}
+
+function filterDestinationKeysByLocation(keys) {
+    const catalog = window.RoamitraDestinations && window.RoamitraDestinations.DESTINATIONS;
+    if (!catalog || typeof RoamitraNav === 'undefined') return keys;
+    return keys.filter((key) => RoamitraNav.locationMatches((catalog[key] || {}).planner));
 }
 
 function filmIndexes(index, n, size) {
@@ -1164,7 +1082,15 @@ function toggleDestGrid() {
 
 function initDestCylinder() {
     if (!document.getElementById('destSpotlight')) return;
-    renderDestCylinder(destKeys());
+    renderDestCylinder(filterDestinationKeysByLocation(destKeys()));
+    window.addEventListener('roamitra-location-updated', () => {
+        const search = document.querySelector('.search-hero .search-bar input');
+        if (search && search.value.trim() && typeof window.RoamitraExploreSearch === 'function') {
+            window.RoamitraExploreSearch(false);
+        } else {
+            renderDestCylinder(filterDestinationKeysByLocation(destKeys()));
+        }
+    });
 
     document.getElementById('seeAllDestinations')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1256,8 +1182,9 @@ function initExploreSearch() {
 
         const normalized = q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         const matches = find(q).filter((key) => {
-            if (!normalized) return true;
             const destination = window.RoamitraDestinations.DESTINATIONS[key] || {};
+            if (!RoamitraNav.locationMatches(destination.planner)) return false;
+            if (!normalized) return true;
             const city = String(destination.planner || '').toLowerCase();
             return city.includes(normalized) || destinationSearchTerms(key, destination).includes(normalized);
         });
@@ -1277,7 +1204,7 @@ function initExploreSearch() {
         }
 
         if (!q) destGridOpen = false;
-        renderDestCylinder(q ? matches : destKeys());
+        renderDestCylinder(q ? matches : filterDestinationKeysByLocation(destKeys()));
         if (q && matches.length) {
             cylinderIndex = 0;
             destGridOpen = false;
@@ -1285,7 +1212,8 @@ function initExploreSearch() {
         }
 
         if (submit && q) {
-            const key = resolve ? resolve(q) : matches[0];
+            const resolved = resolve ? resolve(q) : matches[0];
+            const key = matches.includes(resolved) ? resolved : matches[0];
             if (key) openDestination(key, true);
         }
     };
